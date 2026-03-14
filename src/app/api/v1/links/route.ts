@@ -1,18 +1,14 @@
-// Short Link API (SQLite backed)
+// Short Link API
 import { NextRequest, NextResponse } from 'next/server';
-import { sqliteDb } from '@/lib/sqlite-db';
+import { db } from '@/lib/universal-db';
+
+export async function GET() {
+  const result = db.getShortLinks();
+  return NextResponse.json({ success: true, ...result });
+}
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { url, storeId, couponId } = body;
-  if (!url || !storeId) {
-    return NextResponse.json({ success: false, message: 'Missing url or storeId' }, { status: 400 });
-  }
-  const link = sqliteDb.shortLinks.create(url, storeId, couponId);
+  const link = db.createShortLink(body);
   return NextResponse.json({ success: true, data: link }, { status: 201 });
-}
-
-export async function GET() {
-  const links = sqliteDb.shortLinks.findAll();
-  return NextResponse.json({ success: true, data: links });
 }

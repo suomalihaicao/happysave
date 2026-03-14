@@ -1,36 +1,11 @@
-// Short Link Redirect - /s/[code] (SQLite backed)
+// Short Link Redirect with Tracking
 import { redirect } from 'next/navigation';
-import { sqliteDb } from '@/lib/sqlite-db';
-import { headers } from 'next/headers';
+import { db } from '@/lib/universal-db';
 
-interface PageProps {
-  params: Promise<{ code: string }>;
-}
-
-export default async function ShortLinkRedirect({ params }: PageProps) {
+export default async function ShortLinkPage({ params }: { params: Promise<{ code: string }> }) {
   const { code } = await params;
-  const link = sqliteDb.shortLinks.findByCode(code);
-  
-  if (!link) {
-    redirect('/');
-  }
-  
-  // Log click and increment
-  try {
-    const headersList = await headers();
-    sqliteDb.shortLinks.incrementClick(code);
-    sqliteDb.clickLogs.create({
-      shortCode: code,
-      storeId: link.storeId,
-      couponId: link.couponId,
-      ip: headersList.get('x-forwarded-for') || '',
-      userAgent: headersList.get('user-agent') || '',
-      referer: headersList.get('referer') || '',
-      device: 'unknown',
-    });
-  } catch (e) {
-    // Best-effort logging
-  }
-  
+  const link = db.getShortLinkByCode(code);
+  if (!link) redirect('/');
+  db.incrementClicks(code);
   redirect(link.originalUrl);
 }
