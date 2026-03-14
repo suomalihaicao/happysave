@@ -6,3 +6,4 @@ data/
 .env*.local
 .vercel
 .turbo
+package-lock.json
