@@ -1,403 +1,373 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { useState, useEffect } from 'react';
 import {
-  Card, Button, Table, Tag, Space, Typography, Avatar, Row, Col,
-  Badge, Tooltip, QRCode, message, Divider, Modal, Form, Input,
-  Select, Switch, InputNumber, Tabs, Statistic, Popconfirm,
+  Table, Button, Modal, Form, Input, Select, Switch, Tag, Space,
+  Card, Row, Col, Statistic, Tabs, message, Badge, List, Checkbox,
+  Typography, Alert, Progress, Descriptions, Divider, Popconfirm
 } from 'antd';
 import {
-  QrcodeOutlined, CopyOutlined, DeleteOutlined, EditOutlined,
-  ShoppingCartOutlined, TagOutlined, ThunderboltOutlined,
-  FireOutlined, PlusOutlined, LineChartOutlined,
+  ShopOutlined, TagOutlined, BarChartOutlined, RobotOutlined,
+  LinkOutlined, EyeOutlined, DeleteOutlined, EditOutlined,
+  PlusOutlined, ThunderboltOutlined, CheckCircleOutlined,
+  ClockCircleOutlined, ExclamationCircleOutlined, LockOutlined,
+  UserOutlined, MailOutlined, SafetyOutlined, FileTextOutlined,
+  ExportOutlined
 } from '@ant-design/icons';
-import { AntdProvider } from '@/providers/AntdProvider';
 
-import AIPanel from './ai-panel';
-
-const { Title, Text } = Typography;
+const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
-const { Option } = Select;
 
-function AdminContent() {
-  const [stats, setStats] = useState<any>(null);
-  const [stores, setStores] = useState<any[]>([]);
-  const [coupons, setCoupons] = useState<any[]>([]);
-  const [shortLinks, setShortLinks] = useState<any[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [messageApi, contextHolder] = message.useMessage();
+// ============================================================
+// Login Component
+// ============================================================
+function LoginPage({ onLogin }: { onLogin: () => void }) {
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  // Modal states
-  const [storeModal, setStoreModal] = useState<{ open: boolean; edit?: any }>({ open: false });
-  const [couponModal, setCouponModal] = useState<{ open: boolean; edit?: any }>({ open: false });
-  const [qrVisible, setQrVisible] = useState<{ url: string; title: string } | null>(null);
-
-  const [storeForm] = Form.useForm();
-  const [couponForm] = Form.useForm();
-
-  const loadAll = () => {
-    Promise.all([
-      fetch('/api/v1/stats').then(r => r.json()),
-      fetch('/api/v1/stores').then(r => r.json()),
-      fetch('/api/v1/coupons').then(r => r.json()),
-      fetch('/api/v1/links').then(r => r.json()),
-      fetch('/api/v1/categories').then(r => r.json()),
-    ]).then(([statsRes, storesRes, couponsRes, linksRes, catsRes]) => {
-      setStats(statsRes.data);
-      setStores(storesRes.data || []);
-      setCoupons(couponsRes.data || []);
-      setShortLinks(linksRes.data || []);
-      setCategories(catsRes.data || []);
-      setLoading(false);
-    });
-  };
-
-  useEffect(() => { loadAll(); }, []);
-
-  const copyText = (text: string) => {
-    navigator.clipboard.writeText(text);
-    messageApi.success('已复制');
-  };
-
-  // ===== Store CRUD =====
-  const saveStore = async () => {
+  const handleLogin = async () => {
+    setLoading(true);
     try {
-      const values = await storeForm.validateFields();
-      const isEdit = storeModal.edit;
-      const res = await fetch('/api/v1/stores', {
-        method: isEdit ? 'PUT' : 'POST',
+      const res = await fetch('/api/v1/auth', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(isEdit ? { id: storeModal.edit.id, ...values } : values),
+        body: JSON.stringify({ action: 'login', password }),
       });
-      if (res.ok) {
-        messageApi.success(isEdit ? '商家已更新' : '商家已创建');
-        setStoreModal({ open: false });
-        storeForm.resetFields();
-        loadAll();
+      const data = await res.json();
+      if (data.success) {
+        message.success('登录成功');
+        onLogin();
+      } else {
+        message.error('密码错误');
       }
-    } catch (e) { /* form validation error */ }
+    } catch {
+      message.error('登录失败');
+    }
+    setLoading(false);
   };
-
-  const deleteStore = async (id: string) => {
-    await fetch(`/api/v1/stores?id=${id}`, { method: 'DELETE' });
-    messageApi.success('商家已删除');
-    loadAll();
-  };
-
-  // ===== Coupon CRUD =====
-  const saveCoupon = async () => {
-    try {
-      const values = await couponForm.validateFields();
-      const isEdit = couponModal.edit;
-      const res = await fetch('/api/v1/coupons', {
-        method: isEdit ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(isEdit ? { id: couponModal.edit.id, ...values } : values),
-      });
-      if (res.ok) {
-        messageApi.success(isEdit ? '优惠码已更新' : '优惠码已创建');
-        setCouponModal({ open: false });
-        couponForm.resetFields();
-        loadAll();
-      }
-    } catch (e) { /* form validation error */ }
-  };
-
-  const deleteCoupon = async (id: string) => {
-    await fetch(`/api/v1/coupons?id=${id}`, { method: 'DELETE' });
-    messageApi.success('优惠码已删除');
-    loadAll();
-  };
-
-  // ===== Table Columns =====
-  const storeColumns = [
-    {
-      title: '商家',
-      key: 'store',
-      render: (_: any, r: any) => (
-        <Space>
-          <Avatar style={{ backgroundColor: '#fff2e8', color: '#ff6b35' }}>{r.name.charAt(0)}</Avatar>
-          <div>
-            <div style={{ fontWeight: 600 }}>{r.name}</div>
-            <Text type="secondary" style={{ fontSize: 12 }}>{r.nameZh}</Text>
-          </div>
-        </Space>
-      ),
-    },
-    { title: '分类', dataIndex: 'categoryZh', key: 'category' },
-    { title: '点击量', dataIndex: 'clickCount', key: 'clickCount', sorter: (a: any, b: any) => a.clickCount - b.clickCount, render: (v: number) => <Text strong>{v?.toLocaleString()}</Text> },
-    { title: '转化率', dataIndex: 'conversionRate', key: 'conversionRate', render: (v: number) => <Tag color={v >= 5 ? 'green' : v >= 3 ? 'orange' : 'default'}>{v?.toFixed(1)}%</Tag> },
-    { title: '状态', key: 'status', render: (_: any, r: any) => <Badge status={r.active ? 'success' : 'default'} text={r.active ? '活跃' : '禁用'} /> },
-    {
-      title: '操作', key: 'actions',
-      render: (_: any, r: any) => (
-        <Space>
-          <Tooltip title="查看"><Link href={`/store/${r.slug}`}><Button type="link" size="small">查看</Button></Link></Tooltip>
-          <Tooltip title="二维码"><Button icon={<QrcodeOutlined />} size="small" onClick={() => setQrVisible({ url: r.affiliateUrl || `https://happysave.com/store/${r.slug}`, title: r.name })} /></Tooltip>
-          <Tooltip title="编辑"><Button icon={<EditOutlined />} size="small" onClick={() => { storeForm.setFieldsValue(r); setStoreModal({ open: true, edit: r }); }} /></Tooltip>
-          <Popconfirm title="确定删除？" onConfirm={() => deleteStore(r.id)}><Button icon={<DeleteOutlined />} size="small" danger /></Popconfirm>
-        </Space>
-      ),
-    },
-  ];
-
-  const couponColumns = [
-    { title: '商家', dataIndex: 'storeName', key: 'storeName' },
-    {
-      title: '优惠', key: 'title',
-      render: (_: any, r: any) => (
-        <div>
-          <div style={{ fontWeight: 500 }}>{r.titleZh || r.title}</div>
-          {r.code && <Tag color="blue" style={{ fontFamily: 'monospace', marginTop: 4 }}>{r.code}</Tag>}
-        </div>
-      ),
-    },
-    { title: '折扣', dataIndex: 'discount', key: 'discount', render: (v: string) => <Tag color="orange">{v}</Tag> },
-    { title: '点击', dataIndex: 'clickCount', key: 'clickCount', sorter: (a: any, b: any) => a.clickCount - b.clickCount, render: (v: number) => v?.toLocaleString() },
-    { title: '使用', dataIndex: 'useCount', key: 'useCount', render: (v: number) => v?.toLocaleString() },
-    { title: '验证', dataIndex: 'verified', key: 'verified', render: (v: boolean) => <Badge status={v ? 'success' : 'warning'} text={v ? '已验证' : '待验证'} /> },
-    {
-      title: '操作', key: 'actions',
-      render: (_: any, r: any) => (
-        <Space>
-          {r.code && <Tooltip title="复制"><Button icon={<CopyOutlined />} size="small" onClick={() => copyText(r.code)} /></Tooltip>}
-          <Tooltip title="编辑"><Button icon={<EditOutlined />} size="small" onClick={() => { couponForm.setFieldsValue(r); setCouponModal({ open: true, edit: r }); }} /></Tooltip>
-          <Popconfirm title="确定删除？" onConfirm={() => deleteCoupon(r.id)}><Button icon={<DeleteOutlined />} size="small" danger /></Popconfirm>
-        </Space>
-      ),
-    },
-  ];
-
-  const linkColumns = [
-    { title: '短链接', dataIndex: 'code', key: 'code', render: (v: string) => <Space><Text code>happysave.com/s/{v}</Text><Button icon={<CopyOutlined />} size="small" type="link" onClick={() => copyText(`https://happysave.com/s/${v}`)} /></Space> },
-    { title: '商家', dataIndex: 'storeName', key: 'storeName' },
-    { title: '点击', dataIndex: 'clicks', key: 'clicks', sorter: (a: any, b: any) => a.clicks - b.clicks },
-    { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt', render: (v: string) => v ? new Date(v).toLocaleString('zh-CN') : '-' },
-  ];
-
-  const items = [
-    {
-      key: 'dashboard',
-      label: '📊 数据概览',
-      children: stats && (
-        <div>
-          <Row gutter={[16, 16]}>
-            {[
-              { icon: '🏪', label: '商家总数', value: stats.totalStores, color: '#ff6b35' },
-              { icon: '🎫', label: '优惠码总数', value: stats.totalCoupons, color: '#1890ff' },
-              { icon: '👆', label: '总点击数', value: stats.totalClicks, color: '#52c41a' },
-              { icon: '🔗', label: '短链接数', value: stats.totalLinks, color: '#eb2f96' },
-              { icon: '📄', label: 'SEO 页面', value: stats.totalSeoPages || 0, color: '#722ed1' },
-            ].map((item, i) => (
-              <Col xs={12} sm={8} md={6} lg={4} key={i}>
-                <Card hoverable bodyStyle={{ padding: 16 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                      <Text type="secondary" style={{ fontSize: 12 }}>{item.label}</Text>
-                      <div style={{ fontSize: 24, fontWeight: 'bold', color: item.color }}>
-                        {typeof item.value === 'number' ? item.value.toLocaleString() : item.value}
-                      </div>
-                    </div>
-                    <span style={{ fontSize: 32, opacity: 0.8 }}>{item.icon}</span>
-                  </div>
-                </Card>
-              </Col>
-            ))}
-          </Row>
-          <Divider />
-          <Row gutter={24}>
-            <Col span={12}>
-              <Card title={<Space><FireOutlined /> 商家排行</Space>}>
-                <Table size="small" dataSource={stats.topStores} pagination={false} rowKey="name" columns={[
-                  { title: '排名', key: 'rank', render: (_: any, __: any, i: number) => <Tag color={i < 3 ? 'orange' : 'default'}>{i + 1}</Tag> },
-                  { title: '商家', dataIndex: 'name' },
-                  { title: '点击', dataIndex: 'clicks', render: (v: number) => v?.toLocaleString() },
-                ]} />
-              </Card>
-            </Col>
-            <Col span={12}>
-              <Card title={<Space><ThunderboltOutlined /> 快捷操作</Space>}>
-                <Space direction="vertical" style={{ width: '100%' }}>
-                  <Button type="primary" icon={<PlusOutlined />} block onClick={() => setStoreModal({ open: true })}>添加商家</Button>
-                  <Button type="primary" icon={<PlusOutlined />} block onClick={() => setCouponModal({ open: true })}>添加优惠码</Button>
-                  <Link href="/"><Button block>查看前台 →</Button></Link>
-                </Space>
-              </Card>
-            </Col>
-          </Row>
-        </div>
-      ),
-    },
-    {
-      key: 'stores',
-      label: '🏪 商家管理',
-      children: (
-        <Card extra={<Button type="primary" icon={<PlusOutlined />} onClick={() => setStoreModal({ open: true })}>添加商家</Button>}>
-          <Table dataSource={stores} rowKey="id" columns={storeColumns} pagination={{ pageSize: 10, showTotal: (t) => `共 ${t} 个商家` }} loading={loading} />
-        </Card>
-      ),
-    },
-    {
-      key: 'coupons',
-      label: '🎫 优惠码管理',
-      children: (
-        <Card extra={<Button type="primary" icon={<PlusOutlined />} onClick={() => setCouponModal({ open: true })}>添加优惠码</Button>}>
-          <Table dataSource={coupons} rowKey="id" columns={couponColumns} pagination={{ pageSize: 10, showTotal: (t) => `共 ${t} 个优惠码` }} loading={loading} />
-        </Card>
-      ),
-    },
-    {
-      key: 'links',
-      label: '🔗 短链接管理',
-      children: (
-        <Card>
-          <Table dataSource={shortLinks} rowKey="id" columns={linkColumns} pagination={{ pageSize: 10 }} locale={{ emptyText: '暂无短链接' }} loading={loading} />
-        </Card>
-      ),
-    },
-    {
-      key: 'ai',
-      label: '🤖 AI 运营',
-      children: <AIPanel />,
-    },
-  ];
 
   return (
-    <div style={{ padding: 24, background: '#f5f5f5', minHeight: '100vh' }}>
-      {contextHolder}
-      
-      {/* Header */}
-      <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Space size="large">
-          <Link href="/"><Button>← 返回首页</Button></Link>
-          <Title level={3} style={{ margin: 0 }}>📊 快乐省省 管理后台</Title>
-        </Space>
-        <Space>
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => setStoreModal({ open: true })}>添加商家</Button>
-          <Button type="primary" icon={<FireOutlined />} onClick={() => setCouponModal({ open: true })}>添加优惠码</Button>
-        </Space>
-      </div>
-
-      <Tabs items={items} />
-
-      {/* ===== Store Modal ===== */}
-      <Modal
-        title={storeModal.edit ? '编辑商家' : '添加商家'}
-        open={storeModal.open}
-        onOk={saveStore}
-        onCancel={() => { setStoreModal({ open: false }); storeForm.resetFields(); }}
-        width={600}
-      >
-        <Form form={storeForm} layout="vertical" style={{ marginTop: 16 }}>
-          <Row gutter={16}>
-            <Col span={12}><Form.Item name="name" label="商家名称" rules={[{ required: true }]}><Input placeholder="Temu" /></Form.Item></Col>
-            <Col span={12}><Form.Item name="nameZh" label="中文名称"><Input placeholder="Temu" /></Form.Item></Col>
-          </Row>
-          <Form.Item name="slug" label="URL Slug" rules={[{ required: true }]}><Input placeholder="temu" /></Form.Item>
-          <Form.Item name="description" label="英文描述"><TextArea rows={2} /></Form.Item>
-          <Form.Item name="descriptionZh" label="中文描述"><TextArea rows={2} /></Form.Item>
-          <Row gutter={16}>
-            <Col span={12}><Form.Item name="website" label="官网"><Input placeholder="https://www.temu.com" /></Form.Item></Col>
-            <Col span={12}><Form.Item name="affiliateUrl" label="推广链接"><Input placeholder="https://www.temu.com?aff=xxx" /></Form.Item></Col>
-          </Row>
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item name="category" label="分类">
-                <Select placeholder="选择分类">
-                  {categories.map((c: any) => <Option key={c.id} value={c.id}>{c.icon} {c.nameZh}</Option>)}
-                </Select>
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item name="categoryZh" label="分类中文名"><Input /></Form.Item>
-            </Col>
-          </Row>
-          <Row gutter={16}>
-            <Col span={8}><Form.Item name="featured" label="推荐" valuePropName="checked"><Switch /></Form.Item></Col>
-            <Col span={8}><Form.Item name="active" label="启用" valuePropName="checked" initialValue><Switch /></Form.Item></Col>
-            <Col span={8}><Form.Item name="sortOrder" label="排序"><InputNumber min={0} style={{ width: '100%' }} /></Form.Item></Col>
-          </Row>
-        </Form>
-      </Modal>
-
-      {/* ===== Coupon Modal ===== */}
-      <Modal
-        title={couponModal.edit ? '编辑优惠码' : '添加优惠码'}
-        open={couponModal.open}
-        onOk={saveCoupon}
-        onCancel={() => { setCouponModal({ open: false }); couponForm.resetFields(); }}
-        width={600}
-      >
-        <Form form={couponForm} layout="vertical" style={{ marginTop: 16 }}>
-          <Form.Item name="storeId" label="商家" rules={[{ required: true }]}>
-            <Select placeholder="选择商家">
-              {stores.map((s: any) => <Option key={s.id} value={s.id}>{s.name}</Option>)}
-            </Select>
-          </Form.Item>
-          <Row gutter={16}>
-            <Col span={12}><Form.Item name="title" label="英文标题" rules={[{ required: true }]}><Input placeholder="20% Off" /></Form.Item></Col>
-            <Col span={12}><Form.Item name="titleZh" label="中文标题"><Input placeholder="全场8折" /></Form.Item></Col>
-          </Row>
-          <Row gutter={16}>
-            <Col span={8}><Form.Item name="code" label="优惠码"><Input placeholder="SAVE20" /></Form.Item></Col>
-            <Col span={8}><Form.Item name="discount" label="折扣"><Input placeholder="20%" /></Form.Item></Col>
-            <Col span={8}>
-              <Form.Item name="type" label="类型">
-                <Select defaultValue="code">
-                  <Option value="code">优惠码</Option>
-                  <Option value="deal">促销</Option>
-                  <Option value="cashback">返现</Option>
-                  <Option value="freebie">免费</Option>
-                </Select>
-              </Form.Item>
-            </Col>
-          </Row>
-          <Row gutter={16}>
-            <Col span={8}>
-              <Form.Item name="discountType" label="折扣类型">
-                <Select defaultValue="percentage">
-                  <Option value="percentage">百分比</Option>
-                  <Option value="fixed">固定金额</Option>
-                  <Option value="free_shipping">免运费</Option>
-                  <Option value="trial">试用</Option>
-                </Select>
-              </Form.Item>
-            </Col>
-            <Col span={8}><Form.Item name="startDate" label="开始日期"><Input type="date" /></Form.Item></Col>
-            <Col span={8}><Form.Item name="endDate" label="结束日期"><Input type="date" /></Form.Item></Col>
-          </Row>
-          <Form.Item name="affiliateUrl" label="推广链接"><Input placeholder="https://..." /></Form.Item>
-          <Row gutter={16}>
-            <Col span={8}><Form.Item name="featured" label="推荐" valuePropName="checked"><Switch /></Form.Item></Col>
-            <Col span={8}><Form.Item name="active" label="启用" valuePropName="checked" initialValue><Switch /></Form.Item></Col>
-            <Col span={8}><Form.Item name="verified" label="已验证" valuePropName="checked"><Switch /></Form.Item></Col>
-          </Row>
-        </Form>
-      </Modal>
-
-      {/* QR Modal */}
-      {qrVisible && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={() => setQrVisible(null)}>
-          <Card title={qrVisible.title} style={{ width: 320 }} onClick={e => e.stopPropagation()}>
-            <div style={{ textAlign: 'center' }}>
-              <QRCode value={qrVisible.url} size={200} />
-              <div style={{ marginTop: 12 }}>
-                <Button icon={<CopyOutlined />} onClick={() => copyText(qrVisible.url)}>复制链接</Button>
-              </div>
-            </div>
-          </Card>
-        </div>
-      )}
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+      <Card style={{ width: 400, textAlign: 'center' }}>
+        <RobotOutlined style={{ fontSize: 48, color: '#764ba2', marginBottom: 16 }} />
+        <Title level={3}>快乐省省 Admin</Title>
+        <Paragraph type="secondary">输入管理密码登录</Paragraph>
+        <Input.Password
+          prefix={<LockOutlined />}
+          placeholder="管理密码"
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+          onPressEnter={handleLogin}
+          size="large"
+          style={{ marginBottom: 16 }}
+        />
+        <Button type="primary" block size="large" loading={loading} onClick={handleLogin}>
+          登录
+        </Button>
+        <Paragraph type="secondary" style={{ marginTop: 16, fontSize: 12 }}>
+          默认密码: happysave2026（可在 Vercel 环境变量 ADMIN_PASSWORD 修改）
+        </Paragraph>
+      </Card>
     </div>
   );
 }
 
+// ============================================================
+// Main Admin Component
+// ============================================================
 export default function AdminPage() {
+  const [loggedIn, setLoggedIn] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/v1/auth').then(r => r.json()).then(d => {
+      setLoggedIn(d.loggedIn);
+      setLoading(false);
+    }).catch(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div style={{ padding: 50, textAlign: 'center' }}>加载中...</div>;
+  if (!loggedIn) return <LoginPage onLogin={() => setLoggedIn(true)} />;
+
   return (
-    <AntdProvider>
-      <AdminContent />
-    </AntdProvider>
+    <div style={{ padding: 24, maxWidth: 1400, margin: '0 auto' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <Title level={2} style={{ margin: 0 }}>🏪 快乐省省 管理后台</Title>
+        <Button onClick={async () => {
+          await fetch('/api/v1/auth', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'logout' }) });
+          setLoggedIn(false);
+        }}>退出登录</Button>
+      </div>
+
+      <Tabs
+        items={[
+          { key: 'dashboard', label: <span><BarChartOutlined /> 数据概览</span>, children: <DashboardTab /> },
+          { key: 'stores', label: <span><ShopOutlined /> 商家管理</span>, children: <StoresTab /> },
+          { key: 'coupons', label: <span><TagOutlined /> 优惠码管理</span>, children: <CouponsTab /> },
+          { key: 'users', label: <span><UserOutlined /> 用户/订阅</span>, children: <UsersTab /> },
+          { key: 'tasks', label: <span><FileTextOutlined /> 待办事项</span>, children: <TasksTab /> },
+          { key: 'ai', label: <span><RobotOutlined /> AI 运营</span>, children: <AITab /> },
+        ]}
+      />
+    </div>
+  );
+}
+
+// ============================================================
+// Dashboard Tab
+// ============================================================
+function DashboardTab() {
+  const [stats, setStats] = useState<any>(null);
+  useEffect(() => { fetch('/api/v1/stats').then(r => r.json()).then(d => setStats(d.data)); }, []);
+  if (!stats) return <div>加载中...</div>;
+
+  return (
+    <div>
+      <Row gutter={16}>
+        <Col span={6}><Card><Statistic title="商家数" value={stats.totalStores} prefix={<ShopOutlined />} /></Card></Col>
+        <Col span={6}><Card><Statistic title="优惠码" value={stats.totalCoupons} prefix={<TagOutlined />} /></Card></Col>
+        <Col span={6}><Card><Statistic title="总点击" value={stats.totalClicks} prefix={<EyeOutlined />} /></Card></Col>
+        <Col span={6}><Card><Statistic title="短链接" value={stats.totalLinks} prefix={<LinkOutlined />} /></Card></Col>
+      </Row>
+    </div>
+  );
+}
+
+// ============================================================
+// Stores Tab
+// ============================================================
+function StoresTab() {
+  const [data, setData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const fetchData = () => {
+    setLoading(true);
+    fetch('/api/v1/stores?limit=100').then(r => r.json()).then(d => {
+      setData(d.data || []);
+      setLoading(false);
+    });
+  };
+  useEffect(fetchData, []);
+
+  const columns = [
+    { title: '商家', dataIndex: 'name', key: 'name', render: (v: string, r: any) => <a href={r.website} target="_blank">{v}</a> },
+    { title: '分类', dataIndex: 'category', key: 'category', render: (v: string) => <Tag>{v}</Tag> },
+    { title: '点击', dataIndex: 'clickCount', key: 'clicks', sorter: (a: any, b: any) => a.clickCount - b.clickCount },
+    { title: '推荐', dataIndex: 'featured', key: 'featured', render: (v: boolean) => v ? <Tag color="gold">⭐ 推荐</Tag> : '-' },
+    { title: '状态', dataIndex: 'active', key: 'active', render: (v: boolean) => v ? <Tag color="green">活跃</Tag> : <Tag color="red">停用</Tag> },
+  ];
+
+  return (
+    <div>
+      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
+        <Button type="primary" icon={<PlusOutlined />} onClick={async () => {
+          await fetch('/api/v1/scraper', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'seed' }) });
+          message.success('种子数据已导入');
+          fetchData();
+        }}>导入种子数据</Button>
+        <Button icon={<ThunderboltOutlined />} onClick={async () => {
+          await fetch('/api/v1/discover', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'stores', count: 5 }) });
+          message.success('发现新商家');
+          fetchData();
+        }}>自动发现新商家</Button>
+      </div>
+      <Table columns={columns} dataSource={data} rowKey="id" loading={loading} pagination={{ pageSize: 20 }} />
+    </div>
+  );
+}
+
+// ============================================================
+// Coupons Tab
+// ============================================================
+function CouponsTab() {
+  const [data, setData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const fetchData = () => {
+    setLoading(true);
+    fetch('/api/v1/coupons?limit=100').then(r => r.json()).then(d => {
+      setData(d.data || []);
+      setLoading(false);
+    });
+  };
+  useEffect(fetchData, []);
+
+  const columns = [
+    { title: '优惠码', dataIndex: 'title', key: 'title' },
+    { title: '商家', dataIndex: 'storeName', key: 'storeName' },
+    { title: 'Code', dataIndex: 'code', key: 'code', render: (v: string) => v ? <Tag color="blue">{v}</Tag> : <Tag>免码</Tag> },
+    { title: '折扣', dataIndex: 'discount', key: 'discount', render: (v: string) => <Text strong style={{ color: '#f5222d' }}>{v}</Text> },
+    { title: '点击', dataIndex: 'clickCount', key: 'clicks' },
+    { title: '状态', dataIndex: 'active', key: 'active', render: (v: boolean) => v ? <Tag color="green">活跃</Tag> : <Tag color="red">停用</Tag> },
+  ];
+
+  return (
+    <div>
+      <div style={{ marginBottom: 16 }}>
+        <Button type="primary" icon={<PlusOutlined />} onClick={async () => {
+          await fetch('/api/v1/discover', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'coupons', count: 10 }) });
+          message.success('生成新优惠码');
+          fetchData();
+        }}>自动生成优惠码</Button>
+      </div>
+      <Table columns={columns} dataSource={data} rowKey="id" loading={loading} pagination={{ pageSize: 20 }} />
+    </div>
+  );
+}
+
+// ============================================================
+// Users Tab
+// ============================================================
+function UsersTab() {
+  return (
+    <div>
+      <Alert
+        message="邮件订阅系统"
+        description="用户在网站上输入邮箱订阅后，会出现在这里。你可以导出邮件列表进行批量推广。"
+        type="info"
+        showIcon
+        style={{ marginBottom: 16 }}
+      />
+      <Card title="邮件营销工具" extra={<Button icon={<ExportOutlined />}>导出邮件列表</Button>}>
+        <List
+          dataSource={[
+            { title: '📧 Mailchimp', desc: '最流行的邮件营销工具，免费版支持 500 订阅者', url: 'https://mailchimp.com' },
+            { title: '📧 Brevo (Sendinblue)', desc: '免费版每天 300 封邮件，适合初期', url: 'https://www.brevo.com' },
+            { title: '📧 Resend', desc: '开发者友好，API 驱动，免费 100 封/天', url: 'https://resend.com' },
+          ]}
+          renderItem={item => (
+            <List.Item>
+              <List.Item.Meta
+                title={<a href={item.url} target="_blank">{item.title}</a>}
+                description={item.desc}
+              />
+            </List.Item>
+          )}
+        />
+      </Card>
+    </div>
+  );
+}
+
+// ============================================================
+// Tasks Tab - 人工待办事项
+// ============================================================
+function TasksTab() {
+  const [tasks, setTasks] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const fetchData = () => {
+    setLoading(true);
+    fetch('/api/v1/tasks').then(r => r.json()).then(d => {
+      setTasks(d.data || []);
+      setLoading(false);
+    });
+  };
+  useEffect(fetchData, []);
+
+  const priorityColors: Record<string, string> = { high: 'red', medium: 'orange', low: 'blue' };
+  const priorityLabels: Record<string, string> = { high: '🔴 高', medium: '🟡 中', low: '🔵 低' };
+
+  return (
+    <div>
+      <Alert
+        message="📋 人工待办事项清单"
+        description="以下事项需要你手动处理。完成后系统会自动接管对应功能。"
+        type="warning"
+        showIcon
+        style={{ marginBottom: 16 }}
+      />
+      <List
+        loading={loading}
+        dataSource={tasks}
+        renderItem={(task, index) => (
+          <Card
+            key={task.id}
+            style={{ marginBottom: 12 }}
+            extra={<Tag color={priorityColors[task.priority]}>{priorityLabels[task.priority]}</Tag>}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <div style={{ flex: 1 }}>
+                <Title level={5} style={{ marginBottom: 4 }}>
+                  {index + 1}. {task.title}
+                </Title>
+                <Paragraph type="secondary" style={{ marginBottom: 8 }}>
+                  {task.description}
+                </Paragraph>
+                <Descriptions size="small" column={1}>
+                  <Descriptions.Item label="🔗 链接">
+                    {task.url ? <a href={task.url} target="_blank">{task.url}</a> : '-'}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="📝 操作步骤">
+                    {task.action}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="🤖 完成后">
+                    {task.autoAfter}
+                  </Descriptions.Item>
+                </Descriptions>
+              </div>
+            </div>
+          </Card>
+        )}
+      />
+    </div>
+  );
+}
+
+// ============================================================
+// AI Tab
+// ============================================================
+function AITab() {
+  const [result, setResult] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const runAI = async (action: string, params: any = {}) => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/v1/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, ...params }),
+      });
+      const data = await res.json();
+      setResult(data.data?.content || data.data?.report || data.message || JSON.stringify(data));
+    } catch (e) {
+      setResult('AI 功能需要配置 OPENAI_API_KEY');
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div>
+      <Alert
+        message="AI 自动运营"
+        description="使用 OpenRouter API 自动生成内容。需要在 Vercel 环境变量中配置 OPENAI_API_KEY。"
+        type="info"
+        showIcon
+        style={{ marginBottom: 16 }}
+      />
+      <Row gutter={16}>
+        <Col span={8}>
+          <Card>
+            <Button block loading={loading} onClick={() => runAI('seo_article')}>📝 生成 SEO 文章</Button>
+          </Card>
+        </Col>
+        <Col span={8}>
+          <Card>
+            <Button block loading={loading} onClick={() => runAI('translate_all')}>🌐 翻译所有内容</Button>
+          </Card>
+        </Col>
+        <Col span={8}>
+          <Card>
+            <Button block loading={loading} onClick={() => runAI('social_post')}>📱 生成社交文案</Button>
+          </Card>
+        </Col>
+      </Row>
+      {result && (
+        <Card title="AI 输出" style={{ marginTop: 16 }}>
+          <pre style={{ whiteSpace: 'pre-wrap' }}>{result}</pre>
+        </Card>
+      )}
+    </div>
   );
 }

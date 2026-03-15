@@ -615,4 +615,22 @@ export const database = {
 
   raw: () => sqliteDb,
   type: () => dbType,
+
+  // Delete notification/task
+  deleteNotification(id: string) {
+    if (dbType === 'sqlite') sqliteDb.prepare('DELETE FROM notifications WHERE id = ?').run(id);
+    else memory.notifications = memory.notifications.filter(n => n.id !== id);
+    return true;
+  },
+
+  // Update notification/task
+  updateNotification(id: string, data: any) {
+    if (dbType === 'sqlite') {
+      if (data.active !== undefined) sqliteDb.prepare('UPDATE notifications SET active = ? WHERE id = ?').run(data.active ? 1 : 0, id);
+    } else {
+      const n = memory.notifications.find(n => n.id === id);
+      if (n) Object.assign(n, data);
+    }
+    return true;
+  },
 };
