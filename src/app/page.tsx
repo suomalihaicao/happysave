@@ -114,6 +114,7 @@ function HomePageContent() {
     <Layout className="min-h-screen">
       {/* Enterprise Header */}
       <Header
+        className="site-header"
         style={{
           background: '#fff',
           padding: '0 24px',
@@ -130,17 +131,18 @@ function HomePageContent() {
         <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <span style={{ fontSize: 28 }}>🎉</span>
           <div>
-            <div style={{ fontSize: 20, fontWeight: 'bold', color: '#ff6b35', lineHeight: 1.2 }}>
+            <div className="logo-text" style={{ fontSize: 20, fontWeight: 'bold', color: '#ff6b35', lineHeight: 1.2 }}>
               {t('快乐省省', 'HappySave')}
             </div>
-            <div style={{ fontSize: 11, color: '#999' }}>
+            <div className="logo-sub" style={{ fontSize: 11, color: '#999' }}>
               {t('全球优惠券平台', 'Global Coupons & Deals')}
             </div>
           </div>
         </Link>
 
-        <Space size="middle">
+        <Space className="actions-desktop" size="middle">
           <Input
+            className="search-desktop"
             placeholder={t('搜索商家或优惠码...', 'Search stores or coupons...')}
             prefix={<SearchOutlined />}
             style={{ width: 280, borderRadius: 20 }}
@@ -162,6 +164,7 @@ function HomePageContent() {
       <Content>
         {/* Hero Section */}
         <div
+          className="hero-section"
           style={{
             background: 'linear-gradient(135deg, #ff6b35 0%, #ff8555 50%, #ff6b6b 100%)',
             padding: '80px 24px',
@@ -279,7 +282,7 @@ function HomePageContent() {
             {t('按分类浏览', 'Browse by Category')}
           </Title>
           
-          <Space wrap size="middle" style={{ marginBottom: 32 }}>
+          <Space wrap size="middle" className="category-scroll" style={{ marginBottom: 32 }} id="stores">
             <Button
               type={selectedCategory === 'all' ? 'primary' : 'default'}
               size="large"
@@ -305,7 +308,7 @@ function HomePageContent() {
             {t('所有商家', 'All Stores')}
           </Title>
           
-          <Row gutter={[16, 16]}>
+          <Row gutter={[16, 16]} className="store-grid">
             {filteredStores.map(store => (
               <Col xs={12} sm={8} md={6} lg={4} key={store.id}>
                 <Link href={`/store/${store.slug}`}>
@@ -349,7 +352,7 @@ function HomePageContent() {
       </div>
 
       {/* SEO FAQ Section */}
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '48px 24px' }}>
+      <div className="faq-section page-content" style={{ maxWidth: 1200, margin: '0 auto', padding: '48px 24px' }}>
         <Title level={2} style={{ textAlign: 'center', marginBottom: 32 }}>
           ❓ {t('常见问题', 'Frequently Asked Questions')}
         </Title>
@@ -493,6 +496,42 @@ function HomePageContent() {
 
       {/* Back to top */}
       <FloatButton.BackTop />
+
+      {/* Mobile Bottom Navigation */}
+      <nav className="mobile-bottom-nav">
+        <Link href="/" className="nav-item active">
+          <span className="nav-icon">🏠</span>
+          {t('首页', 'Home')}
+        </Link>
+        <Link href="/#stores" className="nav-item">
+          <span className="nav-icon">🏪</span>
+          {t('商家', 'Stores')}
+        </Link>
+        <Link href="/#coupons" className="nav-item">
+          <span className="nav-icon">🏷️</span>
+          {t('优惠', 'Deals')}
+        </Link>
+        <Link href="/advertise" className="nav-item">
+          <span className="nav-icon">📢</span>
+          {t('合作', 'Partner')}
+        </Link>
+        <Link href="/admin" className="nav-item">
+          <span className="nav-icon">⚙️</span>
+          {t('管理', 'Admin')}
+        </Link>
+      </nav>
+
+      {/* Mobile Search Bar */}
+      <div className="mobile-search-float">
+        <Input
+          placeholder={t('搜索商家或优惠码...', 'Search stores or coupons...')}
+          prefix={<SearchOutlined />}
+          style={{ borderRadius: 20 }}
+          value={searchText}
+          onChange={e => setSearchText(e.target.value)}
+          size="large"
+        />
+      </div>
     </Layout>
   );
 }

@@ -18,68 +18,274 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Enterprise Ant Design overrides */
-.ant-layout {
-  min-height: 100vh;
-}
+/* ===== Mobile-First Responsive ===== */
 
-.ant-pro-layout {
-  min-height: 100vh;
-}
-
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #d9d9d9;
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-track {
-  background: #f5f5f5;
-}
-
-/* Primary color customization */
-.ant-btn-primary {
-  background-color: var(--primary-color) !important;
-  border-color: var(--primary-color) !important;
-}
-
-.ant-btn-primary:hover {
-  background-color: #ff8555 !important;
-  border-color: #ff8555 !important;
-}
-
-.ant-menu-item-selected {
-  color: var(--primary-color) !important;
-}
-
-.ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
-  color: var(--primary-color) !important;
-}
-
-/* Card hover effects */
-.coupon-card {
-  transition: all 0.3s ease;
-}
-
-.coupon-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-}
-
-/* Responsive utilities */
+/* Mobile Header */
 @media (max-width: 768px) {
-  .hide-mobile {
+  .site-header {
+    padding: 0 12px !important;
+    height: 56px !important;
+  }
+  .site-header .logo-text {
+    font-size: 16px !important;
+  }
+  .site-header .logo-sub {
+    display: none;
+  }
+  .site-header .search-desktop {
+    display: none !important;
+  }
+  .site-header .actions-desktop {
     display: none !important;
   }
 }
 
-@media (min-width: 769px) {
-  .hide-desktop {
+/* Mobile Hero */
+@media (max-width: 768px) {
+  .hero-section {
+    padding: 40px 16px !important;
+  }
+  .hero-section h1 {
+    font-size: 28px !important;
+    line-height: 1.3 !important;
+    margin-bottom: 12px !important;
+  }
+  .hero-section p {
+    font-size: 14px !important;
+    margin-bottom: 20px !important;
+  }
+  .hero-stats {
+    gap: 16px !important;
+  }
+  .hero-stats .ant-statistic-content-value {
+    font-size: 22px !important;
+  }
+}
+
+/* Mobile Store Grid */
+@media (max-width: 768px) {
+  .store-grid .ant-col {
+    padding: 0 6px !important;
+  }
+  .store-grid .ant-card {
+    padding: 0 !important;
+  }
+  .store-grid .ant-card-body {
+    padding: 12px 8px !important;
+  }
+  .store-grid .ant-avatar {
+    width: 48px !important;
+    height: 48px !important;
+    font-size: 20px !important;
+    margin-bottom: 8px !important;
+  }
+}
+
+/* Mobile Coupon Cards */
+@media (max-width: 768px) {
+  .coupon-card {
+    margin-bottom: 12px !important;
+  }
+  .coupon-card .ant-card-body {
+    padding: 12px !important;
+  }
+  .coupon-code-display {
+    font-size: 14px !important;
+    padding: 8px !important;
+  }
+  .coupon-actions {
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+  .coupon-actions .ant-btn {
+    width: 100% !important;
+    height: 44px !important;
+  }
+}
+
+/* Mobile Category Pills */
+@media (max-width: 768px) {
+  .category-scroll {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+    gap: 8px !important;
+    padding: 0 12px !important;
+  }
+  .category-scroll::-webkit-scrollbar {
     display: none !important;
+  }
+  .category-scroll .ant-btn {
+    flex-shrink: 0 !important;
+    height: 36px !important;
+    font-size: 13px !important;
+    padding: 0 14px !important;
+    border-radius: 18px !important;
+  }
+}
+
+/* Mobile FAQ */
+@media (max-width: 768px) {
+  .faq-section .ant-card {
+    margin-bottom: 8px !important;
+  }
+  .faq-section .ant-card-body {
+    padding: 12px !important;
+  }
+  .faq-section h5 {
+    font-size: 14px !important;
+  }
+}
+
+/* Mobile Footer */
+@media (max-width: 768px) {
+  .site-footer {
+    padding: 32px 16px !important;
+  }
+  .site-footer .ant-col {
+    margin-bottom: 16px !important;
+  }
+}
+
+/* Mobile Bottom Navigation */
+.mobile-bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border-top: 1px solid #f0f0f0;
+  padding: 8px 0 env(safe-area-inset-bottom, 8px);
+  z-index: 1000;
+  box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
+}
+
+@media (max-width: 768px) {
+  .mobile-bottom-nav {
+    display: flex;
+  }
+  .page-content {
+    padding-bottom: 80px !important;
+  }
+}
+
+.mobile-bottom-nav .nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 0;
+  color: #999;
+  text-decoration: none;
+  font-size: 10px;
+  transition: color 0.2s;
+}
+
+.mobile-bottom-nav .nav-item.active,
+.mobile-bottom-nav .nav-item:hover {
+  color: #ff6b35;
+}
+
+.mobile-bottom-nav .nav-item .nav-icon {
+  font-size: 22px;
+  line-height: 1;
+}
+
+/* Mobile Search Bar (floating) */
+.mobile-search-float {
+  display: none;
+  position: sticky;
+  top: 56px;
+  z-index: 99;
+  background: #fff;
+  padding: 8px 12px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+@media (max-width: 768px) {
+  .mobile-search-float {
+    display: block;
+  }
+}
+
+/* Touch optimizations */
+@media (max-width: 768px) {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+  .ant-btn {
+    min-height: 40px;
+  }
+  .ant-btn-lg {
+    min-height: 48px;
+    font-size: 16px;
+  }
+  a, button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  .ant-input {
+    min-height: 44px;
+    font-size: 16px;
+  }
+}
+
+/* Mobile Ad Slot */
+@media (max-width: 768px) {
+  .ad-slot {
+    margin: 12px 0 !important;
+    border-radius: 8px !important;
+    overflow: hidden;
+  }
+}
+
+/* Skeleton loading */
+.skeleton-pulse {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* SEO-friendly visual elements */
+.deal-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: linear-gradient(135deg, #ff6b35, #ff8555);
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.discount-circle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ff4d4f, #ff7875);
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  text-align: center;
+  line-height: 1.2;
+}
+
+@media (max-width: 768px) {
+  .discount-circle {
+    width: 48px;
+    height: 48px;
+    font-size: 12px;
   }
 }

@@ -94,7 +94,7 @@ function StoreDetailContent({ slug }: { slug: string }) {
   if (!store) return <div style={{ padding: 48, textAlign: 'center' }}>商家未找到</div>;
 
   return (
-    <Layout style={{ minHeight: '100vh', background: '#f5f5f5' }}>
+    <Layout className="page-content" style={{ minHeight: '100vh', background: '#f5f5f5' }}>
       {contextHolder}
       <Content style={{ padding: '24px' }}>
         <div style={{ maxWidth: 1000, margin: '0 auto' }}>
@@ -175,7 +175,7 @@ function StoreDetailContent({ slug }: { slug: string }) {
           <Row gutter={[16, 16]}>
             {coupons.map((coupon: any) => (
               <Col xs={24} sm={24} md={12} key={coupon.id}>
-                <Card hoverable style={{ borderLeft: '4px solid #ff6b35' }}>
+                <Card className="coupon-card" hoverable style={{ borderLeft: '4px solid #ff6b35' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div style={{ flex: 1 }}>
                       <Space style={{ marginBottom: 8 }}>
@@ -227,7 +227,7 @@ function StoreDetailContent({ slug }: { slug: string }) {
                   )}
 
                   {/* Actions */}
-                  <div style={{ marginTop: 16, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <div className="coupon-actions" style={{ marginTop: 16, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                     <Button type="primary" size="large" style={{ flex: 1 }} onClick={() => {
                       trackClick(store.id, coupon.id);
                       window.open(coupon.affiliateUrl, '_blank');
