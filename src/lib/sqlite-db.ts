@@ -41,14 +41,16 @@ type SeoPage = {
 type Favorite = { id: string; userId: string; itemType: string; itemId: string; createdAt: string };
 type Notification = { id: string; userId: string; email: string; type: string; storeId: string; keyword: string; active: number; createdAt: string };
 
-// Try to load better-sqlite3, fall back to in-memory
+// Try to load better-sqlite3 (only available locally, not on Vercel)
+// Use eval to avoid Turbopack static analysis
+const dynamicRequire = eval('require') as NodeRequire;
 let dbType: 'sqlite' | 'memory' = 'memory';
 let sqliteDb: any = null;
 
 try {
-  const Database = require('better-sqlite3');
-  const path = require('path');
-  const fs = require('fs');
+  const Database = dynamicRequire('better-sqlite3');
+  const path = dynamicRequire('path');
+  const fs = dynamicRequire('fs');
   
   const DB_PATH = path.join(process.cwd(), 'data', 'happysave.db');
   fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
@@ -56,7 +58,7 @@ try {
   sqliteDb.pragma('journal_mode = WAL');
   dbType = 'sqlite';
   console.log('✅ SQLite database connected:', DB_PATH);
-} catch (e: any) {
+} catch {
   console.log('📦 better-sqlite3 not available, using in-memory storage (Vercel)');
 }
 
