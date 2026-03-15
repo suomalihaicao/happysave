@@ -7,15 +7,15 @@ export async function GET(
   { params }: { params: Promise<{ code: string }> }
 ) {
   const { code } = await params;
-  const link = db.getShortLinkByCode(code);
+  const link = await db.getShortLinkByCode(code);
   
   if (!link) {
     return NextResponse.redirect(new URL('/', request.url));
   }
 
   // Track click
-  db.incrementLinkClick(code);
-  db.logClick({
+  await db.incrementLinkClick(code);
+  await db.logClick({
     shortCode: code,
     storeId: (link as any).storeId || '',
     couponId: (link as any).couponId || '',

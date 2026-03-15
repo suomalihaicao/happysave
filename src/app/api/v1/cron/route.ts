@@ -23,22 +23,22 @@ export async function GET(request: NextRequest) {
   try {
     // 任务 1: 每日生成 SEO 文章（为还没有文章的商家）
     if (task === 'seo' || task === 'all') {
-      const stores = db.getStores({ active: true, limit: 100 });
-      const seoPages = db.getSeoPages();
+      const stores = await db.getStores({ active: true, limit: 100 });
+      const seoPages = await db.getSeoPages();
       const existingSlugs = new Set(seoPages.data.map((p: any) => p.slug));
       
       let generated = 0;
       for (const store of stores.data as any[]) {
         const slug = `guide-${store.slug}`;
         if (!existingSlugs.has(slug)) {
-          const coupons = db.getCouponsByStoreSlug(store.slug);
+          const coupons = await db.getCouponsByStoreSlug(store.slug);
           const article = await ai.generateStoreArticle(
             store.name,
             store.categoryZh || store.category,
             coupons.map((c: any) => c.titleZh || c.title)
           );
           if (article.title) {
-            db.createSeoPage({
+            await db.createSeoPage({
               slug,
               title: article.title,
               content: article.content,
@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
 
     // 任务 2: 每日运营报告
     if (task === 'report' || task === 'all') {
-      const stats = db.getDashboardStats();
+      const stats = await db.getDashboardStats();
       const report = await ai.generateDailyReport({
         totalClicks: stats.totalClicks,
         newCoupons: 0,
@@ -69,17 +69,17 @@ export async function GET(request: NextRequest) {
 
     // 任务 4: 自动发现新商家和优惠码
     if (task === 'discover' || task === 'all') {
-      const stores = autoDiscover.discoverNewStores(3);
-      const coupons = autoDiscover.discoverNewCoupons(10);
+      const stores = await autoDiscover.discoverNewStores(3);
+      const coupons = await autoDiscover.discoverNewCoupons(10);
       results.discover = { newStores: stores.added, newCoupons: coupons.added };
     }
 
     // 任务 3: 社交媒体文案生成
     if (task === 'social' || task === 'all') {
-      const coupons = db.getCoupons({ featured: true, active: true, limit: 3 });
+      const coupons = await db.getCoupons({ featured: true, active: true, limit: 3 });
       const posts = [];
       for (const coupon of coupons.data as any[]) {
-        const store = db.getStoreById(coupon.storeId);
+        const store = await db.getStoreById(coupon.storeId);
         if (store) {
           const post = await ai.generateSocialPost(
             (store as any).name,

@@ -36,7 +36,7 @@ export default async function CategoryPage({ params }: Props) {
   const cat = CATEGORY_NAMES[slug];
   if (!cat) notFound();
 
-  const stores = db.getStores({ category: slug, active: true, limit: 50 });
+  const stores = await db.getStores({ category: slug, active: true, limit: 50 });
 
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '40px 20px', fontFamily: 'system-ui' }}>

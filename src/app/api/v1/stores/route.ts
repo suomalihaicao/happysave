@@ -10,20 +10,20 @@ export async function GET(request: NextRequest) {
   const search = searchParams.get('search') || undefined;
   const page = parseInt(searchParams.get('page') || '1');
   const limit = parseInt(searchParams.get('limit') || '20');
-  const result = db.getStores({ category, featured, active, search, page, limit });
+  const result = await db.getStores({ category, featured, active, search, page, limit });
   return NextResponse.json({ success: true, ...result });
 }
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const store = db.createStore(body);
+  const store = await db.createStore(body);
   return NextResponse.json({ success: true, data: store }, { status: 201 });
 }
 
 export async function PUT(request: NextRequest) {
   const body = await request.json();
   const { id, ...data } = body;
-  const store = db.updateStore(id, data);
+  const store = await db.updateStore(id, data);
   if (!store) return NextResponse.json({ success: false, message: 'Store not found' }, { status: 404 });
   return NextResponse.json({ success: true, data: store });
 }
@@ -32,6 +32,6 @@ export async function DELETE(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
   if (!id) return NextResponse.json({ success: false, message: 'ID required' }, { status: 400 });
-  db.deleteStore(id);
+  await db.deleteStore(id);
   return NextResponse.json({ success: true, message: 'Deleted' });
 }

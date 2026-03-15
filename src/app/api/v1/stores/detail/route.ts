@@ -8,13 +8,13 @@ export async function GET(request: NextRequest) {
   const id = searchParams.get('id');
   
   let store;
-  if (slug) store = db.getStoreBySlug(slug);
-  else if (id) store = db.getStoreById(id);
+  if (slug) store = await db.getStoreBySlug(slug);
+  else if (id) store = await db.getStoreById(id);
   
   if (!store) return NextResponse.json({ success: false, message: 'Store not found' }, { status: 404 });
   
   // Also get coupons for this store
-  const coupons = db.getCouponsByStoreSlug(store.slug);
+  const coupons = await db.getCouponsByStoreSlug(store.slug);
   
   return NextResponse.json({ success: true, data: { ...store, coupons } });
 }

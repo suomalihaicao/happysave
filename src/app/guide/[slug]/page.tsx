@@ -9,7 +9,7 @@ interface Props {
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const page = db.getSeoPageBySlug(slug);
+  const page = await db.getSeoPageBySlug(slug);
   if (!page) return { title: 'Not Found' };
   
   return {
@@ -26,12 +26,12 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function GuidePage({ params }: Props) {
   const { slug } = await params;
-  const page = db.getSeoPageBySlug(slug);
+  const page = await db.getSeoPageBySlug(slug);
   
   if (!page) notFound();
 
   // Increment view count
-  db.incrementPageView(slug);
+  await db.incrementPageView(slug);
 
   const p = page as any;
 

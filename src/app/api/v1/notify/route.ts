@@ -4,6 +4,6 @@ import { db } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const id = db.createNotification(body);
+  const id = await db.createNotification(body);
   return NextResponse.json({ success: true, data: { id }, message: '订阅成功' }, { status: 201 });
 }

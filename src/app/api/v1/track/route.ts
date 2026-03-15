@@ -4,7 +4,7 @@ import { db } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const id = db.logClick({
+  const id = await db.logClick({
     shortCode: body.shortCode || '',
     storeId: body.storeId || '',
     couponId: body.couponId || '',

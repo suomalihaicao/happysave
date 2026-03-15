@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
 
   switch (action) {
     case 'stores': {
-      const result = autoDiscover.discoverNewStores(count || 5);
+      const result = await autoDiscover.discoverNewStores(count || 5);
       return NextResponse.json({
         success: true,
         message: `发现了 ${result.added} 家新商家`,
@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     }
 
     case 'coupons': {
-      const result = autoDiscover.discoverNewCoupons(count || 10);
+      const result = await autoDiscover.discoverNewCoupons(count || 10);
       return NextResponse.json({
         success: true,
         message: `生成了 ${result.added} 个新优惠码`,
@@ -28,8 +28,8 @@ export async function POST(request: NextRequest) {
 
     case 'full': {
       // 完整发现流程：先加商家，再加优惠码
-      const stores = autoDiscover.discoverNewStores(count || 3);
-      const coupons = autoDiscover.discoverNewCoupons(15);
+      const stores = await autoDiscover.discoverNewStores(count || 3);
+      const coupons = await autoDiscover.discoverNewCoupons(15);
       return NextResponse.json({
         success: true,
         message: `新增 ${stores.added} 家商家，${coupons.added} 个优惠码`,
@@ -44,5 +44,5 @@ export async function POST(request: NextRequest) {
 
 // GET /api/v1/discover - 发现统计
 export async function GET() {
-  return NextResponse.json({ success: true, data: autoDiscover.getStats() });
+  return NextResponse.json({ success: true, data: await autoDiscover.getStats() });
 }

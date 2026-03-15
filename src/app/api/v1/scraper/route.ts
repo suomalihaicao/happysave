@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
 
   switch (action) {
     case 'seed':
-      const result = scraper.seedMerchants();
+      const result = await scraper.seedMerchants();
       return NextResponse.json({
         success: true,
         message: `导入完成：${result.stores} 家商家，${result.coupons} 个优惠码`,
@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
       });
 
     case 'stats':
-      return NextResponse.json({ success: true, data: scraper.getStats() });
+      return NextResponse.json({ success: true, data: await scraper.getStats() });
 
     default:
       return NextResponse.json({ success: false, message: `Unknown action: ${action}` }, { status: 400 });
@@ -26,5 +26,5 @@ export async function POST(request: NextRequest) {
 
 // GET /api/v1/scraper - 采集状态
 export async function GET() {
-  return NextResponse.json({ success: true, data: scraper.getStats() });
+  return NextResponse.json({ success: true, data: await scraper.getStats() });
 }

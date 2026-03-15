@@ -225,9 +225,9 @@ export const dataGrowth = {
       const merchants = await network.fetchMerchants();
       for (const m of merchants.slice(0, 20)) {
         const slug = (m.name || m.companyName || '').toLowerCase().replace(/[^a-z0-9]/g, '-');
-        if (!slug || db.getStoreBySlug(slug)) continue;
+        if (!slug || await db.getStoreBySlug(slug)) continue;
 
-        db.createStore({
+        await db.createStore({
           slug,
           name: m.name || m.companyName,
           nameZh: m.name || m.companyName,
@@ -258,9 +258,9 @@ export const dataGrowth = {
       for (const c of coupons.slice(0, 50)) {
         // 找到或创建商家
         const slug = (c.merchant || c.store || '').toLowerCase().replace(/[^a-z0-9]/g, '-');
-        let store = db.getStoreBySlug(slug);
+        let store = await db.getStoreBySlug(slug);
         if (!store && slug) {
-          store = db.createStore({
+          store = await db.createStore({
             slug,
             name: c.merchant || c.store || 'Unknown',
             nameZh: c.merchant || c.store || 'Unknown',
@@ -276,7 +276,7 @@ export const dataGrowth = {
         }
 
         if (store) {
-          db.createCoupon({
+          await db.createCoupon({
             storeId: (store as any).id,
             storeName: (store as any).name,
             code: c.code || null,

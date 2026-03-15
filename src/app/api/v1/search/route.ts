@@ -12,8 +12,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: true, data: { stores: [], coupons: [] } });
   }
 
-  const stores = db.getStores({ search: q, active: true, page, limit });
-  const coupons = db.getCoupons({ search: q, active: true, page, limit });
+  const stores = await db.getStores({ search: q, active: true, page, limit });
+  const coupons = await db.getCoupons({ search: q, active: true, page, limit });
 
   return NextResponse.json({
     success: true,

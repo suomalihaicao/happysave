@@ -13,10 +13,10 @@ export async function POST(request: NextRequest) {
 
   // 找到或创建商家
   const slug = storeName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-  let store = db.getStoreBySlug(slug);
+  let store = await db.getStoreBySlug(slug);
 
   if (!store) {
-    store = db.createStore({
+    store = await db.createStore({
       slug,
       name: storeName,
       nameZh: storeName,
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
   }
 
   // 创建优惠码（待审核）
-  const coupon = db.createCoupon({
+  const coupon = await db.createCoupon({
     storeId: (store as any).id,
     storeName: (store as any).name,
     code: couponCode || null,
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
   });
 
   // 记录提交通知
-  db.createNotification({
+  await db.createNotification({
     type: 'new_submission',
     storeId: (store as any).id,
     email: submitterEmail || '',

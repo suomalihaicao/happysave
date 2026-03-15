@@ -2,12 +2,12 @@
 import type { MetadataRoute } from 'next';
 import { db } from '@/lib/db';
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://happysave.com';
   const now = new Date();
 
-  const stores = db.getStores({ active: true, limit: 200 });
-  const seoPages = db.getSeoPages();
+  const stores = await db.getStores({ active: true, limit: 200 });
+  const seoPages = await db.getSeoPages();
 
   const urls: MetadataRoute.Sitemap = [
     {
