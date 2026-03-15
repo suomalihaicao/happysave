@@ -280,29 +280,13 @@ function StoreDetailContent({ slug }: { slug: string }) {
 
       <FloatButton.BackTop />
       
-      {/* SEO 结构化数据 */}
-      {store && (
-        <Script id="store-jsonld" type="application/ld+json" dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            '@context': 'https://schema.org',
-            '@type': 'Store',
-            name: store.name,
-            description: store.descriptionZh || store.description,
-            url: `https://happysave.cn/store/${store.slug}`,
-            image: store.logo,
-            aggregateRating: store.clickCount > 100 ? {
-              '@type': 'AggregateRating',
-              ratingValue: '4.5',
-              reviewCount: Math.floor(store.clickCount / 50),
-            } : undefined,
-          })
-        }} />
-      )}
+      {/* SEO 结构化数据 - 已在 layout.tsx 中处理 */}
     </Layout>
   );
 }
 
-export default function StorePage({ params }: { params: Promise<{ slug: string }> }) {
+// Renamed: use StoreDetailPage as default for import from layout.tsx
+export default function StoreDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const [slug, setSlug] = useState<string>('');
   
   useEffect(() => {
