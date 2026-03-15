@@ -1,5 +1,2 @@
-// Database - Works locally (SQLite) and on Vercel (in-memory with seed)
-// On Vercel: data seeds on cold start (fast, ~500ms)
-// Only click counts reset on cold start (acceptable for MVP)
-
+// Database - sqlite-db.ts handles both SQLite (local) and in-memory (Vercel)
 export { database as db } from './sqlite-db';

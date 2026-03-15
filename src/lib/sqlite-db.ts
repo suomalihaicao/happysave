@@ -1,468 +1,493 @@
-// SQLite Database - Real persistence layer
-import Database from 'better-sqlite3';
-import path from 'path';
+// SQLite Database - Local dev with better-sqlite3, Vercel with in-memory
+// better-sqlite3 在 Vercel serverless 上不可用，自动降级到内存模式
 
-const DB_PATH = path.join(process.cwd(), 'data', 'happysave.db');
+type Store = {
+  id: string; slug: string; name: string; nameZh: string; description: string;
+  descriptionZh: string; logo: string; website: string; affiliateUrl: string;
+  category: string; categoryZh: string; tags: string; featured: number;
+  active: number; sortOrder: number; clickCount: number; conversionRate: number;
+  createdAt: string; updatedAt: string;
+};
 
-let db: Database.Database;
+type Coupon = {
+  id: string; storeId: string; storeName: string; code: string | null;
+  title: string; titleZh: string; description: string; descriptionZh: string;
+  discount: string; discountType: string; type: string; affiliateUrl: string;
+  startDate: string; endDate: string | null; featured: number; active: number;
+  verified: number; clickCount: number; useCount: number;
+  createdAt: string; updatedAt: string;
+};
 
-function getDb(): Database.Database {
-  if (!db) {
-    const fs = require('fs');
-    const dir = path.dirname(DB_PATH);
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    
-    db = new Database(DB_PATH);
-    db.pragma('journal_mode = WAL');
-    db.pragma('foreign_keys = ON');
-    initSchema();
-    seedIfEmpty();
-  }
-  return db;
-}
+type ShortLink = {
+  id: string; code: string; originalUrl: string; shortUrl: string;
+  storeId: string; storeName: string; couponId: string; clicks: number;
+  uniqueClicks: number; createdAt: string; lastClickedAt: string | null;
+};
 
-function initSchema() {
-  getDb().exec(`
-    CREATE TABLE IF NOT EXISTS stores (
-      id TEXT PRIMARY KEY,
-      slug TEXT UNIQUE NOT NULL,
-      name TEXT NOT NULL,
-      nameZh TEXT DEFAULT '',
-      description TEXT DEFAULT '',
-      descriptionZh TEXT DEFAULT '',
-      logo TEXT DEFAULT '',
-      website TEXT DEFAULT '',
-      affiliateUrl TEXT DEFAULT '',
-      category TEXT DEFAULT '',
-      categoryZh TEXT DEFAULT '',
-      tags TEXT DEFAULT '[]',
-      featured INTEGER DEFAULT 0,
-      active INTEGER DEFAULT 1,
-      sortOrder INTEGER DEFAULT 0,
-      clickCount INTEGER DEFAULT 0,
-      conversionRate REAL DEFAULT 0,
-      createdAt TEXT DEFAULT (datetime('now')),
-      updatedAt TEXT DEFAULT (datetime('now'))
-    );
+type ClickLog = {
+  id: string; shortCode: string; storeId: string; couponId: string;
+  ip: string; userAgent: string; referer: string; country: string;
+  device: string; timestamp: string;
+};
 
-    CREATE TABLE IF NOT EXISTS coupons (
-      id TEXT PRIMARY KEY,
-      storeId TEXT NOT NULL,
-      storeName TEXT DEFAULT '',
-      code TEXT,
-      title TEXT NOT NULL,
-      titleZh TEXT DEFAULT '',
-      description TEXT DEFAULT '',
-      descriptionZh TEXT DEFAULT '',
-      discount TEXT DEFAULT '',
-      discountType TEXT DEFAULT 'percentage',
-      type TEXT DEFAULT 'code',
-      affiliateUrl TEXT DEFAULT '',
-      startDate TEXT,
-      endDate TEXT,
-      featured INTEGER DEFAULT 0,
-      active INTEGER DEFAULT 1,
-      verified INTEGER DEFAULT 0,
-      clickCount INTEGER DEFAULT 0,
-      useCount INTEGER DEFAULT 0,
-      createdAt TEXT DEFAULT (datetime('now')),
-      updatedAt TEXT DEFAULT (datetime('now')),
-      FOREIGN KEY (storeId) REFERENCES stores(id) ON DELETE CASCADE
-    );
+type Category = { id: string; name: string; nameZh: string; icon: string; sortOrder: number };
 
-    CREATE TABLE IF NOT EXISTS short_links (
-      id TEXT PRIMARY KEY,
-      code TEXT UNIQUE NOT NULL,
-      originalUrl TEXT NOT NULL,
-      shortUrl TEXT DEFAULT '',
-      storeId TEXT,
-      storeName TEXT DEFAULT '',
-      couponId TEXT,
-      clicks INTEGER DEFAULT 0,
-      uniqueClicks INTEGER DEFAULT 0,
-      createdAt TEXT DEFAULT (datetime('now')),
-      lastClickedAt TEXT
-    );
+type SeoPage = {
+  id: string; slug: string; title: string; content: string; metaDesc: string;
+  keywords: string; pageType: string; storeId: string; views: number;
+  aiGenerated: number; createdAt: string; updatedAt: string;
+};
 
-    CREATE TABLE IF NOT EXISTS click_logs (
-      id TEXT PRIMARY KEY,
-      shortCode TEXT,
-      storeId TEXT,
-      couponId TEXT,
-      ip TEXT DEFAULT '',
-      userAgent TEXT DEFAULT '',
-      referer TEXT DEFAULT '',
-      country TEXT DEFAULT '',
-      device TEXT DEFAULT '',
-      timestamp TEXT DEFAULT (datetime('now'))
-    );
+type Favorite = { id: string; userId: string; itemType: string; itemId: string; createdAt: string };
+type Notification = { id: string; userId: string; email: string; type: string; storeId: string; keyword: string; active: number; createdAt: string };
 
-    CREATE TABLE IF NOT EXISTS categories (
-      id TEXT PRIMARY KEY,
-      name TEXT NOT NULL,
-      nameZh TEXT DEFAULT '',
-      icon TEXT DEFAULT '🏷️',
-      sortOrder INTEGER DEFAULT 0
-    );
+// Try to load better-sqlite3, fall back to in-memory
+let dbType: 'sqlite' | 'memory' = 'memory';
+let sqliteDb: any = null;
 
-    CREATE TABLE IF NOT EXISTS seo_pages (
-      id TEXT PRIMARY KEY,
-      slug TEXT UNIQUE NOT NULL,
-      title TEXT NOT NULL,
-      content TEXT DEFAULT '',
-      metaDesc TEXT DEFAULT '',
-      keywords TEXT DEFAULT '',
-      pageType TEXT DEFAULT 'store',
-      storeId TEXT,
-      views INTEGER DEFAULT 0,
-      aiGenerated INTEGER DEFAULT 1,
-      createdAt TEXT DEFAULT (datetime('now')),
-      updatedAt TEXT DEFAULT (datetime('now'))
-    );
-
-    CREATE TABLE IF NOT EXISTS favorites (
-      id TEXT PRIMARY KEY,
-      userId TEXT NOT NULL,
-      itemType TEXT NOT NULL,
-      itemId TEXT NOT NULL,
-      createdAt TEXT DEFAULT (datetime('now')),
-      UNIQUE(userId, itemType, itemId)
-    );
-
-    CREATE TABLE IF NOT EXISTS notifications (
-      id TEXT PRIMARY KEY,
-      userId TEXT,
-      email TEXT,
-      type TEXT DEFAULT 'coupon_alert',
-      storeId TEXT,
-      keyword TEXT DEFAULT '',
-      active INTEGER DEFAULT 1,
-      createdAt TEXT DEFAULT (datetime('now'))
-    );
-
-    CREATE INDEX IF NOT EXISTS idx_coupons_store ON coupons(storeId);
-    CREATE INDEX IF NOT EXISTS idx_coupons_featured ON coupons(featured, active);
-    CREATE INDEX IF NOT EXISTS idx_stores_slug ON stores(slug);
-    CREATE INDEX IF NOT EXISTS idx_stores_category ON stores(category);
-    CREATE INDEX IF NOT EXISTS idx_short_links_code ON short_links(code);
-    CREATE INDEX IF NOT EXISTS idx_seo_pages_slug ON seo_pages(slug);
-    CREATE INDEX IF NOT EXISTS idx_favorites_user ON favorites(userId);
-  `);
-}
-
-function seedIfEmpty() {
-  const count = getDb().prepare('SELECT COUNT(*) as c FROM stores').get() as { c: number };
-  if (count.c > 0) return;
-
-  const insertStore = getDb().prepare(`
-    INSERT INTO stores (id, slug, name, nameZh, description, descriptionZh, logo, website, affiliateUrl, category, categoryZh, tags, featured, active, sortOrder, clickCount, conversionRate)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `);
-
-  const insertCoupon = getDb().prepare(`
-    INSERT INTO coupons (id, storeId, storeName, code, title, titleZh, description, descriptionZh, discount, discountType, type, affiliateUrl, startDate, endDate, featured, active, verified, clickCount, useCount)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `);
-
-  const tx = getDb().transaction(() => {
-    // Stores
-    insertStore.run('1', 'temu', 'Temu', 'Temu', 'Shop like a billionaire. Discover incredible deals.', '像亿万富翁一样购物。发现时尚、家居、美妆等超值优惠。', '/logos/temu.png', 'https://www.temu.com', 'https://www.temu.com?aff=happysave', 'shopping', '综合购物', '["fashion","home","electronics","deals"]', 1, 1, 1, 15234, 3.2);
-    insertStore.run('2', 'shein', 'SHEIN', 'SHEIN', 'Affordable fashion for everyone.', '人人都买得起的时尚。潮流款式，无与伦比的价格。', '/logos/shein.png', 'https://www.shein.com', 'https://www.shein.com?aff=happysave', 'fashion', '时尚服饰', '["fashion","women","men","accessories"]', 1, 1, 2, 12456, 4.1);
-    insertStore.run('3', 'aliexpress', 'AliExpress', '速卖通', 'The global online shopping platform.', '全球在线购物平台。数百万商品，工厂价格。', '/logos/aliexpress.png', 'https://www.aliexpress.com', 'https://www.aliexpress.com?aff=happysave', 'shopping', '综合购物', '["electronics","fashion","home","tools"]', 1, 1, 3, 9876, 2.8);
-    insertStore.run('4', 'anker', 'Anker', '安克创新', 'Leading charging technology brand.', '领先的充电技术品牌。充电宝、充电器、数据线。', '/logos/anker.png', 'https://www.anker.com', 'https://www.anker.com?aff=happysave', 'electronics', '电子产品', '["electronics","charging","powerbank"]', 0, 1, 4, 5432, 5.6);
-    insertStore.run('5', 'chatgpt', 'ChatGPT Plus', 'ChatGPT Plus', 'The most advanced AI assistant.', '最先进的AI助手。更快响应，优先体验新功能。', '/logos/chatgpt.png', 'https://chat.openai.com', 'https://openai.com/chatgpt?aff=happysave', 'ai', 'AI工具', '["ai","productivity","writing"]', 1, 1, 5, 8765, 6.2);
-    insertStore.run('6', 'nike', 'Nike', '耐克', 'Just Do It. Athletic footwear & apparel.', 'Just Do It. 运动鞋、服装和装备。', '/logos/nike.png', 'https://www.nike.com', 'https://www.nike.com?aff=happysave', 'fashion', '时尚服饰', '["sports","shoes","fashion"]', 1, 1, 6, 7654, 3.8);
-    insertStore.run('7', 'hostinger', 'Hostinger', 'Hostinger', 'Fast and affordable web hosting.', '快速实惠的虚拟主机。免费域名和SSL证书。', '/logos/hostinger.png', 'https://www.hostinger.com', 'https://www.hostinger.com?aff=happysave', 'hosting', '主机服务', '["hosting","domain","ssl"]', 0, 1, 7, 3210, 8.4);
-
-    // Coupons
-    insertCoupon.run('1', '1', 'Temu', 'SAVE20', '20% Off Sitewide', '全场8折优惠', 'Get 20% off everything.', '全场8折优惠，无最低消费要求。', '20%', 'percentage', 'code', 'https://www.temu.com?aff=happysave&cpn=SAVE20', '2026-03-01', '2026-04-01', 1, 1, 1, 12345, 8765);
-    insertCoupon.run('2', '1', 'Temu', null, 'Free Shipping on Orders $15+', '满$15免运费', 'Free shipping on all orders over $15.', '满$15免运费，限时优惠。', 'Free Shipping', 'free_shipping', 'deal', 'https://www.temu.com?aff=happysave', '2026-03-01', null, 0, 1, 1, 8567, 5432);
-    insertCoupon.run('3', '2', 'SHEIN', 'SPRING15', '15% Off Spring Collection', '春季新品85折', 'Save 15% on the new spring fashion collection.', '春季新品85折优惠。', '15%', 'percentage', 'code', 'https://www.shein.com?aff=happysave&cpn=SPRING15', '2026-03-01', '2026-05-01', 1, 1, 1, 23456, 15678);
-    insertCoupon.run('4', '5', 'ChatGPT Plus', null, 'Free Trial - 7 Days', '免费试用7天', 'Try ChatGPT Plus free for 7 days.', '免费试用ChatGPT Plus 7天，随时取消。', '7-Day Trial', 'trial', 'deal', 'https://openai.com/chatgpt?aff=happysave', '2026-03-01', null, 1, 1, 1, 34567, 21098);
-    insertCoupon.run('5', '6', 'Nike', 'NIKE25', '25% Off Select Styles', '指定款式75折', 'Save 25% on select Nike styles.', '指定款式75折优惠，限时抢购。', '25%', 'percentage', 'code', 'https://www.nike.com?aff=happysave&cpn=NIKE25', '2026-03-10', '2026-03-31', 1, 1, 1, 18765, 11234);
-    insertCoupon.run('6', '7', 'Hostinger', 'HOST75', '75% Off Web Hosting', '主机服务25折', 'Get 75% off premium web hosting plans.', '高级主机方案低至25折。', '75%', 'percentage', 'code', 'https://www.hostinger.com?aff=happysave&cpn=HOST75', '2026-03-01', '2026-06-01', 0, 1, 1, 5678, 2345);
-
-    // Categories
-    getDb().prepare('INSERT INTO categories (id, name, nameZh, icon, sortOrder) VALUES (?, ?, ?, ?, ?)').run('shopping', 'shopping', '综合购物', '🛒', 1);
-    getDb().prepare('INSERT INTO categories (id, name, nameZh, icon, sortOrder) VALUES (?, ?, ?, ?, ?)').run('fashion', 'fashion', '时尚服饰', '👗', 2);
-    getDb().prepare('INSERT INTO categories (id, name, nameZh, icon, sortOrder) VALUES (?, ?, ?, ?, ?)').run('electronics', 'electronics', '电子产品', '📱', 3);
-    getDb().prepare('INSERT INTO categories (id, name, nameZh, icon, sortOrder) VALUES (?, ?, ?, ?, ?)').run('ai', 'ai', 'AI工具', '🤖', 4);
-    getDb().prepare('INSERT INTO categories (id, name, nameZh, icon, sortOrder) VALUES (?, ?, ?, ?, ?)').run('hosting', 'hosting', '主机服务', '🌐', 5);
-  });
-
-  tx();
-  console.log('✅ Database seeded with initial data');
+try {
+  const Database = require('better-sqlite3');
+  const path = require('path');
+  const fs = require('fs');
+  
+  const DB_PATH = path.join(process.cwd(), 'data', 'happysave.db');
+  fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
+  sqliteDb = new Database(DB_PATH);
+  sqliteDb.pragma('journal_mode = WAL');
+  dbType = 'sqlite';
+  console.log('✅ SQLite database connected:', DB_PATH);
+} catch (e: any) {
+  console.log('📦 better-sqlite3 not available, using in-memory storage (Vercel)');
 }
 
 // ============================================================
-// Export DB API
+// In-Memory Storage (for Vercel / when SQLite not available)
 // ============================================================
-export const database = {
-  // Stores
-  getStores: (params?: { category?: string; featured?: boolean; active?: boolean; search?: string; page?: number; limit?: number }) => {
-    const d = getDb();
-    let where = 'WHERE 1=1';
-    const args: any[] = [];
-    if (params?.category) { where += ' AND category = ?'; args.push(params.category); }
-    if (params?.featured !== undefined) { where += ' AND featured = ?'; args.push(params.featured ? 1 : 0); }
-    if (params?.active !== undefined) { where += ' AND active = ?'; args.push(params.active ? 1 : 0); }
-    if (params?.search) { where += ' AND (name LIKE ? OR description LIKE ?)'; args.push(`%${params.search}%`, `%${params.search}%`); }
-
-    const total = (d.prepare(`SELECT COUNT(*) as c FROM stores ${where}`).get(...args) as any).c;
-    const page = params?.page || 1;
-    const limit = params?.limit || 20;
-    const data = d.prepare(`SELECT * FROM stores ${where} ORDER BY sortOrder ASC, clickCount DESC LIMIT ? OFFSET ?`).all(...args, limit, (page - 1) * limit);
-    return { data: data.map(parseStore), total, page, limit };
-  },
-
-  getStoreById: (id: string) => {
-    const row = getDb().prepare('SELECT * FROM stores WHERE id = ?').get(id);
-    return row ? parseStore(row) : null;
-  },
-
-  getStoreBySlug: (slug: string) => {
-    const row = getDb().prepare('SELECT * FROM stores WHERE slug = ? AND active = 1').get(slug);
-    return row ? parseStore(row) : null;
-  },
-
-  createStore: (data: any) => {
-    const id = generateId();
-    getDb().prepare(`
-      INSERT INTO stores (id, slug, name, nameZh, description, descriptionZh, logo, website, affiliateUrl, category, categoryZh, tags, featured, active, sortOrder)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(id, data.slug, data.name, data.nameZh || '', data.description || '', data.descriptionZh || '', data.logo || '', data.website || '', data.affiliateUrl || '', data.category || '', data.categoryZh || '', JSON.stringify(data.tags || []), data.featured ? 1 : 0, data.active !== false ? 1 : 0, data.sortOrder || 0);
-    return database.getStoreById(id);
-  },
-
-  updateStore: (id: string, data: any) => {
-    const existing = database.getStoreById(id);
-    if (!existing) return null;
-    const fields: string[] = [];
-    const values: any[] = [];
-    for (const [key, value] of Object.entries(data)) {
-      if (key !== 'id' && value !== undefined) {
-        fields.push(`${key} = ?`);
-        values.push(key === 'tags' ? JSON.stringify(value) : key === 'featured' || key === 'active' ? (value ? 1 : 0) : value);
-      }
-    }
-    if (fields.length === 0) return existing;
-    fields.push("updatedAt = datetime('now')");
-    values.push(id);
-    getDb().prepare(`UPDATE stores SET ${fields.join(', ')} WHERE id = ?`).run(...values);
-    return database.getStoreById(id);
-  },
-
-  deleteStore: (id: string) => {
-    getDb().prepare('DELETE FROM stores WHERE id = ?').run(id);
-    return true;
-  },
-
-  // Coupons
-  getCoupons: (params?: { storeId?: string; type?: string; featured?: boolean; active?: boolean; search?: string; page?: number; limit?: number }) => {
-    const d = getDb();
-    let where = 'WHERE 1=1';
-    const args: any[] = [];
-    if (params?.storeId) { where += ' AND storeId = ?'; args.push(params.storeId); }
-    if (params?.type) { where += ' AND type = ?'; args.push(params.type); }
-    if (params?.featured !== undefined) { where += ' AND featured = ?'; args.push(params.featured ? 1 : 0); }
-    if (params?.active !== undefined) { where += ' AND active = ?'; args.push(params.active ? 1 : 0); }
-    if (params?.search) { where += ' AND (title LIKE ? OR code LIKE ?)'; args.push(`%${params.search}%`, `%${params.search}%`); }
-
-    const total = (d.prepare(`SELECT COUNT(*) as c FROM coupons ${where}`).get(...args) as any).c;
-    const page = params?.page || 1;
-    const limit = params?.limit || 20;
-    const data = d.prepare(`SELECT * FROM coupons ${where} ORDER BY featured DESC, clickCount DESC LIMIT ? OFFSET ?`).all(...args, limit, (page - 1) * limit);
-    return { data: data.map(parseCoupon), total, page, limit };
-  },
-
-  getCouponById: (id: string) => {
-    const row = getDb().prepare('SELECT * FROM coupons WHERE id = ?').get(id);
-    return row ? parseCoupon(row) : null;
-  },
-
-  getCouponsByStoreSlug: (slug: string) => {
-    const store = database.getStoreBySlug(slug);
-    if (!store) return [];
-    return getDb().prepare('SELECT * FROM coupons WHERE storeId = ? AND active = 1 ORDER BY featured DESC').all(store.id).map(parseCoupon);
-  },
-
-  createCoupon: (data: any) => {
-    const id = generateId();
-    getDb().prepare(`
-      INSERT INTO coupons (id, storeId, storeName, code, title, titleZh, description, descriptionZh, discount, discountType, type, affiliateUrl, startDate, endDate, featured, active, verified)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(id, data.storeId, data.storeName || '', data.code || null, data.title, data.titleZh || '', data.description || '', data.descriptionZh || '', data.discount || '', data.discountType || 'percentage', data.type || 'code', data.affiliateUrl || '', data.startDate || new Date().toISOString(), data.endDate || null, data.featured ? 1 : 0, data.active !== false ? 1 : 0, data.verified ? 1 : 0);
-    return database.getCouponById(id);
-  },
-
-  updateCoupon: (id: string, data: any) => {
-    const existing = database.getCouponById(id);
-    if (!existing) return null;
-    const fields: string[] = [];
-    const values: any[] = [];
-    for (const [key, value] of Object.entries(data)) {
-      if (key !== 'id' && value !== undefined) {
-        fields.push(`${key} = ?`);
-        values.push(key === 'featured' || key === 'active' || key === 'verified' ? (value ? 1 : 0) : value);
-      }
-    }
-    if (fields.length === 0) return existing;
-    fields.push("updatedAt = datetime('now')");
-    values.push(id);
-    getDb().prepare(`UPDATE coupons SET ${fields.join(', ')} WHERE id = ?`).run(...values);
-    return database.getCouponById(id);
-  },
-
-  deleteCoupon: (id: string) => {
-    getDb().prepare('DELETE FROM coupons WHERE id = ?').run(id);
-    return true;
-  },
-
-  incrementCouponClick: (id: string) => {
-    getDb().prepare('UPDATE coupons SET clickCount = clickCount + 1 WHERE id = ?').run(id);
-  },
-
-  // Short Links
-  createShortLink: (data: { originalUrl: string; storeId?: string; couponId?: string }) => {
-    const id = generateId();
-    const code = generateCode();
-    const store = data.storeId ? database.getStoreById(data.storeId) : null;
-    getDb().prepare(`
-      INSERT INTO short_links (id, code, originalUrl, shortUrl, storeId, storeName, couponId)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(id, code, data.originalUrl, `/s/${code}`, data.storeId || '', store?.name || '', data.couponId || null);
-    return getDb().prepare('SELECT * FROM short_links WHERE id = ?').get(id);
-  },
-
-  getShortLinkByCode: (code: string) => {
-    return getDb().prepare('SELECT * FROM short_links WHERE code = ?').get(code);
-  },
-
-  getShortLinks: () => {
-    const data = getDb().prepare('SELECT * FROM short_links ORDER BY createdAt DESC').all();
-    return { data, total: data.length };
-  },
-
-  incrementLinkClick: (code: string) => {
-    getDb().prepare('UPDATE short_links SET clicks = clicks + 1, lastClickedAt = datetime(\'now\') WHERE code = ?').run(code);
-  },
-
-  // Click Logs
-  logClick: (data: { shortCode?: string; storeId?: string; couponId?: string; ip?: string; userAgent?: string; referer?: string }) => {
-    const id = generateId();
-    getDb().prepare(`
-      INSERT INTO click_logs (id, shortCode, storeId, couponId, ip, userAgent, referer, device)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(id, data.shortCode || '', data.storeId || '', data.couponId || '', data.ip || '', data.userAgent || '', data.referer || '', detectDevice(data.userAgent || ''));
-    // Also increment store click count
-    if (data.storeId) {
-      getDb().prepare('UPDATE stores SET clickCount = clickCount + 1 WHERE id = ?').run(data.storeId);
-    }
-    return id;
-  },
-
-  // Categories
-  getCategories: () => {
-    return getDb().prepare('SELECT * FROM categories ORDER BY sortOrder ASC').all();
-  },
-
-  // SEO Pages
-  createSeoPage: (data: { slug: string; title: string; content?: string; metaDesc?: string; keywords?: string; pageType?: string; storeId?: string }) => {
-    const id = generateId();
-    getDb().prepare(`
-      INSERT INTO seo_pages (id, slug, title, content, metaDesc, keywords, pageType, storeId, aiGenerated)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
-    `).run(id, data.slug, data.title, data.content || '', data.metaDesc || '', data.keywords || '', data.pageType || 'store', data.storeId || null);
-    return getDb().prepare('SELECT * FROM seo_pages WHERE id = ?').get(id);
-  },
-
-  getSeoPageBySlug: (slug: string) => {
-    return getDb().prepare('SELECT * FROM seo_pages WHERE slug = ?').get(slug);
-  },
-
-  getSeoPages: () => {
-    const data = getDb().prepare('SELECT * FROM seo_pages ORDER BY createdAt DESC').all();
-    return { data, total: data.length };
-  },
-
-  incrementPageView: (slug: string) => {
-    getDb().prepare('UPDATE seo_pages SET views = views + 1 WHERE slug = ?').run(slug);
-  },
-
-  // Favorites
-  toggleFavorite: (userId: string, itemType: string, itemId: string) => {
-    const existing = getDb().prepare('SELECT * FROM favorites WHERE userId = ? AND itemType = ? AND itemId = ?').get(userId, itemType, itemId);
-    if (existing) {
-      getDb().prepare('DELETE FROM favorites WHERE id = ?').run((existing as any).id);
-      return { favorited: false };
-    } else {
-      getDb().prepare('INSERT INTO favorites (id, userId, itemType, itemId) VALUES (?, ?, ?, ?)').run(generateId(), userId, itemType, itemId);
-      return { favorited: true };
-    }
-  },
-
-  getFavorites: (userId: string) => {
-    return getDb().prepare('SELECT * FROM favorites WHERE userId = ? ORDER BY createdAt DESC').all(userId);
-  },
-
-  // Notifications
-  createNotification: (data: { userId?: string; email?: string; type?: string; storeId?: string; keyword?: string }) => {
-    const id = generateId();
-    getDb().prepare(`
-      INSERT INTO notifications (id, userId, email, type, storeId, keyword)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `).run(id, data.userId || '', data.email || '', data.type || 'coupon_alert', data.storeId || '', data.keyword || '');
-    return id;
-  },
-
-  // Dashboard Stats
-  getDashboardStats: () => {
-    const d = getDb();
-    const totalStores = (d.prepare('SELECT COUNT(*) as c FROM stores WHERE active = 1').get() as any).c;
-    const totalCoupons = (d.prepare('SELECT COUNT(*) as c FROM coupons WHERE active = 1').get() as any).c;
-    const totalClicks = (d.prepare('SELECT COALESCE(SUM(clickCount), 0) as c FROM stores').get() as any).c;
-    const totalLinks = (d.prepare('SELECT COUNT(*) as c FROM short_links').get() as any).c;
-    const totalSeoPages = (d.prepare('SELECT COUNT(*) as c FROM seo_pages').get() as any).c;
-    const topStores = d.prepare('SELECT name, slug, clickCount as clicks, conversionRate FROM stores WHERE active = 1 ORDER BY clickCount DESC LIMIT 5').all();
-    const recentCoupons = d.prepare('SELECT * FROM coupons WHERE active = 1 ORDER BY createdAt DESC LIMIT 5').all().map(parseCoupon);
-
-    return {
-      totalStores, totalCoupons, totalClicks, totalLinks, totalSeoPages,
-      featuredCoupons: d.prepare('SELECT * FROM coupons WHERE featured = 1 AND active = 1').all().map(parseCoupon),
-      recentCoupons,
-      topStores,
-      storeStats: d.prepare('SELECT name, slug, (SELECT COUNT(*) FROM coupons WHERE storeId = stores.id) as couponCount FROM stores WHERE active = 1').all(),
-    };
-  },
-
-  // Raw query for AI
-  raw: getDb,
+const memory = {
+  stores: [] as Store[],
+  coupons: [] as Coupon[],
+  shortLinks: [] as ShortLink[],
+  clickLogs: [] as ClickLog[],
+  categories: [] as Category[],
+  seoPages: [] as SeoPage[],
+  favorites: [] as Favorite[],
+  notifications: [] as Notification[],
 };
 
 // ============================================================
-// Helpers
+// Shared Utilities
 // ============================================================
-function generateId(): string {
+function genId(): string {
   return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 }
 
-function generateCode(): string {
+function genCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
-  let result = '';
-  for (let i = 0; i < 7; i++) result += chars.charAt(Math.floor(Math.random() * chars.length));
-  return result;
+  let r = '';
+  for (let i = 0; i < 7; i++) r += chars.charAt(Math.floor(Math.random() * chars.length));
+  return r;
 }
 
-function detectDevice(ua: string): string {
-  if (/mobile/i.test(ua)) return 'mobile';
-  if (/tablet/i.test(ua)) return 'tablet';
-  return 'desktop';
+function parseTags(t: string): string[] {
+  try { return JSON.parse(t || '[]'); } catch { return []; }
 }
 
-function parseStore(row: any): any {
-  return { ...row, tags: JSON.parse(row.tags || '[]'), featured: !!row.featured, active: !!row.active };
+// ============================================================
+// SQLite Schema Init
+// ============================================================
+if (dbType === 'sqlite' && sqliteDb) {
+  sqliteDb.exec(`
+    CREATE TABLE IF NOT EXISTS stores (
+      id TEXT PRIMARY KEY, slug TEXT UNIQUE NOT NULL, name TEXT NOT NULL,
+      nameZh TEXT DEFAULT '', description TEXT DEFAULT '', descriptionZh TEXT DEFAULT '',
+      logo TEXT DEFAULT '', website TEXT DEFAULT '', affiliateUrl TEXT DEFAULT '',
+      category TEXT DEFAULT '', categoryZh TEXT DEFAULT '', tags TEXT DEFAULT '[]',
+      featured INTEGER DEFAULT 0, active INTEGER DEFAULT 1, sortOrder INTEGER DEFAULT 0,
+      clickCount INTEGER DEFAULT 0, conversionRate REAL DEFAULT 0,
+      createdAt TEXT DEFAULT (datetime('now')), updatedAt TEXT DEFAULT (datetime('now'))
+    );
+    CREATE TABLE IF NOT EXISTS coupons (
+      id TEXT PRIMARY KEY, storeId TEXT NOT NULL, storeName TEXT DEFAULT '',
+      code TEXT, title TEXT NOT NULL, titleZh TEXT DEFAULT '',
+      description TEXT DEFAULT '', descriptionZh TEXT DEFAULT '',
+      discount TEXT DEFAULT '', discountType TEXT DEFAULT 'percentage',
+      type TEXT DEFAULT 'code', affiliateUrl TEXT DEFAULT '',
+      startDate TEXT, endDate TEXT, featured INTEGER DEFAULT 0,
+      active INTEGER DEFAULT 1, verified INTEGER DEFAULT 0,
+      clickCount INTEGER DEFAULT 0, useCount INTEGER DEFAULT 0,
+      createdAt TEXT DEFAULT (datetime('now')), updatedAt TEXT DEFAULT (datetime('now'))
+    );
+    CREATE TABLE IF NOT EXISTS short_links (
+      id TEXT PRIMARY KEY, code TEXT UNIQUE NOT NULL, originalUrl TEXT NOT NULL,
+      shortUrl TEXT DEFAULT '', storeId TEXT, storeName TEXT DEFAULT '',
+      couponId TEXT, clicks INTEGER DEFAULT 0, uniqueClicks INTEGER DEFAULT 0,
+      createdAt TEXT DEFAULT (datetime('now')), lastClickedAt TEXT
+    );
+    CREATE TABLE IF NOT EXISTS click_logs (
+      id TEXT PRIMARY KEY, shortCode TEXT, storeId TEXT, couponId TEXT,
+      ip TEXT DEFAULT '', userAgent TEXT DEFAULT '', referer TEXT DEFAULT '',
+      country TEXT DEFAULT '', device TEXT DEFAULT '', timestamp TEXT DEFAULT (datetime('now'))
+    );
+    CREATE TABLE IF NOT EXISTS categories (
+      id TEXT PRIMARY KEY, name TEXT NOT NULL, nameZh TEXT DEFAULT '',
+      icon TEXT DEFAULT '🏷️', sortOrder INTEGER DEFAULT 0
+    );
+    CREATE TABLE IF NOT EXISTS seo_pages (
+      id TEXT PRIMARY KEY, slug TEXT UNIQUE NOT NULL, title TEXT NOT NULL,
+      content TEXT DEFAULT '', metaDesc TEXT DEFAULT '', keywords TEXT DEFAULT '',
+      pageType TEXT DEFAULT 'store', storeId TEXT, views INTEGER DEFAULT 0,
+      aiGenerated INTEGER DEFAULT 1,
+      createdAt TEXT DEFAULT (datetime('now')), updatedAt TEXT DEFAULT (datetime('now'))
+    );
+    CREATE TABLE IF NOT EXISTS favorites (
+      id TEXT PRIMARY KEY, userId TEXT NOT NULL, itemType TEXT NOT NULL,
+      itemId TEXT NOT NULL, createdAt TEXT DEFAULT (datetime('now')),
+      UNIQUE(userId, itemType, itemId)
+    );
+    CREATE TABLE IF NOT EXISTS notifications (
+      id TEXT PRIMARY KEY, userId TEXT DEFAULT '', email TEXT DEFAULT '',
+      type TEXT DEFAULT 'coupon_alert', storeId TEXT DEFAULT '',
+      keyword TEXT DEFAULT '', active INTEGER DEFAULT 1,
+      createdAt TEXT DEFAULT (datetime('now'))
+    );
+  `);
 }
 
-function parseCoupon(row: any): any {
-  return { ...row, featured: !!row.featured, active: !!row.active, verified: !!row.verified };
-}
+// ============================================================
+// Database API
+// ============================================================
+export const database = {
+  // ===== Stores =====
+  getStores(params?: { category?: string; featured?: boolean; active?: boolean; search?: string; page?: number; limit?: number }) {
+    const page = params?.page || 1;
+    const limit = params?.limit || 20;
+    const offset = (page - 1) * limit;
+
+    if (dbType === 'sqlite') {
+      let where = 'WHERE 1=1';
+      const args: any[] = [];
+      if (params?.category) { where += ' AND category = ?'; args.push(params.category); }
+      if (params?.featured !== undefined) { where += ' AND featured = ?'; args.push(params.featured ? 1 : 0); }
+      if (params?.active !== undefined) { where += ' AND active = ?'; args.push(params.active ? 1 : 0); }
+      if (params?.search) { where += ' AND (name LIKE ? OR description LIKE ?)'; args.push(`%${params.search}%`, `%${params.search}%`); }
+
+      const total = sqliteDb.prepare(`SELECT COUNT(*) as c FROM stores ${where}`).get(...args).c;
+      const data = sqliteDb.prepare(`SELECT * FROM stores ${where} ORDER BY sortOrder ASC, clickCount DESC LIMIT ? OFFSET ?`).all(...args, limit, offset);
+      return { data: data.map((s: Store) => ({ ...s, tags: parseTags(s.tags), featured: !!s.featured, active: !!s.active })), total, page, limit };
+    }
+
+    // In-memory
+    let filtered = [...memory.stores];
+    if (params?.category) filtered = filtered.filter(s => s.category === params.category);
+    if (params?.featured !== undefined) filtered = filtered.filter(s => !!s.featured === params.featured);
+    if (params?.active !== undefined) filtered = filtered.filter(s => !!s.active === params.active);
+    if (params?.search) { const q = params.search.toLowerCase(); filtered = filtered.filter(s => s.name.toLowerCase().includes(q) || s.description.toLowerCase().includes(q)); }
+    const total = filtered.length;
+    const data = filtered.slice(offset, offset + limit).map(s => ({ ...s, tags: parseTags(s.tags), featured: !!s.featured, active: !!s.active }));
+    return { data, total, page, limit };
+  },
+
+  getStoreById(id: string) {
+    const store = dbType === 'sqlite'
+      ? sqliteDb.prepare('SELECT * FROM stores WHERE id = ?').get(id)
+      : memory.stores.find(s => s.id === id);
+    return store ? { ...store, tags: parseTags(store.tags), featured: !!store.featured, active: !!store.active } : null;
+  },
+
+  getStoreBySlug(slug: string) {
+    const store = dbType === 'sqlite'
+      ? sqliteDb.prepare('SELECT * FROM stores WHERE slug = ? AND active = 1').get(slug)
+      : memory.stores.find(s => s.slug === slug && s.active);
+    return store ? { ...store, tags: parseTags(store.tags), featured: !!store.featured, active: !!store.active } : null;
+  },
+
+  createStore(data: any) {
+    const id = genId();
+    const now = new Date().toISOString();
+    const store: Store = {
+      id, slug: data.slug, name: data.name, nameZh: data.nameZh || '',
+      description: data.description || '', descriptionZh: data.descriptionZh || '',
+      logo: data.logo || '', website: data.website || '', affiliateUrl: data.affiliateUrl || '',
+      category: data.category || '', categoryZh: data.categoryZh || '',
+      tags: JSON.stringify(data.tags || []), featured: data.featured ? 1 : 0,
+      active: data.active !== false ? 1 : 0, sortOrder: data.sortOrder || 0,
+      clickCount: 0, conversionRate: 0, createdAt: now, updatedAt: now,
+    };
+
+    if (dbType === 'sqlite') {
+      sqliteDb.prepare(`INSERT INTO stores VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(
+        store.id, store.slug, store.name, store.nameZh, store.description, store.descriptionZh,
+        store.logo, store.website, store.affiliateUrl, store.category, store.categoryZh,
+        store.tags, store.featured, store.active, store.sortOrder, store.clickCount, store.conversionRate,
+        store.createdAt, store.updatedAt
+      );
+    } else {
+      memory.stores.push(store);
+    }
+    return database.getStoreById(id);
+  },
+
+  updateStore(id: string, data: any) {
+    const existing = database.getStoreById(id);
+    if (!existing) return null;
+    if (dbType === 'sqlite') {
+      const fields = Object.entries(data).filter(([k, v]) => v !== undefined && k !== 'id');
+      for (const [k, v] of fields) {
+        const val = k === 'tags' ? JSON.stringify(v) : k === 'featured' || k === 'active' ? (v ? 1 : 0) : v;
+        sqliteDb.prepare(`UPDATE stores SET "${k}" = ?, updatedAt = datetime('now') WHERE id = ?`).run(val, id);
+      }
+    } else {
+      const idx = memory.stores.findIndex(s => s.id === id);
+      if (idx >= 0) Object.assign(memory.stores[idx], data, { updatedAt: new Date().toISOString() });
+    }
+    return database.getStoreById(id);
+  },
+
+  deleteStore(id: string) {
+    if (dbType === 'sqlite') sqliteDb.prepare('DELETE FROM stores WHERE id = ?').run(id);
+    else memory.stores = memory.stores.filter(s => s.id !== id);
+    return true;
+  },
+
+  // ===== Coupons =====
+  getCoupons(params?: { storeId?: string; type?: string; featured?: boolean; active?: boolean; search?: string; page?: number; limit?: number }) {
+    const page = params?.page || 1;
+    const limit = params?.limit || 20;
+    const offset = (page - 1) * limit;
+
+    if (dbType === 'sqlite') {
+      let where = 'WHERE 1=1';
+      const args: any[] = [];
+      if (params?.storeId) { where += ' AND storeId = ?'; args.push(params.storeId); }
+      if (params?.type) { where += ' AND type = ?'; args.push(params.type); }
+      if (params?.featured !== undefined) { where += ' AND featured = ?'; args.push(params.featured ? 1 : 0); }
+      if (params?.active !== undefined) { where += ' AND active = ?'; args.push(params.active ? 1 : 0); }
+      if (params?.search) { where += ' AND (title LIKE ? OR code LIKE ?)'; args.push(`%${params.search}%`, `%${params.search}%`); }
+      const total = sqliteDb.prepare(`SELECT COUNT(*) as c FROM coupons ${where}`).get(...args).c;
+      const data = sqliteDb.prepare(`SELECT * FROM coupons ${where} ORDER BY featured DESC, clickCount DESC LIMIT ? OFFSET ?`).all(...args, limit, offset);
+      return { data: data.map((c: Coupon) => ({ ...c, featured: !!c.featured, active: !!c.active, verified: !!c.verified })), total, page, limit };
+    }
+
+    let filtered = [...memory.coupons];
+    if (params?.storeId) filtered = filtered.filter(c => c.storeId === params.storeId);
+    if (params?.type) filtered = filtered.filter(c => c.type === params.type);
+    if (params?.featured !== undefined) filtered = filtered.filter(c => !!c.featured === params.featured);
+    if (params?.active !== undefined) filtered = filtered.filter(c => !!c.active === params.active);
+    if (params?.search) { const q = params.search.toLowerCase(); filtered = filtered.filter(c => c.title.toLowerCase().includes(q) || (c.code || '').toLowerCase().includes(q)); }
+    const total = filtered.length;
+    return { data: filtered.slice(offset, offset + limit).map(c => ({ ...c, featured: !!c.featured, active: !!c.active, verified: !!c.verified })), total, page, limit };
+  },
+
+  getCouponById(id: string) {
+    const coupon = dbType === 'sqlite' ? sqliteDb.prepare('SELECT * FROM coupons WHERE id = ?').get(id) : memory.coupons.find(c => c.id === id);
+    return coupon ? { ...coupon, featured: !!coupon.featured, active: !!coupon.active, verified: !!coupon.verified } : null;
+  },
+
+  getCouponsByStoreSlug(slug: string) {
+    const store = database.getStoreBySlug(slug);
+    if (!store) return [];
+    if (dbType === 'sqlite') {
+      return sqliteDb.prepare('SELECT * FROM coupons WHERE storeId = ? AND active = 1 ORDER BY featured DESC').all(store.id)
+        .map((c: Coupon) => ({ ...c, featured: !!c.featured, active: !!c.active, verified: !!c.verified }));
+    }
+    return memory.coupons.filter(c => c.storeId === store.id && c.active).map(c => ({ ...c, featured: !!c.featured, active: !!c.active, verified: !!c.verified }));
+  },
+
+  createCoupon(data: any) {
+    const id = genId();
+    const now = new Date().toISOString();
+    const coupon: Coupon = {
+      id, storeId: data.storeId, storeName: data.storeName || '', code: data.code || null,
+      title: data.title, titleZh: data.titleZh || '', description: data.description || '',
+      descriptionZh: data.descriptionZh || '', discount: data.discount || '',
+      discountType: data.discountType || 'percentage', type: data.type || 'code',
+      affiliateUrl: data.affiliateUrl || '', startDate: data.startDate || now,
+      endDate: data.endDate || null, featured: data.featured ? 1 : 0,
+      active: data.active !== false ? 1 : 0, verified: data.verified ? 1 : 0,
+      clickCount: 0, useCount: 0, createdAt: now, updatedAt: now,
+    };
+
+    if (dbType === 'sqlite') {
+      sqliteDb.prepare(`INSERT INTO coupons VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(
+        coupon.id, coupon.storeId, coupon.storeName, coupon.code, coupon.title, coupon.titleZh,
+        coupon.description, coupon.descriptionZh, coupon.discount, coupon.discountType, coupon.type,
+        coupon.affiliateUrl, coupon.startDate, coupon.endDate, coupon.featured, coupon.active,
+        coupon.verified, coupon.clickCount, coupon.useCount, coupon.createdAt, coupon.updatedAt
+      );
+    } else {
+      memory.coupons.push(coupon);
+    }
+    return database.getCouponById(id);
+  },
+
+  updateCoupon(id: string, data: any) {
+    const existing = database.getCouponById(id);
+    if (!existing) return null;
+    if (dbType === 'sqlite') {
+      const fields = Object.entries(data).filter(([k, v]) => v !== undefined && k !== 'id');
+      for (const [k, v] of fields) {
+        const val = k === 'featured' || k === 'active' || k === 'verified' ? (v ? 1 : 0) : v;
+        sqliteDb.prepare(`UPDATE coupons SET "${k}" = ?, updatedAt = datetime('now') WHERE id = ?`).run(val, id);
+      }
+    } else {
+      const idx = memory.coupons.findIndex(c => c.id === id);
+      if (idx >= 0) Object.assign(memory.coupons[idx], data, { updatedAt: new Date().toISOString() });
+    }
+    return database.getCouponById(id);
+  },
+
+  deleteCoupon(id: string) {
+    if (dbType === 'sqlite') sqliteDb.prepare('DELETE FROM coupons WHERE id = ?').run(id);
+    else memory.coupons = memory.coupons.filter(c => c.id !== id);
+    return true;
+  },
+
+  incrementCouponClick(id: string) {
+    if (dbType === 'sqlite') sqliteDb.prepare('UPDATE coupons SET clickCount = clickCount + 1 WHERE id = ?').run(id);
+    else { const c = memory.coupons.find(c => c.id === id); if (c) c.clickCount++; }
+  },
+
+  // ===== Short Links =====
+  createShortLink(data: { originalUrl: string; storeId?: string; couponId?: string }) {
+    const id = genId();
+    const code = genCode();
+    const now = new Date().toISOString();
+    let storeName = '';
+    if (data.storeId) { const s = database.getStoreById(data.storeId); if (s) storeName = s.name; }
+
+    const link: ShortLink = {
+      id, code, originalUrl: data.originalUrl, shortUrl: `/s/${code}`,
+      storeId: data.storeId || '', storeName, couponId: data.couponId || '',
+      clicks: 0, uniqueClicks: 0, createdAt: now, lastClickedAt: null,
+    };
+
+    if (dbType === 'sqlite') {
+      sqliteDb.prepare('INSERT INTO short_links VALUES (?,?,?,?,?,?,?,?,?,?,?)').run(
+        link.id, link.code, link.originalUrl, link.shortUrl, link.storeId,
+        link.storeName, link.couponId, link.clicks, link.uniqueClicks, link.createdAt, link.lastClickedAt
+      );
+    } else {
+      memory.shortLinks.push(link);
+    }
+    return link;
+  },
+
+  getShortLinkByCode(code: string) {
+    return dbType === 'sqlite' ? sqliteDb.prepare('SELECT * FROM short_links WHERE code = ?').get(code) : memory.shortLinks.find(l => l.code === code) || null;
+  },
+
+  getShortLinks() {
+    const data = dbType === 'sqlite' ? sqliteDb.prepare('SELECT * FROM short_links ORDER BY createdAt DESC').all() : [...memory.shortLinks].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    return { data, total: data.length };
+  },
+
+  incrementLinkClick(code: string) {
+    const now = new Date().toISOString();
+    if (dbType === 'sqlite') sqliteDb.prepare('UPDATE short_links SET clicks = clicks + 1, lastClickedAt = ? WHERE code = ?').run(now, code);
+    else { const l = memory.shortLinks.find(l => l.code === code); if (l) { l.clicks++; l.lastClickedAt = now; } }
+  },
+
+  // ===== Click Logs =====
+  logClick(data: any) {
+    const id = genId();
+    const now = new Date().toISOString();
+    const device = /mobile/i.test(data.userAgent || '') ? 'mobile' : /tablet/i.test(data.userAgent || '') ? 'tablet' : 'desktop';
+    const log: ClickLog = { id, shortCode: data.shortCode || '', storeId: data.storeId || '', couponId: data.couponId || '', ip: data.ip || '', userAgent: data.userAgent || '', referer: data.referer || '', country: data.country || '', device, timestamp: now };
+
+    if (dbType === 'sqlite') {
+      sqliteDb.prepare('INSERT INTO click_logs VALUES (?,?,?,?,?,?,?,?,?,?)').run(log.id, log.shortCode, log.storeId, log.couponId, log.ip, log.userAgent, log.referer, log.country, log.device, log.timestamp);
+      if (data.storeId) sqliteDb.prepare('UPDATE stores SET clickCount = clickCount + 1 WHERE id = ?').run(data.storeId);
+    } else {
+      memory.clickLogs.push(log);
+      if (data.storeId) { const s = memory.stores.find(s => s.id === data.storeId); if (s) s.clickCount++; }
+    }
+    return id;
+  },
+
+  // ===== Categories =====
+  getCategories() {
+    return dbType === 'sqlite' ? sqliteDb.prepare('SELECT * FROM categories ORDER BY sortOrder ASC').all() : [...memory.categories].sort((a, b) => a.sortOrder - b.sortOrder);
+  },
+
+  // ===== SEO Pages =====
+  createSeoPage(data: any) {
+    const id = genId();
+    const now = new Date().toISOString();
+    const page: SeoPage = { id, slug: data.slug, title: data.title, content: data.content || '', metaDesc: data.metaDesc || '', keywords: data.keywords || '', pageType: data.pageType || 'store', storeId: data.storeId || '', views: 0, aiGenerated: 1, createdAt: now, updatedAt: now };
+    if (dbType === 'sqlite') sqliteDb.prepare('INSERT INTO seo_pages VALUES (?,?,?,?,?,?,?,?,?,?,?,?)').run(page.id, page.slug, page.title, page.content, page.metaDesc, page.keywords, page.pageType, page.storeId, page.views, page.aiGenerated, page.createdAt, page.updatedAt);
+    else memory.seoPages.push(page);
+    return page;
+  },
+
+  getSeoPageBySlug(slug: string) {
+    return dbType === 'sqlite' ? sqliteDb.prepare('SELECT * FROM seo_pages WHERE slug = ?').get(slug) : memory.seoPages.find(p => p.slug === slug) || null;
+  },
+
+  getSeoPages() {
+    const data = dbType === 'sqlite' ? sqliteDb.prepare('SELECT * FROM seo_pages ORDER BY createdAt DESC').all() : [...memory.seoPages].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    return { data, total: data.length };
+  },
+
+  incrementPageView(slug: string) {
+    if (dbType === 'sqlite') sqliteDb.prepare('UPDATE seo_pages SET views = views + 1 WHERE slug = ?').run(slug);
+    else { const p = memory.seoPages.find(p => p.slug === slug); if (p) p.views++; }
+  },
+
+  // ===== Favorites =====
+  toggleFavorite(userId: string, itemType: string, itemId: string) {
+    if (dbType === 'sqlite') {
+      const existing = sqliteDb.prepare('SELECT * FROM favorites WHERE userId = ? AND itemType = ? AND itemId = ?').get(userId, itemType, itemId);
+      if (existing) { sqliteDb.prepare('DELETE FROM favorites WHERE id = ?').run(existing.id); return { favorited: false }; }
+      else { sqliteDb.prepare('INSERT INTO favorites VALUES (?,?,?,?,datetime(\'now\'))').run(genId(), userId, itemType, itemId); return { favorited: true }; }
+    }
+    const idx = memory.favorites.findIndex(f => f.userId === userId && f.itemType === itemType && f.itemId === itemId);
+    if (idx >= 0) { memory.favorites.splice(idx, 1); return { favorited: false }; }
+    memory.favorites.push({ id: genId(), userId, itemType, itemId, createdAt: new Date().toISOString() });
+    return { favorited: true };
+  },
+
+  getFavorites(userId: string) {
+    return dbType === 'sqlite' ? sqliteDb.prepare('SELECT * FROM favorites WHERE userId = ? ORDER BY createdAt DESC').all(userId) : memory.favorites.filter(f => f.userId === userId);
+  },
+
+  // ===== Notifications =====
+  createNotification(data: any) {
+    const id = genId();
+    const now = new Date().toISOString();
+    const notif: Notification = { id, userId: data.userId || '', email: data.email || '', type: data.type || 'coupon_alert', storeId: data.storeId || '', keyword: data.keyword || '', active: 1, createdAt: now };
+    if (dbType === 'sqlite') sqliteDb.prepare('INSERT INTO notifications VALUES (?,?,?,?,?,?,?,?)').run(notif.id, notif.userId, notif.email, notif.type, notif.storeId, notif.keyword, notif.active, notif.createdAt);
+    else memory.notifications.push(notif);
+    return id;
+  },
+
+  // ===== Dashboard =====
+  getDashboardStats() {
+    if (dbType === 'sqlite') {
+      return {
+        totalStores: sqliteDb.prepare('SELECT COUNT(*) as c FROM stores WHERE active = 1').get().c,
+        totalCoupons: sqliteDb.prepare('SELECT COUNT(*) as c FROM coupons WHERE active = 1').get().c,
+        totalClicks: sqliteDb.prepare('SELECT COALESCE(SUM(clickCount), 0) as c FROM stores').get().c,
+        totalLinks: sqliteDb.prepare('SELECT COUNT(*) as c FROM short_links').get().c,
+        totalSeoPages: sqliteDb.prepare('SELECT COUNT(*) as c FROM seo_pages').get().c,
+        topStores: sqliteDb.prepare('SELECT name, slug, clickCount as clicks, conversionRate FROM stores WHERE active = 1 ORDER BY clickCount DESC LIMIT 5').all(),
+        featuredCoupons: sqliteDb.prepare('SELECT * FROM coupons WHERE featured = 1 AND active = 1').all(),
+        recentCoupons: sqliteDb.prepare('SELECT * FROM coupons WHERE active = 1 ORDER BY createdAt DESC LIMIT 5').all(),
+        storeStats: sqliteDb.prepare("SELECT name, slug, (SELECT COUNT(*) FROM coupons WHERE storeId = stores.id) as couponCount FROM stores WHERE active = 1").all(),
+      };
+    }
+    return {
+      totalStores: memory.stores.filter(s => s.active).length,
+      totalCoupons: memory.coupons.filter(c => c.active).length,
+      totalClicks: memory.stores.reduce((s, st) => s + st.clickCount, 0),
+      totalLinks: memory.shortLinks.length,
+      totalSeoPages: memory.seoPages.length,
+      topStores: memory.stores.filter(s => s.active).sort((a, b) => b.clickCount - a.clickCount).slice(0, 5).map(s => ({ name: s.name, slug: s.slug, clicks: s.clickCount, conversionRate: s.conversionRate })),
+      featuredCoupons: memory.coupons.filter(c => c.featured && c.active),
+      recentCoupons: memory.coupons.filter(c => c.active).sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 5),
+      storeStats: memory.stores.filter(s => s.active).map(s => ({ name: s.name, slug: s.slug, couponCount: memory.coupons.filter(c => c.storeId === s.id).length })),
+    };
+  },
+
+  raw: () => sqliteDb,
+  type: () => dbType,
+};
