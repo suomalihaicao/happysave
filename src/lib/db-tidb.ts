@@ -128,6 +128,12 @@ export async function initTiDB() {
     )
   `);
   
+  // 添加 UTM 追踪列（兼容已有表）
+  try { await db.execute(`ALTER TABLE click_logs ADD COLUMN IF NOT EXISTS utmSource VARCHAR(100) DEFAULT ''`); } catch {}
+  try { await db.execute(`ALTER TABLE click_logs ADD COLUMN IF NOT EXISTS utmMedium VARCHAR(100) DEFAULT ''`); } catch {}
+  try { await db.execute(`ALTER TABLE click_logs ADD COLUMN IF NOT EXISTS utmCampaign VARCHAR(100) DEFAULT ''`); } catch {}
+  try { await db.execute(`CREATE INDEX IF NOT EXISTS idx_utmSource ON click_logs(utmSource)`); } catch {}
+  
   await db.execute(`
     CREATE TABLE IF NOT EXISTS categories (
       id VARCHAR(32) PRIMARY KEY,
