@@ -1,5 +1,7 @@
 {
   "framework": "nextjs",
+  "installCommand": "npm install --legacy-peer-deps --no-optional",
+  "buildCommand": "next build",
   "crons": [
     {
       "path": "/api/v1/cron?task=discover&secret=happysave-cron-2026",
