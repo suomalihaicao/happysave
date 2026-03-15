@@ -2,544 +2,285 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import {
-  Layout,
-  Menu,
-  Input,
-  Card,
-  Button,
-  Tag,
-  Space,
-  Row,
-  Col,
-  Typography,
-  Divider,
-  Badge,
-  Avatar,
-  Statistic,
-  ConfigProvider,
-  FloatButton,
-} from 'antd';
-import {
-  SearchOutlined,
-  FireOutlined,
-  ShopOutlined,
-  TagOutlined,
-  QrcodeOutlined,
-  CopyOutlined,
-  GlobalOutlined,
-  RightOutlined,
-  GiftOutlined,
-  ThunderboltOutlined,
-  StarOutlined,
-} from '@ant-design/icons';
-import { AntdProvider } from '@/providers/AntdProvider';
+import Script from 'next/script';
+import { Layout, Input, Tag, Space, Row, Col, Button, Avatar, Badge, message, FloatButton, Card } from 'antd';
+import { SearchOutlined, ShopOutlined, CopyOutlined, GlobalOutlined } from '@ant-design/icons';
 import { AdSlot, SponsoredBadge } from '@/components/AdSlot';
-import type { Store, Coupon, Category } from '@/types';
+import { getFAQJsonLd, getBreadcrumbJsonLd } from '@/lib/seo';
 
-const { Header, Content, Footer } = Layout;
-const { Title, Text, Paragraph } = Typography;
-const { Meta } = Card;
+const { Content, Footer } = Layout;
 
-// Fetch data hook
 function useData() {
-  const [stores, setStores] = useState<Store[]>([]);
-  const [coupons, setCoupons] = useState<Coupon[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [stores, setStores] = useState<any[]>([]);
+  const [coupons, setCoupons] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [stats, setStats] = useState({ stores: 0, coupons: 0, saved: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     Promise.all([
-      fetch('/api/v1/stores').then(r => r.json()),
-      fetch('/api/v1/coupons').then(r => r.json()),
-    ]).then(([storeRes, couponRes]) => {
-      setStores(storeRes.data || []);
-      setCoupons(couponRes.data || []);
-      
-      // Build categories
-      const catMap = new Map<string, Category>();
-      (storeRes.data || []).forEach((s: Store) => {
-        const existing = catMap.get(s.category);
-        if (existing) {
-          existing.count++;
-        } else {
-          catMap.set(s.category, {
-            name: s.category,
-            nameZh: s.categoryZh,
-            icon: getCategoryIcon(s.category),
-            count: 1,
-          });
-        }
-      });
-      setCategories(Array.from(catMap.values()));
+      fetch('/api/v1/stores').then(r => r.json()).catch(() => ({ data: [], total: 0 })),
+      fetch('/api/v1/coupons').then(r => r.json()).catch(() => ({ data: [], total: 0 })),
+      fetch('/api/v1/categories').then(r => r.json()).catch(() => ({ data: [], total: 0 })),
+    ]).then(([s, c, cat]) => {
+      setStores(s.data || []);
+      setCoupons(c.data || []);
+      setCategories(cat.data || []);
+      setStats({ stores: s.total || s.data?.length || 0, coupons: c.total || c.data?.length || 0, saved: 15000 });
       setLoading(false);
     });
   }, []);
 
-  return { stores, coupons, categories, loading };
+  return { stores, coupons, categories, stats, loading };
 }
 
-function getCategoryIcon(category: string): string {
-  const icons: Record<string, string> = {
-    shopping: '🛍️',
-    fashion: '👗',
-    electronics: '📱',
-    ai: '🤖',
-    hosting: '🌐',
-  };
-  return icons[category] || '🏪';
-}
-
-function getCategoryLabel(cat: Category, lang: string): string {
-  return lang === 'zh' ? cat.nameZh : cat.name;
-}
-
-// Main Homepage Component
-function HomePageContent() {
-  const { stores, coupons, categories, loading } = useData();
+export default function HomePage() {
+  const { stores, coupons, categories, stats, loading } = useData();
   const [lang, setLang] = useState<'zh' | 'en'>('zh');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedCat, setSelectedCat] = useState('all');
   const [searchText, setSearchText] = useState('');
 
   const t = (zh: string, en: string) => lang === 'zh' ? zh : en;
 
-  const filteredStores = (selectedCategory === 'all'
-    ? stores
-    : stores.filter(s => s.category === selectedCategory)
-  ).sort((a, b) => ((b as any).featured ? 1 : 0) - ((a as any).featured ? 1 : 0));
+  const filtered = stores.filter(s => {
+    if (selectedCat !== 'all' && s.category !== selectedCat) return false;
+    if (searchText && !s.name.toLowerCase().includes(searchText.toLowerCase())) return false;
+    return true;
+  }).sort((a, b) => ((b as any).featured ? 1 : 0) - ((a as any).featured ? 1 : 0));
 
-  const featuredCoupons = coupons.filter(c => c.featured);
+  const faqJsonLd = getFAQJsonLd();
 
   return (
     <Layout className="min-h-screen">
-      {/* Enterprise Header */}
-      <Header
-        className="site-header"
-        style={{
-          background: '#fff',
-          padding: '0 24px',
-          position: 'sticky',
-          top: 0,
-          zIndex: 100,
-          boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          height: 64,
-        }}
-      >
-        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ fontSize: 28 }}>🎉</span>
+      {/* SEO: FAQ JSON-LD */}
+      <Script id="faq-jsonld" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
+
+      {/* ===== HEADER ===== */}
+      <header className="site-header">
+        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
+          <span style={{ fontSize: 24 }}>🎉</span>
           <div>
-            <div className="logo-text" style={{ fontSize: 20, fontWeight: 'bold', color: '#ff6b35', lineHeight: 1.2 }}>
+            <div style={{ fontSize: 18, fontWeight: 700, color: '#ff6b35', lineHeight: 1.2 }}>
               {t('快乐省省', 'HappySave')}
             </div>
-            <div className="logo-sub" style={{ fontSize: 11, color: '#999' }}>
-              {t('全球优惠券平台', 'Global Coupons & Deals')}
+            <div className="desktop-only" style={{ fontSize: 11, color: '#999' }}>
+              {t('全球优惠券平台', 'Global Coupons')}
             </div>
           </div>
         </Link>
 
-        <Space className="actions-desktop" size="middle">
+        <Space className="desktop-only" size="middle">
           <Input
-            className="search-desktop"
-            placeholder={t('搜索商家或优惠码...', 'Search stores or coupons...')}
+            placeholder={t('搜索商家或优惠码...', 'Search...')}
             prefix={<SearchOutlined />}
             style={{ width: 280, borderRadius: 20 }}
             value={searchText}
             onChange={e => setSearchText(e.target.value)}
+            allowClear
           />
-          <Button
-            icon={<GlobalOutlined />}
-            onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}
-          >
+          <Button icon={<GlobalOutlined />} onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}>
             {lang === 'zh' ? 'EN' : '中文'}
           </Button>
-          <Link href="/admin">
-            <Button type="primary">{t('管理后台', 'Admin')}</Button>
-          </Link>
+          <Link href="/admin"><Button type="primary">{t('管理', 'Admin')}</Button></Link>
         </Space>
-      </Header>
 
-      <Content>
-        {/* Hero Section */}
-        <div
-          className="hero-section"
-          style={{
-            background: 'linear-gradient(135deg, #ff6b35 0%, #ff8555 50%, #ff6b6b 100%)',
-            padding: '80px 24px',
-            textAlign: 'center',
-            color: '#fff',
-          }}
-        >
-          <Title level={1} style={{ color: '#fff', marginBottom: 16, fontSize: 48 }}>
-            {t('全球省钱，快乐购物', 'Save Big, Shop Global')}
-          </Title>
-          <Paragraph style={{ color: 'rgba(255,255,255,0.9)', fontSize: 18, maxWidth: 600, margin: '0 auto 32px' }}>
-            {t(
-              '发现全球品牌独家优惠码和折扣信息，每日更新，帮你省钱购物。',
-              'Discover exclusive coupons from top global brands. Updated daily.'
-            )}
-          </Paragraph>
-          
-          {/* Stats Row */}
-          <Row gutter={32} justify="center">
-            <Col>
-              <Statistic
-                title={<span style={{ color: 'rgba(255,255,255,0.8)' }}>{t('商家', 'Stores')}</span>}
-                value={stores.length}
-                suffix="+"
-                valueStyle={{ color: '#fff', fontSize: 32 }}
-              />
-            </Col>
-            <Col>
-              <Statistic
-                title={<span style={{ color: 'rgba(255,255,255,0.8)' }}>{t('优惠码', 'Coupons')}</span>}
-                value={coupons.length}
-                suffix="+"
-                valueStyle={{ color: '#fff', fontSize: 32 }}
-              />
-            </Col>
-            <Col>
-              <Statistic
-                title={<span style={{ color: 'rgba(255,255,255,0.8)' }}>{t('分类', 'Categories')}</span>}
-                value={categories.length}
-                valueStyle={{ color: '#fff', fontSize: 32 }}
-              />
-            </Col>
-          </Row>
+        {/* Mobile: Language + Admin */}
+        <div className="mobile-only" style={{ display: 'flex', gap: 8 }}>
+          <Button size="small" onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}>
+            {lang === 'zh' ? 'EN' : '中'}
+          </Button>
+          <Link href="/admin"><Button size="small" type="primary">{t('管理', 'Admin')}</Button></Link>
         </div>
+      </header>
 
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '40px 24px' }}>
-          {/* Featured Coupons */}
-          <Title level={3} style={{ marginBottom: 24 }}>
-            <FireOutlined style={{ color: '#ff6b35', marginRight: 8 }} />
-            {t('热门优惠', 'Featured Deals')}
-          </Title>
-          
-          <Row gutter={[16, 16]}>
-            {featuredCoupons.map(coupon => {
-              const store = stores.find(s => s.id === coupon.storeId);
-              return (
-                <Col xs={24} md={12} lg={8} key={coupon.id}>
-                  <Card
-                    className="coupon-card"
-                    hoverable
-                    actions={[
-                      <Link href={`/store/${store?.slug}?coupon=${coupon.id}`} key="get">
-                        <Button type="primary" icon={<GiftOutlined />}>
-                          {t('获取优惠', 'Get Deal')}
-                        </Button>
-                      </Link>,
-                    ]}
-                  >
-                    <Meta
-                      avatar={
-                        <Avatar size={48} style={{ backgroundColor: '#fff2e8', color: '#ff6b35' }}>
-                          {store?.name.charAt(0) || 'S'}
-                        </Avatar>
-                      }
-                      title={
-                        <Space>
-                          <Text strong>{store?.name}</Text>
-                          <Tag color="orange">{coupon.discount}</Tag>
-                        </Space>
-                      }
-                      description={lang === 'zh' ? coupon.titleZh : coupon.title}
-                    />
-                    
-                    {coupon.code && (
-                      <div style={{ marginTop: 16, display: 'flex', gap: 8 }}>
-                        <Input
-                          value={coupon.code}
-                          readOnly
-                          style={{ fontFamily: 'monospace', fontWeight: 'bold', textAlign: 'center' }}
-                        />
-                        <Button
-                          icon={<CopyOutlined />}
-                          onClick={() => navigator.clipboard.writeText(coupon.code!)}
-                        />
-                      </div>
-                    )}
-                    
-                    <div style={{ marginTop: 12, display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#999' }}>
-                      <span>👆 {coupon.clickCount.toLocaleString()} {t('次使用', 'used')}</span>
-                      <Tag color={coupon.verified ? 'green' : 'default'}>
-                        {coupon.verified ? t('已验证', 'Verified') : t('未验证', 'Unverified')}
-                      </Tag>
-                    </div>
-                  </Card>
-                </Col>
-              );
-            })}
-          </Row>
-
-          <Divider />
-
-          {/* Categories */}
-          <Title level={3} style={{ marginBottom: 24 }}>
-            <TagOutlined style={{ color: '#ff6b35', marginRight: 8 }} />
-            {t('按分类浏览', 'Browse by Category')}
-          </Title>
-          
-          <Space wrap size="middle" className="category-scroll" style={{ marginBottom: 32 }} id="stores">
-            <Button
-              type={selectedCategory === 'all' ? 'primary' : 'default'}
-              size="large"
-              onClick={() => setSelectedCategory('all')}
-            >
-              {t('全部', 'All')} ({stores.length})
-            </Button>
-            {categories.map(cat => (
-              <Button
-                key={cat.name}
-                type={selectedCategory === cat.name ? 'primary' : 'default'}
-                size="large"
-                onClick={() => setSelectedCategory(cat.name)}
-              >
-                {cat.icon} {getCategoryLabel(cat, lang)} ({cat.count})
-              </Button>
-            ))}
-          </Space>
-
-          {/* Store Grid */}
-          <Title level={3} style={{ marginBottom: 24 }}>
-            <ShopOutlined style={{ color: '#ff6b35', marginRight: 8 }} />
-            {t('所有商家', 'All Stores')}
-          </Title>
-          
-          <Row gutter={[16, 16]} className="store-grid">
-            {filteredStores.map(store => (
-              <Col xs={12} sm={8} md={6} lg={4} key={store.id}>
-                <Link href={`/store/${store.slug}`}>
-                  <Card
-                    hoverable
-                    style={{ textAlign: 'center', position: 'relative' }}
-                    bodyStyle={{ padding: '20px 12px' }}
-                  >
-                    {(store as any).featured && (
-                      <div style={{ position: 'absolute', top: 8, right: 8 }}>
-                        <SponsoredBadge />
-                      </div>
-                    )}
-                    <Avatar size={64} style={{ backgroundColor: '#fff2e8', color: '#ff6b35', fontSize: 28, marginBottom: 12 }}>
-                      {store.name.charAt(0)}
-                    </Avatar>
-                    <div style={{ fontWeight: 600 }}>{store.name}</div>
-                    <Text type="secondary" style={{ fontSize: 12 }}>
-                      {lang === 'zh' ? store.categoryZh : store.category}
-                    </Text>
-                    <div style={{ marginTop: 8 }}>
-                      <Badge
-                        count={coupons.filter(c => c.storeId === store.id).length}
-                        style={{ backgroundColor: '#ff6b35' }}
-                        showZero
-                      >
-                        <Tag>{t('优惠', 'deals')}</Tag>
-                      </Badge>
-                    </div>
-                  </Card>
-                </Link>
-              </Col>
-            ))}
-          </Row>
-        </div>
-      </Content>
-
-      {/* 广告位 */}
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '24px' }}>
-        <AdSlot type="banner" label="横幅广告" />
+      {/* ===== MOBILE SEARCH ===== */}
+      <div className="mobile-search">
+        <Input
+          placeholder={t('搜索商家或优惠码...', 'Search stores...')}
+          prefix={<SearchOutlined />}
+          style={{ borderRadius: 20 }}
+          value={searchText}
+          onChange={e => setSearchText(e.target.value)}
+          allowClear
+          size="large"
+        />
       </div>
 
-      {/* SEO FAQ Section */}
-      <div className="faq-section page-content" style={{ maxWidth: 1200, margin: '0 auto', padding: '48px 24px' }}>
-        <Title level={2} style={{ textAlign: 'center', marginBottom: 32 }}>
-          ❓ {t('常见问题', 'Frequently Asked Questions')}
-        </Title>
-        <Row gutter={[24, 24]}>
-          <Col xs={24} md={12}>
-            <Card>
-              <Title level={5}>🤔 {t('如何使用优惠码？', 'How to use coupon codes?')}</Title>
-              <Paragraph type="secondary">
-                {t('找到想要的优惠码，点击复制后前往商家官网，在结账页面粘贴优惠码即可享受折扣。', 'Find a coupon, copy it, paste at checkout on the merchant\'s website.')}
-              </Paragraph>
-            </Card>
-          </Col>
-          <Col xs={24} md={12}>
-            <Card>
-              <Title level={5}>💰 {t('优惠码是免费的吗？', 'Are coupons free?')}</Title>
-              <Paragraph type="secondary">
-                {t('是的！快乐省省所有优惠码完全免费使用，无需注册。', 'Yes! All coupons on HappySave are completely free, no registration required.')}
-              </Paragraph>
-            </Card>
-          </Col>
-          <Col xs={24} md={12}>
-            <Card>
-              <Title level={5}>⏰ {t('优惠码过期了怎么办？', 'What if a coupon expires?')}</Title>
-              <Paragraph type="secondary">
-                {t('我们会每日更新优惠码。如果某个优惠码失效，请查看该商家页面获取最新优惠。', 'We update coupons daily. Check the store page for the latest deals.')}
-              </Paragraph>
-            </Card>
-          </Col>
-          <Col xs={24} md={12}>
-            <Card>
-              <Title level={5}>🌍 {t('支持哪些商家？', 'Which merchants are supported?')}</Title>
-              <Paragraph type="secondary">
-                {t('我们覆盖50+全球品牌，包括Temu、SHEIN、Nike、Amazon、Adidas等热门商家。', 'We cover 50+ global brands including Temu, SHEIN, Nike, Amazon, Adidas and more.')}
-              </Paragraph>
-            </Card>
-          </Col>
+      {/* ===== HERO ===== */}
+      <section className="hero">
+        <h1>{t('全球省钱，快乐购物', 'Save Big, Shop Global')}</h1>
+        <p>{t('发现50+全球品牌独家优惠码，每日更新，帮你省钱购物。', 'Discover exclusive coupons from 50+ global brands. Updated daily.')}</p>
+        <div className="hero-stats">
+          <div className="hero-stat">
+            <div className="hero-stat-value">{stats.stores}+</div>
+            <div className="hero-stat-label">{t('商家', 'Stores')}</div>
+          </div>
+          <div className="hero-stat">
+            <div className="hero-stat-value">{stats.coupons}+</div>
+            <div className="hero-stat-label">{t('优惠码', 'Coupons')}</div>
+          </div>
+          <div className="hero-stat">
+            <div className="hero-stat-value">¥{Math.floor(stats.saved / 1000)}K+</div>
+            <div className="hero-stat-label">{t('已省金额', 'Saved')}</div>
+          </div>
+        </div>
+      </section>
+
+      {/* ===== CATEGORY BAR ===== */}
+      <div className="category-bar" id="stores">
+        <button className={`cat-chip ${selectedCat === 'all' ? 'active' : ''}`} onClick={() => setSelectedCat('all')}>
+          🔥 {t('全部', 'All')}
+        </button>
+        {categories.map((cat: any) => (
+          <button key={cat.id} className={`cat-chip ${selectedCat === cat.name ? 'active' : ''}`} onClick={() => setSelectedCat(cat.name)}>
+            {cat.icon} {lang === 'zh' ? cat.nameZh : cat.name}
+          </button>
+        ))}
+      </div>
+
+      {/* ===== STORE GRID ===== */}
+      <section className="store-grid main-content">
+        <h2 style={{ margin: '0 4px 12px', fontSize: 17 }}>
+          <ShopOutlined style={{ color: '#ff6b35' }} /> {t('热门商家', 'Popular Stores')}
+        </h2>
+        <Row gutter={[8, 8]}>
+          {filtered.map((store: any) => (
+            <Col xs={8} sm={6} md={4} lg={3} key={store.id}>
+              <Link href={`/store/${store.slug}`} style={{ textDecoration: 'none' }}>
+                <div className="store-card">
+                  {store.featured && <div className="store-badge">⭐ {t('推荐', 'Featured')}</div>}
+                  <div className="store-avatar">
+                    {store.name.charAt(0)}
+                  </div>
+                  <div className="store-name">{store.name}</div>
+                  <div className="store-cat">{lang === 'zh' ? store.categoryZh : store.category}</div>
+                  <Badge count={coupons.filter((c: any) => c.storeId === store.id).length} showZero
+                    style={{ marginTop: 6, backgroundColor: '#ff6b35', fontSize: 11 }}
+                  >
+                    <Tag style={{ fontSize: 10, height: 20, lineHeight: '18px', padding: '0 6px' }}>{t('优惠', 'deals')}</Tag>
+                  </Badge>
+                </div>
+              </Link>
+            </Col>
+          ))}
         </Row>
+      </section>
+
+      {/* ===== AD ===== */}
+      <div className="ad-section">
+        <AdSlot type="banner" />
       </div>
 
-      {/* 邮件订阅 */}
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px 48px' }}>
-        <Card style={{ background: '#fafafa', border: '1px solid #f0f0f0', textAlign: 'center' }}>
-          <Title level={3} style={{ marginBottom: 8 }}>📬 {t('订阅优惠推送', 'Get Deal Alerts')}</Title>
-          <Paragraph type="secondary">
-            {t('每周精选最热优惠码，不错过任何省钱机会。已有 1,200+ 用户订阅。', 'Weekly top deals delivered. Join 1,200+ subscribers.')}
-          </Paragraph>
-          <Space.Compact style={{ maxWidth: 400, margin: '16px auto 0', display: 'flex' }}>
-            <Input placeholder={t('输入邮箱地址...', 'Enter your email...')} type="email" id="subEmail" />
-            <Button type="primary" style={{ background: '#ff6b35', border: 'none' }} onClick={() => {
-              const email = (document.getElementById('subEmail') as HTMLInputElement)?.value;
-              if (email) {
-                fetch('/api/v1/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, action: 'subscribe' }) })
-                  .then(r => r.json()).then(d => { if (d.success) alert(t('订阅成功！', 'Subscribed!')); });
+      {/* ===== SUBSCRIBE ===== */}
+      <section style={{ maxWidth: 1200, margin: '24px auto', padding: '0 16px' }}>
+        <div className="subscribe-section">
+          <h2 style={{ fontSize: 20, marginBottom: 8 }}>📬 {t('订阅优惠推送', 'Get Deal Alerts')}</h2>
+          <p style={{ marginBottom: 16 }}>{t('每周精选最热优惠码，不错过任何省钱机会。', 'Weekly top deals delivered straight to your inbox.')}</p>
+          <Space.Compact style={{ maxWidth: 400, margin: '0 auto', display: 'flex' }}>
+            <Input placeholder={t('输入邮箱...', 'Your email...')} type="email" id="subEmail" size="large" />
+            <Button type="primary" size="large" style={{ background: '#ff6b35', border: 'none' }} onClick={() => {
+              const el = document.getElementById('subEmail') as HTMLInputElement;
+              if (el?.value) {
+                fetch('/api/v1/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: el.value, action: 'subscribe' }) })
+                  .then(r => r.json()).then(d => { if (d.success) message.success(t('订阅成功！🎉', 'Subscribed! 🎉')); });
               }
             }}>
               {t('订阅', 'Subscribe')}
             </Button>
           </Space.Compact>
-        </Card>
-      </div>
+        </div>
+      </section>
 
-      {/* 商务合作 - Advertise */}
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px 48px' }}>
-        <Card style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', border: 'none' }}>
-          <Row align="middle" gutter={32}>
-            <Col xs={24} md={16}>
-              <Title level={3} style={{ color: '#fff', margin: 0 }}>
-                📢 {t('商务合作 / 广告投放', 'Advertise With Us')}
-              </Title>
-              <Paragraph style={{ color: 'rgba(255,255,255,0.85)', fontSize: 16, marginTop: 12 }}>
-                {t(
-                  '面向全球海淘用户，日均 UV 10,000+。支持首页推荐位、商家列表置顶、优惠码Banner等多种合作形式。',
-                  'Reach global shoppers. Support featured placement, banner ads, and more.'
-                )}
-              </Paragraph>
-            </Col>
-            <Col xs={24} md={8} style={{ textAlign: 'center' }}>
-              <Button type="primary" size="large" href="mailto:partner@happysave.vercel.app"
-                style={{ background: '#fff', color: '#764ba2', border: 'none', fontWeight: 600, fontSize: 16, padding: '8px 32px' }}>
-                {t('立即咨询', 'Contact Us')} →
-              </Button>
-            </Col>
-          </Row>
-        </Card>
-      </div>
+      {/* ===== FAQ ===== */}
+      <section style={{ maxWidth: 1200, margin: '0 auto', padding: '0 16px 24px' }}>
+        <h2 style={{ marginBottom: 16 }}>❓ {t('常见问题', 'FAQ')}</h2>
+        <div className="faq-grid">
+          {[
+            { q: t('如何使用优惠码？', 'How to use coupons?'), a: t('找到优惠码→点击复制→前往商家官网→结账时粘贴即可。', 'Find a coupon → Copy → Visit store → Paste at checkout.') },
+            { q: t('优惠码免费吗？', 'Are coupons free?'), a: t('全部免费！快乐省省所有优惠码无需注册即可使用。', 'Yes! All coupons are completely free, no registration needed.') },
+            { q: t('优惠码过期怎么办？', 'Expired coupon?'), a: t('我们会每日更新优惠码，查看该商家页面获取最新优惠。', 'We update daily. Check the store page for the latest deals.') },
+            { q: t('怎么成为合作商家？', 'Partner with us?'), a: t('访问 /advertise 页面，查看合作方案并联系我们。', 'Visit /advertise to see partnership options and contact us.') },
+          ].map((faq, i) => (
+            <div className="faq-item" key={i}>
+              <div className="faq-q">{faq.q}</div>
+              <div className="faq-a">{faq.a}</div>
+            </div>
+          ))}
+        </div>
+      </section>
 
-      {/* SEO 内链 */}
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px 48px' }}>
-        <Title level={4}>{t('热门商家优惠码', 'Popular Store Coupons')}</Title>
+      {/* ===== CTA Banner ===== */}
+      <section style={{ maxWidth: 1200, margin: '0 auto', padding: '0 16px 32px' }}>
+        <div className="cta-banner">
+          <h2 style={{ color: '#fff', fontSize: 20, marginBottom: 8 }}>📢 {t('商务合作 / 广告投放', 'Advertise With Us')}</h2>
+          <p style={{ color: 'rgba(255,255,255,0.85)', marginBottom: 16 }}>
+            {t('面向全球海淘用户，支持首页推荐位、商家列表置顶、优惠码Banner等多种合作形式。', 'Reach global shoppers with featured placements, banners, and more.')}
+          </p>
+          <Button type="primary" size="large" href="/advertise"
+            style={{ background: '#fff', color: '#764ba2', border: 'none', fontWeight: 600 }}>
+            {t('查看合作方案', 'View Plans')} →
+          </Button>
+        </div>
+      </section>
+
+      {/* ===== SEO: Internal Links ===== */}
+      <section style={{ maxWidth: 1200, margin: '0 auto', padding: '0 16px 48px' }}>
+        <h2 style={{ fontSize: 16, marginBottom: 12 }}>🏷️ {t('热门搜索', 'Popular Searches')}</h2>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          {stores.slice(0, 20).map(store => (
-            <Link key={store.id} href={`/store/${store.slug}`}>
-              <Tag style={{ padding: '4px 12px', fontSize: 14, cursor: 'pointer' }}>
-                {store.name} {t('优惠码', 'coupons')}
+          {stores.slice(0, 20).map(s => (
+            <Link key={s.id} href={`/store/${s.slug}`}>
+              <Tag style={{ padding: '4px 12px', fontSize: 13, cursor: 'pointer', marginBottom: 4 }}>
+                {s.name} {t('优惠码', 'coupons')}
               </Tag>
             </Link>
           ))}
         </div>
-      </div>
+      </section>
 
-      <Footer
-        style={{
-          background: '#001529',
-          color: 'rgba(255,255,255,0.65)',
-          padding: '48px 24px',
-        }}
-      >
+      {/* ===== FOOTER ===== */}
+      <footer className="site-footer">
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <Row gutter={[32, 32]}>
+          <Row gutter={[24, 24]}>
             <Col xs={24} md={8}>
-              <Title level={4} style={{ color: '#fff' }}>
-                🎉 {t('快乐省省', 'HappySave')}
-              </Title>
-              <Paragraph style={{ color: 'rgba(255,255,255,0.65)' }}>
-                {t(
-                  '你值得信赖的全球优惠券平台。每一次购物都能省钱。',
-                  'Your trusted global coupon platform. Save on every purchase.'
-                )}
-              </Paragraph>
+              <h3 style={{ color: '#fff', fontSize: 18, marginBottom: 8 }}>🎉 {t('快乐省省', 'HappySave')}</h3>
+              <p>{t('你值得信赖的全球优惠券平台。', 'Your trusted global coupon platform.')}</p>
             </Col>
             <Col xs={24} md={8}>
-              <Title level={5} style={{ color: '#fff' }}>{t('快速链接', 'Quick Links')}</Title>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <Link href="/" style={{ color: 'rgba(255,255,255,0.65)' }}>{t('首页', 'Home')}</Link>
-                <Link href="/admin" style={{ color: 'rgba(255,255,255,0.65)' }}>{t('管理后台', 'Admin')}</Link>
+              <h4 style={{ color: '#fff', fontSize: 14, marginBottom: 8 }}>{t('快速链接', 'Links')}</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <Link href="/advertise" style={{ color: 'rgba(255,255,255,0.65)' }}>{t('商务合作', 'Advertise')}</Link>
+                <Link href="/privacy" style={{ color: 'rgba(255,255,255,0.65)' }}>{t('隐私政策', 'Privacy')}</Link>
+                <Link href="/terms" style={{ color: 'rgba(255,255,255,0.65)' }}>{t('使用条款', 'Terms')}</Link>
               </div>
             </Col>
             <Col xs={24} md={8}>
-              <Title level={5} style={{ color: '#fff' }}>{t('联系我们', 'Contact')}</Title>
-              <Paragraph style={{ color: 'rgba(255,255,255,0.65)' }}>
-                {t('商务合作', 'Partnership')}: partner@happysave.cn
-              </Paragraph>
+              <h4 style={{ color: '#fff', fontSize: 14, marginBottom: 8 }}>{t('联系我们', 'Contact')}</h4>
+              <p>📧 partner@happysave.vercel.app</p>
             </Col>
           </Row>
-          <Divider style={{ borderColor: 'rgba(255,255,255,0.2)' }} />
-          <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.45)' }}>
+          <div style={{ textAlign: 'center', marginTop: 32, paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.15)', fontSize: 12 }}>
             © 2026 {t('快乐省省', 'HappySave')}. {t('保留所有权利', 'All rights reserved')}.
           </div>
         </div>
-      </Footer>
+      </footer>
 
-      {/* Back to top */}
-      <FloatButton.BackTop />
-
-      {/* Mobile Bottom Navigation */}
-      <nav className="mobile-bottom-nav">
+      {/* ===== MOBILE BOTTOM NAV ===== */}
+      <nav className="bottom-nav">
         <Link href="/" className="nav-item active">
-          <span className="nav-icon">🏠</span>
-          {t('首页', 'Home')}
+          <span className="nav-icon">🏠</span>{t('首页', 'Home')}
         </Link>
         <Link href="/#stores" className="nav-item">
-          <span className="nav-icon">🏪</span>
-          {t('商家', 'Stores')}
-        </Link>
-        <Link href="/#coupons" className="nav-item">
-          <span className="nav-icon">🏷️</span>
-          {t('优惠', 'Deals')}
+          <span className="nav-icon">🏪</span>{t('商家', 'Stores')}
         </Link>
         <Link href="/advertise" className="nav-item">
-          <span className="nav-icon">📢</span>
-          {t('合作', 'Partner')}
+          <span className="nav-icon">📢</span>{t('合作', 'Partner')}
         </Link>
         <Link href="/admin" className="nav-item">
-          <span className="nav-icon">⚙️</span>
-          {t('管理', 'Admin')}
+          <span className="nav-icon">⚙️</span>{t('管理', 'Admin')}
         </Link>
       </nav>
 
-      {/* Mobile Search Bar */}
-      <div className="mobile-search-float">
-        <Input
-          placeholder={t('搜索商家或优惠码...', 'Search stores or coupons...')}
-          prefix={<SearchOutlined />}
-          style={{ borderRadius: 20 }}
-          value={searchText}
-          onChange={e => setSearchText(e.target.value)}
-          size="large"
-        />
-      </div>
+      <FloatButton.BackTop />
     </Layout>
-  );
-}
-
-export default function HomePage() {
-  return (
-    <AntdProvider>
-      <HomePageContent />
-    </AntdProvider>
   );
 }
