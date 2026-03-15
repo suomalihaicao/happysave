@@ -119,8 +119,12 @@ export async function initTiDB() {
       country VARCHAR(10) DEFAULT '',
       device VARCHAR(20) DEFAULT '',
       timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      utmSource VARCHAR(100) DEFAULT '',
+      utmMedium VARCHAR(100) DEFAULT '',
+      utmCampaign VARCHAR(100) DEFAULT '',
       INDEX idx_storeId (storeId),
-      INDEX idx_timestamp (timestamp)
+      INDEX idx_timestamp (timestamp),
+      INDEX idx_utmSource (utmSource)
     )
   `);
   
@@ -427,9 +431,29 @@ export const tidb = {
   async logClick(data: any) {
     const id = 'cl-' + Math.random().toString(36).substring(2, 15);
     const device = /mobile/i.test(data.userAgent || '') ? 'mobile' : /tablet/i.test(data.userAgent || '') ? 'tablet' : 'desktop';
-    await tidb.query('INSERT INTO click_logs (id, shortCode, storeId, couponId, ip, userAgent, referer, device) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [id, data.shortCode || '', data.storeId || '', data.couponId || '', data.ip || '', data.userAgent || '', data.referer || '', device]);
+    await tidb.query('INSERT INTO click_logs (id, shortCode, storeId, couponId, ip, userAgent, referer, device, utmSource, utmMedium, utmCampaign) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [id, data.shortCode || '', data.storeId || '', data.couponId || '', data.ip || '', data.userAgent || '', data.referer || '', device, data.utmSource || '', data.utmMedium || '', data.utmCampaign || '']);
     if (data.storeId) await tidb.query('UPDATE stores SET clickCount = clickCount + 1 WHERE id = ?', [data.storeId]);
     return id;
+  },
+
+  // ===== 运营统计 =====
+  async getClickStats({ days = 7, storeId }: { days?: number; storeId?: string }) {
+    const since = new Date(Date.now() - days * 86400000).toISOString().slice(0, 19).replace('T', ' ');
+    const where = storeId ? 'AND cl.storeId = ?' : '';
+    const params = storeId ? [since, storeId] : [since];
+    
+    const totalRes = await tidb.query(`SELECT COUNT(*) as cnt FROM click_logs cl WHERE cl.timestamp >= ? ${where}`, params);
+    const byDevice = await tidb.query(`SELECT cl.device, COUNT(*) as cnt FROM click_logs cl WHERE cl.timestamp >= ? ${where} GROUP BY cl.device ORDER BY cnt DESC`, params);
+    const byReferer = await tidb.query(`SELECT CASE WHEN cl.referer = '' THEN '直接访问' ELSE cl.referer END as source, COUNT(*) as cnt FROM click_logs cl WHERE cl.timestamp >= ? ${where} GROUP BY source ORDER BY cnt DESC LIMIT 20`, params);
+    const byDay = await tidb.query(`SELECT DATE(cl.timestamp) as day, COUNT(*) as cnt FROM click_logs cl WHERE cl.timestamp >= ? ${where} GROUP BY day ORDER BY day DESC`, params);
+    const byStore = await tidb.query(`SELECT s.name, COUNT(cl.id) as cnt FROM click_logs cl LEFT JOIN stores s ON cl.storeId = s.id WHERE cl.timestamp >= ? ${where} GROUP BY cl.storeId ORDER BY cnt DESC LIMIT 10`, params);
+    const byUTMSource = await tidb.query(`SELECT CASE WHEN cl.utmSource = '' THEN '直接' ELSE cl.utmSource END as source, COUNT(*) as cnt FROM click_logs cl WHERE cl.timestamp >= ? ${where} AND cl.utmSource != '' GROUP BY source ORDER BY cnt DESC LIMIT 10`, params);
+
+    return {
+      totalClicks: totalRes?.[0]?.cnt || 0,
+      byDevice, byReferer, byDay, byStore, byUTMSource,
+      period: `${days}天`,
+    };
   },
 
   // ===== Categories =====

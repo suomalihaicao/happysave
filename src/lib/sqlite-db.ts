@@ -28,6 +28,7 @@ type ClickLog = {
   id: string; shortCode: string; storeId: string; couponId: string;
   ip: string; userAgent: string; referer: string; country: string;
   device: string; timestamp: string;
+  utmSource: string; utmMedium: string; utmCampaign: string;
 };
 
 type Category = { id: string; name: string; nameZh: string; icon: string; sortOrder: number };
@@ -251,7 +252,8 @@ if (dbType === 'sqlite' && sqliteDb) {
     CREATE TABLE IF NOT EXISTS click_logs (
       id TEXT PRIMARY KEY, shortCode TEXT, storeId TEXT, couponId TEXT,
       ip TEXT DEFAULT '', userAgent TEXT DEFAULT '', referer TEXT DEFAULT '',
-      country TEXT DEFAULT '', device TEXT DEFAULT '', timestamp TEXT DEFAULT (datetime('now'))
+      country TEXT DEFAULT '', device TEXT DEFAULT '', timestamp TEXT DEFAULT (datetime('now')),
+      utmSource TEXT DEFAULT '', utmMedium TEXT DEFAULT '', utmCampaign TEXT DEFAULT ''
     );
     CREATE TABLE IF NOT EXISTS categories (
       id TEXT PRIMARY KEY, name TEXT NOT NULL, nameZh TEXT DEFAULT '',
@@ -531,16 +533,70 @@ export const database = {
     const id = genId();
     const now = new Date().toISOString();
     const device = /mobile/i.test(data.userAgent || '') ? 'mobile' : /tablet/i.test(data.userAgent || '') ? 'tablet' : 'desktop';
-    const log: ClickLog = { id, shortCode: data.shortCode || '', storeId: data.storeId || '', couponId: data.couponId || '', ip: data.ip || '', userAgent: data.userAgent || '', referer: data.referer || '', country: data.country || '', device, timestamp: now };
+    const log: ClickLog = { id, shortCode: data.shortCode || '', storeId: data.storeId || '', couponId: data.couponId || '', ip: data.ip || '', userAgent: data.userAgent || '', referer: data.referer || '', country: data.country || '', device, timestamp: now, utmSource: data.utmSource || '', utmMedium: data.utmMedium || '', utmCampaign: data.utmCampaign || '' };
 
     if (dbType === 'sqlite') {
-      sqliteDb.prepare('INSERT INTO click_logs VALUES (?,?,?,?,?,?,?,?,?,?)').run(log.id, log.shortCode, log.storeId, log.couponId, log.ip, log.userAgent, log.referer, log.country, log.device, log.timestamp);
+      sqliteDb.prepare('INSERT INTO click_logs VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)').run(log.id, log.shortCode, log.storeId, log.couponId, log.ip, log.userAgent, log.referer, log.country, log.device, log.timestamp, log.utmSource, log.utmMedium, log.utmCampaign);
       if (data.storeId) sqliteDb.prepare('UPDATE stores SET clickCount = clickCount + 1 WHERE id = ?').run(data.storeId);
     } else {
       memory.clickLogs.push(log);
       if (data.storeId) { const s = memory.stores.find(s => s.id === data.storeId); if (s) s.clickCount++; }
     }
     return id;
+  },
+
+  // ===== 运营统计 =====
+  getClickStats({ days = 7, storeId }: { days?: number; storeId?: string }) {
+    const since = new Date(Date.now() - days * 86400000).toISOString();
+    
+    if (dbType === 'sqlite') {
+      const where = storeId ? `WHERE cl.storeId = '${storeId}' AND cl.timestamp >= '${since}'` : `WHERE cl.timestamp >= '${since}'`;
+      
+      const totalClicks = sqliteDb.prepare(`SELECT COUNT(*) as cnt FROM click_logs cl ${where}`).get() as any;
+      const byDevice = sqliteDb.prepare(`SELECT cl.device, COUNT(*) as cnt FROM click_logs cl ${where} GROUP BY cl.device ORDER BY cnt DESC`).all();
+      const byReferer = sqliteDb.prepare(`SELECT CASE WHEN cl.referer = '' THEN '直接访问' ELSE cl.referer END as source, COUNT(*) as cnt FROM click_logs cl ${where} GROUP BY source ORDER BY cnt DESC LIMIT 20`).all();
+      const byDay = sqliteDb.prepare(`SELECT DATE(cl.timestamp) as day, COUNT(*) as cnt FROM click_logs cl ${where} GROUP BY day ORDER BY day DESC`).all();
+      const byStore = sqliteDb.prepare(`SELECT s.name, COUNT(cl.id) as cnt FROM click_logs cl LEFT JOIN stores s ON cl.storeId = s.id ${where} GROUP BY cl.storeId ORDER BY cnt DESC LIMIT 10`).all();
+      const byUTMSource = sqliteDb.prepare(`SELECT CASE WHEN cl.utmSource = '' THEN '直接' ELSE cl.utmSource END as source, COUNT(*) as cnt FROM click_logs cl ${where} AND cl.utmSource != '' GROUP BY source ORDER BY cnt DESC LIMIT 10`).all() as any[];
+
+      return {
+        totalClicks: totalClicks?.cnt || 0,
+        byDevice,
+        byReferer,
+        byDay,
+        byStore,
+        byUTMSource,
+        period: `${days}天`,
+      };
+    } else {
+      const logs = memory.clickLogs.filter(l => l.timestamp >= since && (!storeId || l.storeId === storeId));
+      
+      const deviceMap: Record<string, number> = {};
+      const refererMap: Record<string, number> = {};
+      const dayMap: Record<string, number> = {};
+      const storeMap: Record<string, number> = {};
+      const utmSourceMap: Record<string, number> = {};
+      
+      logs.forEach(l => {
+        deviceMap[l.device] = (deviceMap[l.device] || 0) + 1;
+        const ref = l.referer || '直接访问';
+        refererMap[ref] = (refererMap[ref] || 0) + 1;
+        const day = l.timestamp.slice(0, 10);
+        dayMap[day] = (dayMap[day] || 0) + 1;
+        if (l.storeId) storeMap[l.storeId] = (storeMap[l.storeId] || 0) + 1;
+        if (l.utmSource) utmSourceMap[l.utmSource] = (utmSourceMap[l.utmSource] || 0) + 1;
+      });
+      
+      return {
+        totalClicks: logs.length,
+        byDevice: Object.entries(deviceMap).map(([device, cnt]) => ({ device, cnt })).sort((a, b) => b.cnt - a.cnt),
+        byReferer: Object.entries(refererMap).map(([source, cnt]) => ({ source, cnt })).sort((a, b) => b.cnt - a.cnt).slice(0, 20),
+        byDay: Object.entries(dayMap).map(([day, cnt]) => ({ day, cnt })).sort((a, b) => b.day.localeCompare(a.day)),
+        byStore: Object.entries(storeMap).map(([id, cnt]) => ({ name: memory.stores.find(s => s.id === id)?.name || id, cnt })).sort((a, b) => b.cnt - a.cnt).slice(0, 10),
+        byUTMSource: Object.entries(utmSourceMap).map(([source, cnt]) => ({ source, cnt })).sort((a, b) => b.cnt - a.cnt),
+        period: `${days}天`,
+      };
+    }
   },
 
   // ===== Categories =====
