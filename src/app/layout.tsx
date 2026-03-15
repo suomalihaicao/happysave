@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { AntdProvider } from '@/providers/AntdProvider';
+import { Analytics } from '@vercel/analytics/next';
 import { SEO_CONFIG, getWebsiteJsonLd } from '@/lib/seo';
 
 export const metadata: Metadata = {
@@ -73,6 +74,7 @@ export default function RootLayout({
       </head>
       <body>
         <AntdProvider>{children}</AntdProvider>
+        <Analytics />
       </body>
     </html>
   );
