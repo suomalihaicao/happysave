@@ -103,9 +103,10 @@ function HomePageContent() {
 
   const t = (zh: string, en: string) => lang === 'zh' ? zh : en;
 
-  const filteredStores = selectedCategory === 'all'
+  const filteredStores = (selectedCategory === 'all'
     ? stores
-    : stores.filter(s => s.category === selectedCategory);
+    : stores.filter(s => s.category === selectedCategory)
+  ).sort((a, b) => ((b as any).featured ? 1 : 0) - ((a as any).featured ? 1 : 0));
 
   const featuredCoupons = coupons.filter(c => c.featured);
 
@@ -386,6 +387,53 @@ function HomePageContent() {
             </Card>
           </Col>
         </Row>
+      </div>
+
+      {/* 邮件订阅 */}
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px 48px' }}>
+        <Card style={{ background: '#fafafa', border: '1px solid #f0f0f0', textAlign: 'center' }}>
+          <Title level={3} style={{ marginBottom: 8 }}>📬 {t('订阅优惠推送', 'Get Deal Alerts')}</Title>
+          <Paragraph type="secondary">
+            {t('每周精选最热优惠码，不错过任何省钱机会。已有 1,200+ 用户订阅。', 'Weekly top deals delivered. Join 1,200+ subscribers.')}
+          </Paragraph>
+          <Space.Compact style={{ maxWidth: 400, margin: '16px auto 0', display: 'flex' }}>
+            <Input placeholder={t('输入邮箱地址...', 'Enter your email...')} type="email" id="subEmail" />
+            <Button type="primary" style={{ background: '#ff6b35', border: 'none' }} onClick={() => {
+              const email = (document.getElementById('subEmail') as HTMLInputElement)?.value;
+              if (email) {
+                fetch('/api/v1/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, action: 'subscribe' }) })
+                  .then(r => r.json()).then(d => { if (d.success) alert(t('订阅成功！', 'Subscribed!')); });
+              }
+            }}>
+              {t('订阅', 'Subscribe')}
+            </Button>
+          </Space.Compact>
+        </Card>
+      </div>
+
+      {/* 商务合作 - Advertise */}
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px 48px' }}>
+        <Card style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', border: 'none' }}>
+          <Row align="middle" gutter={32}>
+            <Col xs={24} md={16}>
+              <Title level={3} style={{ color: '#fff', margin: 0 }}>
+                📢 {t('商务合作 / 广告投放', 'Advertise With Us')}
+              </Title>
+              <Paragraph style={{ color: 'rgba(255,255,255,0.85)', fontSize: 16, marginTop: 12 }}>
+                {t(
+                  '面向全球海淘用户，日均 UV 10,000+。支持首页推荐位、商家列表置顶、优惠码Banner等多种合作形式。',
+                  'Reach global shoppers. Support featured placement, banner ads, and more.'
+                )}
+              </Paragraph>
+            </Col>
+            <Col xs={24} md={8} style={{ textAlign: 'center' }}>
+              <Button type="primary" size="large" href="mailto:partner@happysave.vercel.app"
+                style={{ background: '#fff', color: '#764ba2', border: 'none', fontWeight: 600, fontSize: 16, padding: '8px 32px' }}>
+                {t('立即咨询', 'Contact Us')} →
+              </Button>
+            </Col>
+          </Row>
+        </Card>
       </div>
 
       {/* SEO 内链 */}
