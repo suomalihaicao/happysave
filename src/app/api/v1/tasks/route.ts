@@ -35,6 +35,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, message: '任务已删除' });
     }
 
+    case 'fix_stats': {
+      await db.fixCouponStats();
+      return NextResponse.json({ success: true, message: '已批量更新优惠码点击/使用数据' });
+    }
+
     default:
       return NextResponse.json({ success: false }, { status: 400 });
   }

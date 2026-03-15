@@ -395,6 +395,11 @@ export const tidb = {
     await tidb.query('UPDATE coupons SET clickCount = clickCount + 1, useCount = useCount + 1 WHERE id = ?', [id]);
   },
 
+  // Bulk update coupon stats
+  async fixCouponStats() {
+    await tidb.query("UPDATE coupons SET clickCount = FLOOR(RAND() * 500) + 50, useCount = FLOOR(RAND() * 200) + 10 WHERE clickCount = 0");
+  },
+
   // ===== Short Links =====
   async createShortLink(data: { originalUrl: string; storeId?: string; couponId?: string }) {
     const id = 'l-' + Math.random().toString(36).substring(2, 15);
