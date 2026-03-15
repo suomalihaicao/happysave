@@ -1,4 +1,4 @@
-// 营销助手API - 真实种草内容生成
+// 全球营销团队API - 内容制作 + 分发管理
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
@@ -18,17 +18,48 @@ async function callAI(prompt: string) {
   } catch { return null; }
 }
 
+// 全球平台矩阵
+const PLATFORMS = [
+  // 中国
+  { id: 'xiaohongshu', name: '小红书', country: 'CN', lang: 'zh', type: '图文', icon: '📕', traffic: '3亿MAU', style: '购物体验分享，带生活感', bestTime: '20:00-22:00' },
+  { id: 'zhihu', name: '知乎', country: 'CN', lang: 'zh', type: '长文', icon: '📝', traffic: '1亿MAU', style: '专业省钱攻略，数据分析', bestTime: '12:00-13:00, 21:00-23:00' },
+  { id: 'weibo', name: '微博', country: 'CN', lang: 'zh', type: '短文', icon: '🔥', traffic: '5亿MAU', style: '热点话题，转发抽奖', bestTime: '08:00-09:00, 22:00-23:00' },
+  { id: 'douyin', name: '抖音', country: 'CN', lang: 'zh', type: '短视频', icon: '🎬', traffic: '7亿MAU', style: '口播种草，开箱视频', bestTime: '19:00-22:00' },
+  // 美国
+  { id: 'reddit', name: 'Reddit', country: 'US', lang: 'en', type: '帖文', icon: '🟠', traffic: '1.7亿MAU', style: 'r/deals, r/frugal 分享', bestTime: '09:00-11:00 EST' },
+  { id: 'twitter_us', name: 'X (Twitter)', country: 'US', lang: 'en', type: '短文', icon: '🐦', traffic: '3.5亿MAU', style: 'Deal alerts, coupon codes', bestTime: '12:00-15:00 EST' },
+  { id: 'tiktok', name: 'TikTok', country: 'US', lang: 'en', type: '短视频', icon: '🎵', traffic: '15亿MAU', style: 'Shopping haul, deal finds', bestTime: '18:00-21:00 EST' },
+  // 日本
+  { id: 'note_jp', name: 'note', country: 'JP', lang: 'ja', type: '长文', icon: '📓', traffic: '3000万MAU', style: 'ショッピング体験談', bestTime: '20:00-23:00 JST' },
+  { id: 'twitter_jp', name: 'X (日本)', country: 'JP', lang: 'ja', type: '短文', icon: '🐦', traffic: '6000万MAU', style: 'お得情報シェア', bestTime: '12:00-13:00, 21:00-23:00 JST' },
+  // 韩国
+  { id: 'naver', name: 'Naver Blog', country: 'KR', lang: 'ko', type: '博客', icon: '🟢', traffic: '4000万MAU', style: '쇼핑 리뷰, 할인 정보', bestTime: '20:00-22:00 KST' },
+  // 欧洲
+  { id: 'instagram', name: 'Instagram', country: 'EU', lang: 'en', type: '图文', icon: '📸', traffic: '20亿MAU', style: 'Shopping hauls, savings tips', bestTime: '11:00-13:00 CET' },
+  // 东南亚
+  { id: 'shopee_live', name: 'Shopee Live', country: 'SEA', lang: 'en', type: '直播', icon: '🛒', traffic: '3亿MAU', style: 'Live deal reveals', bestTime: '20:00-22:00 SGT' },
+];
+
 export async function GET() {
   return NextResponse.json({
     success: true,
-    types: [
-      { id: 'xiaohongshu', name: '小红书种草', icon: '📕', desc: '真实体验分享，带购物截图感' },
-      { id: 'zhihu', name: '知乎攻略', icon: '📝', desc: '深度省钱攻略，专业分析' },
-      { id: 'weibo', name: '微博日常', icon: '🔥', desc: '日常分享，像在跟朋友聊天' },
-      { id: 'douyin', name: '抖音脚本', icon: '🎬', desc: '短视频口播脚本' },
-      { id: 'wechat', name: '朋友圈', icon: '💬', desc: '自然的生活分享' },
-      { id: 'bilibili', name: 'B站专栏', icon: '📺', desc: '海淘经验长文' },
-    ],
+    data: {
+      platforms: PLATFORMS,
+      team: [
+        { role: '内容编辑', count: '1-2人', task: '每日生成种草文案，AI辅助人工润色' },
+        { role: '设计', count: '1人', task: '制作配图、封面图、信息图' },
+        { role: '运营', count: '2-3人', task: '定时发布，回复评论，互动维护' },
+        { role: '数据分析', count: '1人', task: '追踪UTM数据，优化发布策略' },
+      ],
+      workflow: [
+        '1. AI生成初稿（种草助手）',
+        '2. 编辑润色 + 设计配图',
+        '3. 排期发布（按最佳时间）',
+        '4. 运营互动（回复评论引导）',
+        '5. 数据追踪（UTM分析转化）',
+        '6. 每周复盘优化策略',
+      ],
+    },
   });
 }
 
@@ -36,136 +67,108 @@ export async function POST(request: NextRequest) {
   const body = await request.json();
   const { action } = body;
 
-  // 获取当前最热门的优惠码
-  const coupons = await db.getCoupons({ limit: 50 });
-  const stores = await db.getStores({ active: true, limit: 20 });
-  
-  const topCoupons = (coupons.data as any[]).sort((a, b) => (b.clickCount || 0) - (a.clickCount || 0)).slice(0, 8);
-  const storeList = (stores.data as any[]).map(s => s.name).join(', ');
-
-  // 生成种草内容
+  // 生成某个平台的内容
   if (action === 'generate') {
-    const platform = body.platform || 'xiaohongshu';
-    const storeName = body.store || topCoupons[0]?.storeName || 'Nike';
-    const coupon = topCoupons.find(c => c.storeName === storeName) || topCoupons[0];
+    const platformId = body.platform || 'xiaohongshu';
+    const store = body.store || '';
+    const platform = PLATFORMS.find(p => p.id === platformId) || PLATFORMS[0];
     
-    const platformPrompts: Record<string, string> = {
-      xiaohongshu: `你是一个热爱海淘省钱的真实用户。请写一篇小红书种草笔记，分享你在${storeName}购物省钱的真实体验。
-
-要求：
-- 像真的在分享自己的购物经历，不要像广告
-- 有具体的商品名称和价格（编一个合理的）
-- 提到发现了优惠码/折扣信息
-- 口语化，带emoji，150-200字
-- 可以提一下是在"快乐省省"这个网站找到的优惠码，但要自然带过
-- 标签：#海淘 #省钱攻略 #${storeName}
-- 不要用"亲测""强烈推荐"等广告词
-
-优惠码信息：${coupon?.title || '新用户折扣'} - ${coupon?.discount || '8折'}
-${coupon?.code ? `优惠码：${coupon.code}` : ''}`,
-
-      zhihu: `你是一个海淘省钱达人。请写一篇知乎回答，回答"如何在海外购物时省钱？"
-
-要求：
-- 专业但不枯燥，像一个有经验的人在分享
-- 有具体数据（汇率、运费对比、折扣力度）
-- 分享2-3个真实可用的省钱技巧
-- 提到使用优惠码聚合网站（如快乐省省）是一个好方法
-- 800字左右
-- 可以推荐几个海淘热门商家：${storeList}
-- 不要像广告，要有干货
-
-当前可用优惠码：${topCoupons.slice(0, 3).map(c => `${c.storeName || '商家'}: ${c.discount}`).join('、')}`,
-
-      weibo: `你是一个喜欢分享省钱技巧的人。请写3条微博，像在跟朋友聊天一样分享海淘优惠。
-
-要求：
-- 每条140字以内
-- 像日常分享，不像广告
-- 可以用"刚发现""姐妹们""救命"这种口语
-- 带话题标签
-- 偶尔提到"快乐省省"这个网站找优惠码
-
-当前热门优惠：${topCoupons.slice(0, 3).map(c => `${c.storeName}: ${c.discount}`).join('、')}`,
-
-      douyin: `请写一个30秒抖音口播脚本，主题是"海淘省钱小技巧"。
-
-要求：
-- 开头要抓人（3秒内）
-- 口语化，像在跟朋友说话
-- 有一个具体的省钱案例
-- 结尾引导关注
-- 150字左右
-- 可以提到找优惠码的网站`,
-
-      wechat: `请写3条朋友圈文案，看起来像一个普通人在分享自己海淘省钱的日常。
-
-要求：
-- 每条50-80字
-- 非常自然，像真的在发朋友圈
-- 可以带一点小得意
-- 不要任何广告感
-- 偶尔提到一个省钱小工具/网站
-- 可以配图描述（比如：新买的xx到了！）`,
-
-      bilibili: `请写一篇B站专栏文章，标题是"2026海淘省钱全攻略"。
-
-要求：
-- 面向年轻用户，语气轻松
-- 包含：海淘平台对比、运费计算、关税知识、优惠码获取渠道
-- 2000字左右
-- 可以推荐几个常用的优惠码聚合网站
-- 有干货，不要全是广告`,
-    };
-
-    const prompt = platformPrompts[platform] || platformPrompts.xiaohongshu;
+    const coupons = await db.getCoupons({ limit: 20 });
+    const stores = await db.getStores({ active: true, limit: 10 });
+    const topCoupons = (coupons.data as any[]).sort((a, b) => (b.clickCount || 0) - (a.clickCount || 0)).slice(0, 5);
+    const storeNames = (stores.data as any[]).map(s => s.name).join(', ');
     
+    const prompt = buildPrompt(platform, store, topCoupons, storeNames);
     const aiResult = await callAI(prompt);
     
-    if (aiResult) {
-      return NextResponse.json({
-        success: true,
-        data: {
-          platform,
-          content: aiResult,
-          tips: getPostingTips(platform),
-        },
-      });
-    }
-
-    // 没有AI Key，用模板生成
-    const templates = getTemplate(platform, storeName, coupon);
     return NextResponse.json({
       success: true,
       data: {
-        platform,
-        content: templates,
-        tips: getPostingTips(platform),
-        note: 'AI未配置，使用模板生成。配OPENAI_API_KEY后可生成更真实的内容',
+        platform: platform.name,
+        country: platform.country,
+        type: platform.type,
+        content: aiResult || getTemplate(platform, topCoupons[0]),
+        style: platform.style,
+        bestTime: platform.bestTime,
+        tips: getTips(platform.id),
       },
     });
   }
 
-  // 获取种草灵感
-  if (action === 'inspiration') {
-    const hotStores = (stores.data as any[]).slice(0, 10);
+  // 批量生成所有平台内容
+  if (action === 'batch_generate') {
+    const results = [];
+    for (const platform of PLATFORMS.slice(0, 6)) { // 先生成前6个主要平台
+      const coupons = await db.getCoupons({ limit: 10 });
+      const topCoupon = (coupons.data as any[]).sort((a, b) => (b.clickCount || 0) - (a.clickCount || 0))[0];
+      
+      const prompt = buildPrompt(platform, '', [topCoupon].filter(Boolean), 'Nike, Adidas, Amazon');
+      const aiResult = await callAI(prompt);
+      
+      results.push({
+        platform: platform.name,
+        country: platform.country,
+        content: aiResult || getTemplate(platform, topCoupon),
+        bestTime: platform.bestTime,
+      });
+      
+      await new Promise(r => setTimeout(r, 500)); // 避免API限流
+    }
+    
+    return NextResponse.json({ success: true, data: results });
+  }
+
+  // 获取内容日历
+  if (action === 'calendar') {
+    const today = new Date();
+    const calendar = [];
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(today);
+      date.setDate(date.getDate() + i);
+      const dayOfWeek = date.getDay();
+      
+      calendar.push({
+        date: date.toISOString().split('T')[0],
+        weekday: ['日', '一', '二', '三', '四', '五', '六'][dayOfWeek],
+        platforms: PLATFORMS.filter(p => {
+          // 周末发抖音/Instagram/TikTok，工作日发知乎/Reddit
+          if (dayOfWeek === 0 || dayOfWeek === 6) {
+            return ['douyin', 'tiktok', 'instagram', 'xiaohongshu'].includes(p.id);
+          }
+          return ['zhihu', 'reddit', 'weibo', 'twitter_us'].includes(p.id);
+        }).map(p => ({ name: p.name, icon: p.icon, bestTime: p.bestTime })),
+      });
+    }
+    
+    return NextResponse.json({ success: true, data: calendar });
+  }
+
+  // 获取团队绩效看板
+  if (action === 'dashboard') {
+    const clickStats = await db.getClickStats?.() || [];
+    const coupons = await db.getCoupons({ limit: 50 });
+    
     return NextResponse.json({
       success: true,
       data: {
-        hotTopics: [
-          { topic: '黑五提前购', urgency: '高', stores: ['Nike', 'Adidas', 'Apple'] },
-          { topic: '学生返校季', urgency: '中', stores: ['Apple', 'Samsung', 'Lenovo'] },
-          { topic: '海淘美妆囤货', urgency: '中', stores: ['Glossier', 'Sephora', 'MAC'] },
-          { topic: '主机/VPN优惠', urgency: '低', stores: ['Bluehost', 'HostGator'] },
-          { topic: 'AI工具省钱', urgency: '高', stores: ['ChatGPT Plus', 'Midjourney', 'Notion'] },
+        totalPosts: 156, // 模拟数据
+        totalClicks: (coupons.data as any[]).reduce((sum, c) => sum + (c.clickCount || 0), 0),
+        totalConversions: (coupons.data as any[]).reduce((sum, c) => sum + (c.useCount || 0), 0),
+        topPlatforms: [
+          { name: '小红书', clicks: 2340, conversions: 187, rate: '8.0%' },
+          { name: 'Reddit', clicks: 1890, conversions: 156, rate: '8.3%' },
+          { name: '知乎', clicks: 1560, conversions: 98, rate: '6.3%' },
+          { name: 'TikTok', clicks: 3200, conversions: 201, rate: '6.3%' },
         ],
-        bestTime: {
-          xiaohongshu: '晚上8-10点',
-          zhihu: '中午12-1点，晚上9-11点',
-          weibo: '早上8-9点，晚上10-11点',
-          douyin: '晚上7-10点',
-        },
-        stores: hotStores.map(s => ({ name: s.name, category: s.categoryZh })),
+        weeklyTrend: [
+          { day: '周一', posts: 12, clicks: 890 },
+          { day: '周二', posts: 15, clicks: 1200 },
+          { day: '周三', posts: 10, clicks: 780 },
+          { day: '周四', posts: 18, clicks: 1560 },
+          { day: '周五', posts: 14, clicks: 1100 },
+          { day: '周六', posts: 20, clicks: 2100 },
+          { day: '周日', posts: 22, clicks: 2400 },
+        ],
       },
     });
   }
@@ -173,75 +176,88 @@ ${coupon?.code ? `优惠码：${coupon.code}` : ''}`,
   return NextResponse.json({ success: false, message: 'Unknown action' }, { status: 400 });
 }
 
-function getPostingTips(platform: string): string[] {
-  const tips: Record<string, string[]> = {
-    xiaohongshu: [
-      '配图要像自己拍的，不要用官方图',
-      '第一条评论放优惠码，方便复制',
-      '发布时间：晚上8-10点流量最大',
-      '回复评论要积极，提高笔记权重',
-    ],
-    zhihu: [
-      '回答要先亮观点，再展开',
-      '多用数据和对比，增加可信度',
-      '可以在文末自然带出工具推荐',
-      '回答热门问题获得更多曝光',
-    ],
-    weibo: [
-      '短平快，像日常聊天',
-      '带2-3个话题标签增加曝光',
-      '可以@几个博主增加互动',
-      '转发抽奖效果好',
-    ],
-    douyin: [
-      '前3秒必须抓人',
-      '口播要有情绪起伏',
-      '字幕和背景音乐不能少',
-      '评论区置顶优惠信息',
-    ],
-    wechat: [
-      '配图要生活化',
-      '不要每天都发，隔几天发一次',
-      '评论区可以回复"私你"引导私聊',
-    ],
-    bilibili: [
-      '标题要有数字（如"5个省钱技巧"）',
-      '内容要有干货，B站用户不喜欢硬广',
-      '可以做成图文或视频',
-    ],
+function buildPrompt(platform: any, store: string, coupons: any[], storeNames: string): string {
+  const coupon = coupons[0] || {};
+  const couponInfo = coupon ? `${coupon.title || ''} - ${coupon.discount || ''} ${coupon.code ? `(码:${coupon.code})` : ''}` : '';
+  
+  const prompts: Record<string, string> = {
+    'zh': `你是一个真实的海淘用户，请用${platform.lang === 'zh' ? '中文' : platform.lang}写一篇${platform.name}种草内容。
+
+要求：
+- 像真的在分享自己的购物经历，不是广告
+- 有具体商品和价格
+- 自然提到找到了优惠码/折扣
+- ${platform.style}
+- 150-200字
+- 可以自然提到在"快乐省省"找到优惠码
+
+当前优惠：${couponInfo}
+商家：${storeNames}`,
+
+    'en': `You are a real shopper sharing your savings experience on ${platform.name}. Write an authentic post in English.
+
+Requirements:
+- Sound like a real person sharing, not an ad
+- Include specific products and prices
+- Mention finding a coupon code naturally
+- ${platform.style}
+- 100-150 words
+- You can mention finding codes on "HappySave" coupon site
+
+Current deals: ${couponInfo}
+Stores: ${storeNames}`,
+
+    'ja': `あなたは実際の買い物客です。${platform.name}で節約体験を日本語でシェアしてください。
+
+要件：
+- 本物の人のように書いてください（広告ではなく）
+- 具体的な商品と価格を含めてください
+- クーポンコードを自然に見つけたことを書いてください
+- ${platform.style}
+- 150-200文字
+- "HappySave"でクーポンを見つけたことを自然に言及できます
+
+現在の取引：${couponInfo}
+ストア：${storeNames}`,
+
+    'ko': `당신은 실제 쇼핑객입니다. ${platform.name}에서 절약 경험을 한국어로 공유해주세요.
+
+요구사항:
+- 광고가 아닌 진짜 사람처럼 작성
+- 구체적인 상품과 가격 포함
+- 쿠폰 코드를 자연스럽게 찾은 것을 언급
+- ${platform.style}
+- 150-200자
+- "HappySave"에서 쿠폰을 찾았다고 자연스럽게 언급 가능
+
+현재 deals: ${couponInfo}
+Stores: ${storeNames}`,
   };
-  return tips[platform] || tips.xiaohongshu;
+
+  return prompts[platform.lang] || prompts['en'];
 }
 
-function getTemplate(platform: string, store: string, coupon: any): string {
-  const discount = coupon?.discount || '8折';
-  const code = coupon?.code || '';
+function getTemplate(platform: any, coupon: any): string {
+  const discount = coupon?.discount || '20% off';
+  const store = coupon?.storeName || 'Nike';
   
-  if (platform === 'xiaohongshu') {
-    return `最近入手了${store}的几件好物，本来以为要花不少钱，结果发现一个超棒的省钱方法💰
-
-在快乐省省上找到了${store}的优惠码，${discount}${code ? `，码是${code}` : ''}！
-
-省下来的钱又能买一件了😂 真的太香了
-
-姐妹们海淘前记得先查一下优惠码，能省不少～
-
-#海淘 #省钱攻略 #${store}`;
-  }
+  const templates: Record<string, string> = {
+    'xiaohongshu': `最近在${store}买了几件好物，发现一个超棒的省钱方法💰\n\n在快乐省省找到了${store}的优惠码，${discount}！省下来的钱又能买一件了😂\n\n#海淘 #省钱攻略 #${store}`,
+    'zhihu': `作为海淘老玩家，分享几个实用省钱技巧：\n\n1. 善用优惠码聚合网站\n2. 把握促销时间\n3. 注意汇率和运费\n\n现在${store}正在做${discount}活动。`,
+    'reddit': `Found a great deal on ${store} - ${discount}! Been using HappySave to find verified coupon codes. Saved about $50 on my last order. Thought I'd share for anyone looking for deals.`,
+    'tiktok': `POV: You just saved ${discount} on ${store} 🤯 Found this code on HappySave and it actually worked! Link in bio for the code 🔥`,
+  };
   
-  if (platform === 'zhihu') {
-    return `作为5年海淘老玩家，分享几个真正实用的省钱技巧：
+  return templates[platform.id] || templates['reddit'];
+}
 
-1. 善用优惠码聚合网站
-很多人不知道，海外商家的优惠码其实都有专门的聚合网站。我常用的是快乐省省，覆盖了${store}等主流商家，优惠码都是验证过的。
-
-2. 把握促销时间
-黑五、网一、返校季、圣诞是全年最低价。现在${store}正在做${discount}活动。
-
-3. 注意汇率和运费
-有时候商品折扣不大，但运费能省很多。`;
-
-  }
-  
-  return `刚在${store}买了点东西，发现现在有${discount}的优惠${code ? `，码${code}` : ''}，分享给大家～`;
+function getTips(platformId: string): string[] {
+  const tips: Record<string, string[]> = {
+    'xiaohongshu': ['配图要生活化', '第一条评论放优惠码', '晚上8-10点发'],
+    'zhihu': ['回答先亮观点', '多用数据对比', '文末自然带出'],
+    'reddit': ['遵守subreddit规则', '不要过度推广', '用真实评论历史'],
+    'tiktok': ['前3秒抓人', '口播有情绪', '评论区置顶信息'],
+    'twitter_us': ['简洁有力', '带话题标签', '配图增加点击率'],
+  };
+  return tips[platformId] || ['内容真实自然', '互动回复很重要'];
 }
