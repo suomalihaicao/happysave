@@ -14,6 +14,8 @@ import {
 } from '@ant-design/icons';
 import { AntdProvider } from '@/providers/AntdProvider';
 
+import AIPanel from './ai-panel';
+
 const { Title, Text } = Typography;
 const { TextArea } = Input;
 const { Option } = Select;
@@ -254,6 +256,11 @@ function AdminContent() {
           <Table dataSource={shortLinks} rowKey="id" columns={linkColumns} pagination={{ pageSize: 10 }} locale={{ emptyText: '暂无短链接' }} loading={loading} />
         </Card>
       ),
+    },
+    {
+      key: 'ai',
+      label: '🤖 AI 运营',
+      children: <AIPanel />,
     },
   ];
 

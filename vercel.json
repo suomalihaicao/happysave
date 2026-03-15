@@ -1,3 +1,17 @@
 {
-  "framework": "nextjs"
+  "framework": "nextjs",
+  "crons": [
+    {
+      "path": "/api/v1/cron?task=seo&secret=happysave-cron-2026",
+      "schedule": "0 3 * * 1"
+    },
+    {
+      "path": "/api/v1/cron?task=social&secret=happysave-cron-2026",
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/v1/cron?task=report&secret=happysave-cron-2026",
+      "schedule": "0 23 * * *"
+    }
+  ]
 }
