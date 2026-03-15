@@ -215,7 +215,10 @@ function StoreDetailContent({ slug }: { slug: string }) {
                       }}>
                         {coupon.code}
                       </div>
-                      <Button type="primary" icon={<CopyOutlined />} onClick={() => copyText(coupon.code)}>
+                      <Button type="primary" icon={<CopyOutlined />} onClick={() => {
+                        copyText(coupon.code);
+                        trackClick(store.id, coupon.id);
+                      }}>
                         复制
                       </Button>
                     </div>

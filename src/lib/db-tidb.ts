@@ -248,8 +248,8 @@ async function seedTiDB() {
       couponIdx++;
       
       await db.execute(
-        'INSERT INTO coupons (id, storeId, storeName, code, title, titleZh, description, descriptionZh, discount, discountType, type, affiliateUrl, startDate, endDate, featured, active, verified, clickCount) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY), ?, ?, ?, ?)',
-        [`coupon-${couponIdx}`, storeId, storeName, code, `${t[0]} - ${storeName}`, `${storeName} ${t[1]}`, `${t[2]} off`, `${t[2]}优惠`, t[2], 'percentage', t[3], `${storeUrl}?ref=happysave${code ? `&cpn=${code}` : ''}`, i < 5 && j === 0, true, true, Math.floor(Math.random() * 500)]
+        'INSERT INTO coupons (id, storeId, storeName, code, title, titleZh, description, descriptionZh, discount, discountType, type, affiliateUrl, startDate, endDate, featured, active, verified, clickCount, useCount) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY), ?, ?, ?, ?, ?)',
+        [`coupon-${couponIdx}`, storeId, storeName, code, `${t[0]} - ${storeName}`, `${storeName} ${t[1]}`, `${t[2]} off`, `${t[2]}优惠`, t[2], 'percentage', t[3], `${storeUrl}?ref=happysave${code ? `&cpn=${code}` : ''}`, i < 5 && j === 0, true, true, Math.floor(Math.random() * 500) + 50, Math.floor(Math.random() * 200) + 10]
       );
     }
   }
@@ -392,7 +392,7 @@ export const tidb = {
   },
 
   async incrementCouponClick(id: string) {
-    await tidb.query('UPDATE coupons SET clickCount = clickCount + 1 WHERE id = ?', [id]);
+    await tidb.query('UPDATE coupons SET clickCount = clickCount + 1, useCount = useCount + 1 WHERE id = ?', [id]);
   },
 
   // ===== Short Links =====

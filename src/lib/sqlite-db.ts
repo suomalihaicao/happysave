@@ -185,7 +185,7 @@ function seedData() {
         affiliateUrl: `${s.web}?ref=happysave${code ? `&cpn=${code}` : ''}`,
         startDate: now, endDate: new Date(Date.now() + 30 * 86400000).toISOString(),
         featured: i < 5 && j === 0 ? 1 : 0, active: 1, verified: 1,
-        clickCount: Math.floor(Math.random() * 500), useCount: Math.floor(Math.random() * 100),
+        clickCount: Math.floor(Math.random() * 500) + 50, useCount: Math.floor(Math.random() * 200) + 10,
         createdAt: now, updatedAt: now,
       });
     }
@@ -468,8 +468,8 @@ export const database = {
   },
 
   incrementCouponClick(id: string) {
-    if (dbType === 'sqlite') sqliteDb.prepare('UPDATE coupons SET clickCount = clickCount + 1 WHERE id = ?').run(id);
-    else { const c = memory.coupons.find(c => c.id === id); if (c) c.clickCount++; }
+    if (dbType === 'sqlite') sqliteDb.prepare('UPDATE coupons SET clickCount = clickCount + 1, useCount = useCount + 1 WHERE id = ?').run(id);
+    else { const c = memory.coupons.find(c => c.id === id); if (c) { c.clickCount++; c.useCount++; } }
   },
 
   // ===== Short Links =====
