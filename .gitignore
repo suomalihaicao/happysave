@@ -12,3 +12,4 @@ data/*.db-wal
 data/*.db-shm
 node_modules/
 .next/
+.env
