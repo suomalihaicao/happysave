@@ -12,7 +12,7 @@ import {
   PlusOutlined, ThunderboltOutlined, CheckCircleOutlined,
   ClockCircleOutlined, ExclamationCircleOutlined, LockOutlined,
   UserOutlined, MailOutlined, SafetyOutlined, FileTextOutlined,
-  ExportOutlined
+  ExportOutlined, LineChartOutlined, RiseOutlined
 } from '@ant-design/icons';
 
 const { Title, Text, Paragraph } = Typography;
@@ -65,7 +65,7 @@ function LoginPage({ onLogin }: { onLogin: () => void }) {
           登录
         </Button>
         <Paragraph type="secondary" style={{ marginTop: 16, fontSize: 12 }}>
-          默认密码: happysave2026（可在 Vercel 环境变量 ADMIN_PASSWORD 修改）
+
         </Paragraph>
       </Card>
     </div>
@@ -102,6 +102,7 @@ export default function AdminPage() {
       <Tabs
         items={[
           { key: 'dashboard', label: <span><BarChartOutlined /> 数据概览</span>, children: <DashboardTab /> },
+          { key: 'analytics', label: <span><LineChartOutlined /> 运营统计</span>, children: <AnalyticsTab /> },
           { key: 'stores', label: <span><ShopOutlined /> 商家管理</span>, children: <StoresTab /> },
           { key: 'coupons', label: <span><TagOutlined /> 优惠码管理</span>, children: <CouponsTab /> },
           { key: 'users', label: <span><UserOutlined /> 用户/订阅</span>, children: <UsersTab /> },
@@ -244,6 +245,154 @@ function UsersTab() {
             </List.Item>
           )}
         />
+      </Card>
+    </div>
+  );
+}
+
+// ============================================================
+// Analytics Tab - 运营统计面板
+// ============================================================
+function AnalyticsTab() {
+  const [stats, setStats] = useState<any>(null);
+  const [days, setDays] = useState(7);
+  const [loading, setLoading] = useState(false);
+
+  const fetchStats = () => {
+    setLoading(true);
+    fetch(`/api/v1/track?days=${days}`).then(r => r.json()).then(d => {
+      if (d.success) setStats(d.data);
+    }).finally(() => setLoading(false));
+  };
+
+  useEffect(() => { fetchStats(); }, [days]);
+
+  if (!stats) return <Card loading />;
+
+  return (
+    <div>
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        <Col span={6}>
+          <Card>
+            <Statistic title="总点击" value={stats.totalClicks} prefix={<RiseOutlined />} />
+          </Card>
+        </Col>
+        <Col span={6}>
+          <Card>
+            <Statistic title="移动端" value={(stats.byDevice?.find((d: any) => d.device === 'mobile')?.cnt) || 0} />
+          </Card>
+        </Col>
+        <Col span={6}>
+          <Card>
+            <Statistic title="桌面端" value={(stats.byDevice?.find((d: any) => d.device === 'desktop')?.cnt) || 0} />
+          </Card>
+        </Col>
+        <Col span={6}>
+          <Card>
+            <Statistic title="统计周期" value={stats.period} />
+          </Card>
+        </Col>
+      </Row>
+
+      <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
+        <Col span={24}>
+          <Select value={days} onChange={setDays} style={{ width: 150 }}>
+            <Select.Option value={7}>最近 7 天</Select.Option>
+            <Select.Option value={14}>最近 14 天</Select.Option>
+            <Select.Option value={30}>最近 30 天</Select.Option>
+            <Select.Option value={90}>最近 90 天</Select.Option>
+          </Select>
+          <Button onClick={fetchStats} loading={loading} style={{ marginLeft: 8 }}>刷新</Button>
+        </Col>
+      </Row>
+
+      <Row gutter={[16, 16]}>
+        <Col xs={24} md={12}>
+          <Card title="📊 设备分布">
+            <List
+              dataSource={stats.byDevice || []}
+              renderItem={(item: any) => (
+                <List.Item>
+                  <span>{item.device === 'mobile' ? '📱' : item.device === 'tablet' ? '📋' : '🖥️'} {item.device}</span>
+                  <Tag color="blue">{item.cnt} 次</Tag>
+                </List.Item>
+              )}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} md={12}>
+          <Card title="🔗 渠道来源 (UTM)">
+            <List
+              dataSource={stats.byUTMSource || []}
+              locale={{ emptyText: '暂无UTM数据 - 添加 ?utm_source=平台名 到推广链接' }}
+              renderItem={(item: any) => (
+                <List.Item>
+                  <span>{item.source}</span>
+                  <Tag color="green">{item.cnt} 次</Tag>
+                </List.Item>
+              )}
+            />
+          </Card>
+        </Col>
+      </Row>
+
+      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+        <Col xs={24} md={12}>
+          <Card title="🏪 热门商家">
+            <List
+              dataSource={stats.byStore || []}
+              renderItem={(item: any) => (
+                <List.Item>
+                  <span>{item.name || item.cnt}</span>
+                  <Tag color="orange">{item.cnt} 次</Tag>
+                </List.Item>
+              )}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} md={12}>
+          <Card title="🌐 来源网站">
+            <List
+              dataSource={stats.byReferer?.slice(0, 10) || []}
+              locale={{ emptyText: '暂无来源数据' }}
+              renderItem={(item: any) => (
+                <List.Item>
+                  <Text ellipsis style={{ maxWidth: 200 }}>{item.source}</Text>
+                  <Tag>{item.cnt} 次</Tag>
+                </List.Item>
+              )}
+            />
+          </Card>
+        </Col>
+      </Row>
+
+      <Card title="📅 每日趋势" style={{ marginTop: 16 }}>
+        <List
+          dataSource={stats.byDay || []}
+          renderItem={(item: any) => (
+            <List.Item>
+              <span>{item.day}</span>
+              <Progress percent={stats.totalClicks ? Math.round(item.cnt / stats.totalClicks * 100) : 0} format={() => `${item.cnt} 次`} style={{ width: 300 }} />
+            </List.Item>
+          )}
+        />
+      </Card>
+
+      <Card title="🚀 推广链接生成器" style={{ marginTop: 16 }}>
+        <Text type="secondary">选择平台，自动生成带追踪参数的链接：</Text>
+        <Row gutter={[8, 8]} style={{ marginTop: 12 }}>
+          {['zhihu', 'weibo', 'xiaohongshu', 'douban', 'wechat', 'douyin'].map(platform => (
+            <Col key={platform}>
+              <Button size="small" onClick={() => {
+                const url = `https://happysave.vercel.app/?utm_source=${platform}&utm_medium=forum&utm_campaign=2026spring`;
+                navigator.clipboard.writeText(url);
+                message.success(`已复制 ${platform} 链接！`);
+              }}>
+                {platform === 'zhihu' ? '知乎' : platform === 'weibo' ? '微博' : platform === 'xiaohongshu' ? '小红书' : platform === 'douban' ? '豆瓣' : platform === 'wechat' ? '微信' : '抖音'}
+              </Button>
+            </Col>
+          ))}
+        </Row>
       </Card>
     </div>
   );
