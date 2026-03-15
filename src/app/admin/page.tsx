@@ -150,27 +150,61 @@ function StoresTab() {
   };
   useEffect(fetchData, []);
 
+  const toggleFeatured = async (store: any) => {
+    await fetch('/api/v1/stores', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: store.id, featured: !store.featured }) });
+    message.success(`${store.name} 已${store.featured ? '取消推荐' : '设为推荐'}`);
+    fetchData();
+  };
+
+  const toggleActive = async (store: any) => {
+    await fetch('/api/v1/stores', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: store.id, active: !store.active }) });
+    message.success(`${store.name} 已${store.active ? '停用' : '启用'}`);
+    fetchData();
+  };
+
+  const deleteStore = async (store: any) => {
+    await fetch(`/api/v1/stores?id=${store.id}`, { method: 'DELETE' });
+    message.success(`${store.name} 已删除`);
+    fetchData();
+  };
+
   const columns = [
-    { title: '商家', dataIndex: 'name', key: 'name', render: (v: string, r: any) => <a href={r.website} target="_blank">{v}</a> },
+    { title: '商家', dataIndex: 'name', key: 'name', render: (v: string, r: any) => <a href={`/store/${r.slug}`} target="_blank">{v}</a> },
     { title: '分类', dataIndex: 'category', key: 'category', render: (v: string) => <Tag>{v}</Tag> },
     { title: '点击', dataIndex: 'clickCount', key: 'clicks', sorter: (a: any, b: any) => a.clickCount - b.clickCount },
     { title: '推荐', dataIndex: 'featured', key: 'featured', render: (v: boolean) => v ? <Tag color="gold">⭐ 推荐</Tag> : '-' },
     { title: '状态', dataIndex: 'active', key: 'active', render: (v: boolean) => v ? <Tag color="green">活跃</Tag> : <Tag color="red">停用</Tag> },
+    { title: '操作', key: 'action', render: (_: any, record: any) => (
+      <Space size="small">
+        <Button size="small" type={record.featured ? 'default' : 'dashed'} onClick={() => toggleFeatured(record)}>
+          {record.featured ? '取消推荐' : '⭐ 设为推荐'}
+        </Button>
+        <Button size="small" type={record.active ? 'default' : 'primary'} onClick={() => toggleActive(record)}>
+          {record.active ? '停用' : '启用'}
+        </Button>
+        <Popconfirm title="确定删除？" onConfirm={() => deleteStore(record)}>
+          <Button size="small" danger>删除</Button>
+        </Popconfirm>
+      </Space>
+    )},
   ];
 
   return (
     <div>
       <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
-        <Button type="primary" icon={<PlusOutlined />} onClick={async () => {
-          await fetch('/api/v1/scraper', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'seed' }) });
-          message.success('种子数据已导入');
-          fetchData();
-        }}>导入种子数据</Button>
-        <Button icon={<ThunderboltOutlined />} onClick={async () => {
-          await fetch('/api/v1/discover', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'stores', count: 5 }) });
-          message.success('发现新商家');
-          fetchData();
-        }}>自动发现新商家</Button>
+        <Space>
+          <Button type="primary" icon={<PlusOutlined />} onClick={async () => {
+            await fetch('/api/v1/scraper', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'seed' }) });
+            message.success('种子数据已导入');
+            fetchData();
+          }}>导入种子数据</Button>
+          <Button icon={<ThunderboltOutlined />} onClick={async () => {
+            await fetch('/api/v1/discover', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'stores', count: 5 }) });
+            message.success('发现新商家');
+            fetchData();
+          }}>自动发现新商家</Button>
+        </Space>
+        <Text type="secondary">共 {data.length} 个商家</Text>
       </div>
       <Table columns={columns} dataSource={data} rowKey="id" loading={loading} pagination={{ pageSize: 20 }} />
     </div>
@@ -193,23 +227,47 @@ function CouponsTab() {
   };
   useEffect(fetchData, []);
 
+  const toggleActive = async (coupon: any) => {
+    await fetch('/api/v1/coupons', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: coupon.id, active: !coupon.active }) });
+    message.success(`优惠码已${coupon.active ? '停用' : '启用'}`);
+    fetchData();
+  };
+
+  const deleteCoupon = async (coupon: any) => {
+    await fetch(`/api/v1/coupons?id=${coupon.id}`, { method: 'DELETE' });
+    message.success('优惠码已删除');
+    fetchData();
+  };
+
   const columns = [
     { title: '优惠码', dataIndex: 'title', key: 'title' },
     { title: '商家', dataIndex: 'storeName', key: 'storeName' },
     { title: 'Code', dataIndex: 'code', key: 'code', render: (v: string) => v ? <Tag color="blue">{v}</Tag> : <Tag>免码</Tag> },
     { title: '折扣', dataIndex: 'discount', key: 'discount', render: (v: string) => <Text strong style={{ color: '#f5222d' }}>{v}</Text> },
-    { title: '点击', dataIndex: 'clickCount', key: 'clicks' },
+    { title: '点击', dataIndex: 'clickCount', key: 'clicks', sorter: (a: any, b: any) => a.clickCount - b.clickCount },
+    { title: '使用', dataIndex: 'useCount', key: 'use', sorter: (a: any, b: any) => (a.useCount || 0) - (b.useCount || 0) },
     { title: '状态', dataIndex: 'active', key: 'active', render: (v: boolean) => v ? <Tag color="green">活跃</Tag> : <Tag color="red">停用</Tag> },
+    { title: '操作', key: 'action', render: (_: any, record: any) => (
+      <Space size="small">
+        <Button size="small" type={record.active ? 'default' : 'primary'} onClick={() => toggleActive(record)}>
+          {record.active ? '停用' : '启用'}
+        </Button>
+        <Popconfirm title="确定删除？" onConfirm={() => deleteCoupon(record)}>
+          <Button size="small" danger>删除</Button>
+        </Popconfirm>
+      </Space>
+    )},
   ];
 
   return (
     <div>
-      <div style={{ marginBottom: 16 }}>
+      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
         <Button type="primary" icon={<PlusOutlined />} onClick={async () => {
           await fetch('/api/v1/discover', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'coupons', count: 10 }) });
           message.success('生成新优惠码');
           fetchData();
         }}>自动生成优惠码</Button>
+        <Text type="secondary">共 {data.length} 个优惠码</Text>
       </div>
       <Table columns={columns} dataSource={data} rowKey="id" loading={loading} pagination={{ pageSize: 20 }} />
     </div>
