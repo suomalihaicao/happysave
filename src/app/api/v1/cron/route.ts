@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { ai } from '@/lib/ai-engine';
+import { autoDiscover } from '@/lib/auto-discover';
 
 // 验证 cron secret（防止外部调用）
 const CRON_SECRET = process.env.CRON_SECRET || 'happysave-cron-2026';
@@ -64,6 +65,13 @@ export async function GET(request: NextRequest) {
         conversions: 0,
       });
       results.report = report;
+    }
+
+    // 任务 4: 自动发现新商家和优惠码
+    if (task === 'discover' || task === 'all') {
+      const stores = autoDiscover.discoverNewStores(3);
+      const coupons = autoDiscover.discoverNewCoupons(10);
+      results.discover = { newStores: stores.added, newCoupons: coupons.added };
     }
 
     // 任务 3: 社交媒体文案生成
