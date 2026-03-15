@@ -34,6 +34,7 @@ import {
   StarOutlined,
 } from '@ant-design/icons';
 import { AntdProvider } from '@/providers/AntdProvider';
+import { AdSlot, SponsoredBadge } from '@/components/AdSlot';
 import type { Store, Coupon, Category } from '@/types';
 
 const { Header, Content, Footer } = Layout;
@@ -309,9 +310,14 @@ function HomePageContent() {
                 <Link href={`/store/${store.slug}`}>
                   <Card
                     hoverable
-                    style={{ textAlign: 'center' }}
+                    style={{ textAlign: 'center', position: 'relative' }}
                     bodyStyle={{ padding: '20px 12px' }}
                   >
+                    {(store as any).featured && (
+                      <div style={{ position: 'absolute', top: 8, right: 8 }}>
+                        <SponsoredBadge />
+                      </div>
+                    )}
                     <Avatar size={64} style={{ backgroundColor: '#fff2e8', color: '#ff6b35', fontSize: 28, marginBottom: 12 }}>
                       {store.name.charAt(0)}
                     </Avatar>
@@ -336,7 +342,11 @@ function HomePageContent() {
         </div>
       </Content>
 
-      {/* Enterprise Footer */}
+      {/* 广告位 */}
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '24px' }}>
+        <AdSlot type="banner" label="横幅广告" />
+      </div>
+
       {/* SEO FAQ Section */}
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '48px 24px' }}>
         <Title level={2} style={{ textAlign: 'center', marginBottom: 32 }}>

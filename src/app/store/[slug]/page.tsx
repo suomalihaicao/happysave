@@ -36,6 +36,7 @@ import {
   HeartFilled,
 } from '@ant-design/icons';
 import { AntdProvider } from '@/providers/AntdProvider';
+import { AdSlot } from '@/components/AdSlot';
 
 const { Content } = Layout;
 const { Title, Text, Paragraph } = Typography;
@@ -277,6 +278,11 @@ function StoreDetailContent({ slug }: { slug: string }) {
           </Card>
         </div>
       )}
+
+      {/* 广告位 */}
+      <div style={{ padding: '0 24px', maxWidth: 1200, margin: '0 auto' }}>
+        <AdSlot type="in-article" label="文章内广告" />
+      </div>
 
       <FloatButton.BackTop />
       
