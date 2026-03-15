@@ -1,5 +1,5 @@
 // SEO 配置 - 中文搜索引擎优化
-export const BASE_URL = 'https://happysave.cn';
+export const BASE_URL = 'https://happysave.vercel.app';
 
 export const SEO_CONFIG = {
   siteName: '快乐省省',

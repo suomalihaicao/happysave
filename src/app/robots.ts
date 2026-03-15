@@ -30,7 +30,7 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ['/api/', '/admin'],
       },
     ],
-    sitemap: 'https://happysave.cn/sitemap.xml',
-    host: 'https://happysave.cn',
+    sitemap: 'https://happysave.vercel.app/sitemap.xml',
+    host: 'https://happysave.vercel.app',
   };
 }

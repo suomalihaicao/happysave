@@ -14,7 +14,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const s = store as any;
   const coupons = await db.getCouponsByStoreSlug(slug);
-  const baseUrl = 'https://happysave.cn';
+  const baseUrl = 'https://happysave.vercel.app';
   
   return {
     title: `${s.name} 优惠码 ${s.nameZh || ''} - ${coupons.length} 个优惠 | 快乐省省`,
@@ -45,7 +45,7 @@ export default async function StoreSEOWrapper({ params }: Props) {
     name: s.name,
     alternateName: s.nameZh,
     description: s.descriptionZh || s.description,
-    url: `https://happysave.cn/store/${slug}`,
+    url: `https://happysave.vercel.app/store/${slug}`,
     image: s.logo,
     category: s.categoryZh || s.category,
     aggregateRating: (s.clickCount || 0) > 100 ? {
