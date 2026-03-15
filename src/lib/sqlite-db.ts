@@ -77,6 +77,129 @@ const memory = {
 };
 
 // ============================================================
+// Seed Data - Auto-populate on Vercel (in-memory mode)
+// ============================================================
+const SEED_CATEGORIES: Category[] = [
+  { id: 'cat-1', name: 'Shopping', nameZh: '综合购物', icon: '🛒', sortOrder: 1 },
+  { id: 'cat-2', name: 'Fashion', nameZh: '时尚服饰', icon: '👗', sortOrder: 2 },
+  { id: 'cat-3', name: 'Electronics', nameZh: '电子产品', icon: '📱', sortOrder: 3 },
+  { id: 'cat-4', name: 'AI Tools', nameZh: 'AI工具', icon: '🤖', sortOrder: 4 },
+  { id: 'cat-5', name: 'Hosting', nameZh: '主机服务', icon: '🖥️', sortOrder: 5 },
+  { id: 'cat-6', name: 'Beauty', nameZh: '美妆个护', icon: '💄', sortOrder: 6 },
+  { id: 'cat-7', name: 'Travel', nameZh: '旅行酒店', icon: '✈️', sortOrder: 7 },
+  { id: 'cat-8', name: 'Food', nameZh: '食品生鲜', icon: '🍔', sortOrder: 8 },
+  { id: 'cat-9', name: 'Education', nameZh: '在线教育', icon: '📚', sortOrder: 9 },
+];
+
+const SEED_STORES = [
+  { name: 'Temu', slug: 'temu', cat: 'shopping', catZh: '综合购物', logo: 'https://logo.clearbit.com/temu.com', web: 'https://www.temu.com', featured: true, clicks: 15234, desc: 'Shop like a billionaire' },
+  { name: 'SHEIN', slug: 'shein', cat: 'fashion', catZh: '时尚服饰', logo: 'https://logo.clearbit.com/shein.com', web: 'https://www.shein.com', featured: true, clicks: 12456, desc: 'Online fashion retailer' },
+  { name: 'AliExpress', slug: 'aliexpress', cat: 'shopping', catZh: '综合购物', logo: 'https://logo.clearbit.com/aliexpress.com', web: 'https://www.aliexpress.com', featured: true, clicks: 9876, desc: 'Global online marketplace' },
+  { name: 'ChatGPT Plus', slug: 'chatgpt-plus', cat: 'ai', catZh: 'AI工具', logo: 'https://logo.clearbit.com/openai.com', web: 'https://chat.openai.com', featured: true, clicks: 8765, desc: 'AI-powered assistant' },
+  { name: 'Nike', slug: 'nike', cat: 'fashion', catZh: '时尚服饰', logo: 'https://logo.clearbit.com/nike.com', web: 'https://www.nike.com', featured: true, clicks: 7654, desc: 'Athletic footwear and apparel' },
+  { name: 'Amazon', slug: 'amazon', cat: 'shopping', catZh: '综合购物', logo: 'https://logo.clearbit.com/amazon.com', web: 'https://www.amazon.com', featured: true, clicks: 6543, desc: 'Earth\'s most customer-centric company' },
+  { name: 'Anker', slug: 'anker', cat: 'electronics', catZh: '电子产品', logo: 'https://logo.clearbit.com/anker.com', web: 'https://www.anker.com', featured: false, clicks: 5432, desc: 'Charging technology leader' },
+  { name: 'Adidas', slug: 'adidas', cat: 'fashion', catZh: '时尚服饰', logo: 'https://logo.clearbit.com/adidas.com', web: 'https://www.adidas.com', featured: true, clicks: 4321, desc: 'Sportswear and athletic gear' },
+  { name: 'Hostinger', slug: 'hostinger', cat: 'hosting', catZh: '主机服务', logo: 'https://logo.clearbit.com/hostinger.com', web: 'https://www.hostinger.com', featured: false, clicks: 3210, desc: 'Web hosting made easy' },
+  { name: 'Walmart', slug: 'walmart', cat: 'shopping', catZh: '综合购物', logo: 'https://logo.clearbit.com/walmart.com', web: 'https://www.walmart.com', featured: false, clicks: 2100, desc: 'Save money. Live better.' },
+  { name: 'eBay', slug: 'ebay', cat: 'shopping', catZh: '综合购物', logo: 'https://logo.clearbit.com/ebay.com', web: 'https://www.ebay.com', featured: false, clicks: 1980, desc: 'The world\'s online marketplace' },
+  { name: 'Target', slug: 'target', cat: 'shopping', catZh: '综合购物', logo: 'https://logo.clearbit.com/target.com', web: 'https://www.target.com', featured: false, clicks: 1850, desc: 'Expect more. Pay less.' },
+  { name: 'Costco', slug: 'costco', cat: 'shopping', catZh: '综合购物', logo: 'https://logo.clearbit.com/costco.com', web: 'https://www.costco.com', featured: false, clicks: 1720, desc: 'Wholesale warehouse club' },
+  { name: 'IKEA', slug: 'ikea', cat: 'shopping', catZh: '综合购物', logo: 'https://logo.clearbit.com/ikea.com', web: 'https://www.ikea.com', featured: false, clicks: 1650, desc: 'Furniture and home accessories' },
+  { name: 'Zara', slug: 'zara', cat: 'fashion', catZh: '时尚服饰', logo: 'https://logo.clearbit.com/zara.com', web: 'https://www.zara.com', featured: false, clicks: 1580, desc: 'Fast fashion retailer' },
+  { name: 'Uniqlo', slug: 'uniqlo', cat: 'fashion', catZh: '时尚服饰', logo: 'https://logo.clearbit.com/uniqlo.com', web: 'https://www.uniqlo.com', featured: false, clicks: 1500, desc: 'Japanese casual wear designer' },
+  { name: 'Ray-Ban', slug: 'rayban', cat: 'fashion', catZh: '时尚服饰', logo: 'https://logo.clearbit.com/ray-ban.com', web: 'https://www.ray-ban.com', featured: false, clicks: 1420, desc: 'Iconic eyewear brand' },
+  { name: 'Bluehost', slug: 'bluehost', cat: 'hosting', catZh: '主机服务', logo: 'https://logo.clearbit.com/bluehost.com', web: 'https://www.bluehost.com', featured: false, clicks: 1350, desc: 'Web hosting solutions' },
+  { name: 'Namecheap', slug: 'namecheap', cat: 'hosting', catZh: '主机服务', logo: 'https://logo.clearbit.com/namecheap.com', web: 'https://www.namecheap.com', featured: false, clicks: 1280, desc: 'Domain names and web hosting' },
+  { name: 'Runway', slug: 'runway', cat: 'ai', catZh: 'AI工具', logo: 'https://logo.clearbit.com/runway.ml', web: 'https://runway.ml', featured: false, clicks: 1200, desc: 'AI video generation platform' },
+  { name: 'ElevenLabs', slug: 'elevenlabs', cat: 'ai', catZh: 'AI工具', logo: 'https://logo.clearbit.com/elevenlabs.io', web: 'https://elevenlabs.io', featured: false, clicks: 1150, desc: 'AI voice generation' },
+  { name: 'Copy.ai', slug: 'copyai', cat: 'ai', catZh: 'AI工具', logo: 'https://logo.clearbit.com/copy.ai', web: 'https://www.copy.ai', featured: false, clicks: 1080, desc: 'AI copywriting tool' },
+  { name: 'Glossier', slug: 'glossier', cat: 'beauty', catZh: '美妆个护', logo: 'https://logo.clearbit.com/glossier.com', web: 'https://www.glossier.com', featured: false, clicks: 950, desc: 'Beauty inspired by real life' },
+  { name: 'Sephora', slug: 'sephora', cat: 'beauty', catZh: '美妆个护', logo: 'https://logo.clearbit.com/sephora.com', web: 'https://www.sephora.com', featured: false, clicks: 920, desc: 'Beauty retailer' },
+  { name: 'Booking.com', slug: 'booking', cat: 'travel', catZh: '旅行酒店', logo: 'https://logo.clearbit.com/booking.com', web: 'https://www.booking.com', featured: false, clicks: 880, desc: 'Hotel and travel deals' },
+  { name: 'Airbnb', slug: 'airbnb', cat: 'travel', catZh: '旅行酒店', logo: 'https://logo.clearbit.com/airbnb.com', web: 'https://www.airbnb.com', featured: false, clicks: 850, desc: 'Unique stays and experiences' },
+  { name: 'Grubhub', slug: 'grubhub', cat: 'food', catZh: '食品生鲜', logo: 'https://logo.clearbit.com/grubhub.com', web: 'https://www.grubhub.com', featured: false, clicks: 780, desc: 'Food delivery service' },
+  { name: 'MasterClass', slug: 'masterclass', cat: 'education', catZh: '在线教育', logo: 'https://logo.clearbit.com/masterclass.com', web: 'https://www.masterclass.com', featured: false, clicks: 720, desc: 'Learn from the best' },
+  { name: 'Udemy', slug: 'udemy', cat: 'education', catZh: '在线教育', logo: 'https://logo.clearbit.com/udemy.com', web: 'https://www.udemy.com', featured: false, clicks: 680, desc: 'Online courses marketplace' },
+  { name: 'Coursera', slug: 'coursera', cat: 'education', catZh: '在线教育', logo: 'https://logo.clearbit.com/coursera.org', web: 'https://www.coursera.org', featured: false, clicks: 650, desc: 'Learn without limits' },
+  { name: 'Samsung', slug: 'samsung', cat: 'electronics', catZh: '电子产品', logo: 'https://logo.clearbit.com/samsung.com', web: 'https://www.samsung.com', featured: false, clicks: 620, desc: 'Technology leader' },
+  { name: 'LG', slug: 'lg', cat: 'electronics', catZh: '电子产品', logo: 'https://logo.clearbit.com/lg.com', web: 'https://www.lg.com', featured: false, clicks: 580, desc: 'Life\'s Good' },
+  { name: 'Sony', slug: 'sony', cat: 'electronics', catZh: '电子产品', logo: 'https://logo.clearbit.com/sony.com', web: 'https://www.sony.com', featured: false, clicks: 550, desc: 'Electronics and entertainment' },
+  { name: 'Dell', slug: 'dell', cat: 'electronics', catZh: '电子产品', logo: 'https://logo.clearbit.com/dell.com', web: 'https://www.dell.com', featured: false, clicks: 520, desc: 'Technology solutions' },
+  { name: 'HP', slug: 'hp', cat: 'electronics', catZh: '电子产品', logo: 'https://logo.clearbit.com/hp.com', web: 'https://www.hp.com', featured: false, clicks: 490, desc: 'Innovation that makes a difference' },
+  { name: 'Gymshark', slug: 'gymshark', cat: 'fashion', catZh: '时尚服饰', logo: 'https://logo.clearbit.com/gymshark.com', web: 'https://www.gymshark.com', featured: false, clicks: 460, desc: 'Fitness apparel' },
+  { name: 'Lululemon', slug: 'lululemon', cat: 'fashion', catZh: '时尚服饰', logo: 'https://logo.clearbit.com/lululemon.com', web: 'https://www.lululemon.com', featured: false, clicks: 440, desc: 'Athletic apparel' },
+  { name: 'Chewy', slug: 'chewy', cat: 'shopping', catZh: '综合购物', logo: 'https://logo.clearbit.com/chewy.com', web: 'https://www.chewy.com', featured: false, clicks: 420, desc: 'Pet supplies' },
+  { name: 'Wayfair', slug: 'wayfair', cat: 'shopping', catZh: '综合购物', logo: 'https://logo.clearbit.com/wayfair.com', web: 'https://www.wayfair.com', featured: false, clicks: 400, desc: 'Home goods and furniture' },
+  { name: 'Etsy', slug: 'etsy', cat: 'shopping', catZh: '综合购物', logo: 'https://logo.clearbit.com/etsy.com', web: 'https://www.etsy.com', featured: false, clicks: 380, desc: 'Handmade and vintage items' },
+];
+
+// Seed coupons - generates 2-3 coupons per store
+const COUPON_TEMPLATES = [
+  { title: 'Welcome Discount', titleZh: '新用户专享', discount: '10%', type: 'code', prefix: 'WELCOME' },
+  { title: 'Season Sale', titleZh: '季节大促', discount: '15%', type: 'code', prefix: 'SEASON' },
+  { title: 'Flash Deal', titleZh: '限时特惠', discount: '20%', type: 'code', prefix: 'FLASH' },
+  { title: 'Free Shipping', titleZh: '免运费', discount: 'Free Shipping', type: 'deal', prefix: '' },
+  { title: 'Bundle Offer', titleZh: '组合优惠', discount: '25%', type: 'deal', prefix: '' },
+  { title: 'VIP Exclusive', titleZh: '会员专享', discount: '30%', type: 'code', prefix: 'VIP' },
+  { title: 'Student Discount', titleZh: '学生优惠', discount: '20%', type: 'code', prefix: 'STUDENT' },
+  { title: 'First Order Deal', titleZh: '首单优惠', discount: '$10 Off', type: 'deal', prefix: '' },
+];
+
+function seedData() {
+  if (memory.stores.length > 0) return; // Already seeded
+  
+  // Seed categories
+  memory.categories = [...SEED_CATEGORIES];
+  
+  // Seed stores and coupons
+  for (let i = 0; i < SEED_STORES.length; i++) {
+    const s = SEED_STORES[i];
+    const storeId = `store-${i + 1}`;
+    const now = new Date().toISOString();
+    
+    memory.stores.push({
+      id: storeId, slug: s.slug, name: s.name, nameZh: s.name,
+      description: s.desc, descriptionZh: '',
+      logo: s.logo, website: s.web, affiliateUrl: `${s.web}?ref=happysave`,
+      category: s.cat, categoryZh: s.catZh,
+      tags: JSON.stringify([s.cat]), featured: s.featured ? 1 : 0, active: 1,
+      sortOrder: i, clickCount: s.clicks, conversionRate: Math.round(Math.random() * 500) / 100,
+      createdAt: now, updatedAt: now,
+    });
+    
+    // Generate 2-3 coupons per store
+    const numCoupons = 2 + Math.floor(Math.random() * 2);
+    const templates = [...COUPON_TEMPLATES].sort(() => Math.random() - 0.5).slice(0, numCoupons);
+    
+    for (let j = 0; j < templates.length; j++) {
+      const t = templates[j];
+      const code = t.prefix ? `${t.prefix}${Math.random().toString(36).substring(2, 5).toUpperCase()}` : null;
+      const id = `coupon-${i}-${j}`;
+      
+      memory.coupons.push({
+        id, storeId, storeName: s.name, code,
+        title: `${t.title} - ${s.name}`, titleZh: `${s.name} ${t.titleZh}`,
+        description: `${t.discount} off at ${s.name}`, descriptionZh: `${s.name} ${t.titleZh}，${t.discount}优惠`,
+        discount: t.discount, discountType: 'percentage', type: t.type,
+        affiliateUrl: `${s.web}?ref=happysave${code ? `&cpn=${code}` : ''}`,
+        startDate: now, endDate: new Date(Date.now() + 30 * 86400000).toISOString(),
+        featured: i < 5 && j === 0 ? 1 : 0, active: 1, verified: 1,
+        clickCount: Math.floor(Math.random() * 500), useCount: Math.floor(Math.random() * 100),
+        createdAt: now, updatedAt: now,
+      });
+    }
+  }
+  
+  console.log(`🌱 Seeded: ${memory.stores.length} stores, ${memory.coupons.length} coupons, ${memory.categories.length} categories`);
+}
+
+// Auto-seed when in memory mode
+if (dbType === 'memory') {
+  seedData();
+}
+
+// ============================================================
 // Shared Utilities
 // ============================================================
 function genId(): string {
