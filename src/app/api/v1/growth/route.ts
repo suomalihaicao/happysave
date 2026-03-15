@@ -22,11 +22,9 @@ export async function POST(request: NextRequest) {
   // 1. 生成SEO落地页 - 每个商家+分类组合自动生成页面
   if (action === 'generate_seo_pages') {
     const stores = await db.getStores({ active: true, limit: 50 });
-    const categories = await db.getCategories();
     const pages: any[] = [];
-    
     const storeList = stores.data as any[];
-    const catList = categories.data as any[];
+    const catList = [...new Set(storeList.map((s: any) => s.categoryZh))];
     
     // 为每个商家生成落地页
     for (const store of storeList) {
@@ -43,11 +41,11 @@ export async function POST(request: NextRequest) {
     // 为每个分类生成落地页
     for (const cat of catList) {
       pages.push({
-        url: `/category/${cat.name}`,
+        url: `/category/${encodeURIComponent(cat)}`,
         type: 'category',
-        title: `${cat.nameZh}优惠码大全 | ${cat.name} Coupons ${new Date().getFullYear()}`,
-        h1: `${cat.nameZh}商家优惠码合集`,
-        keywords: [`${cat.nameZh}优惠码`, `${cat.name}coupons`, `海淘${cat.nameZh}折扣`],
+        title: `${cat}优惠码大全 | ${cat.name} Coupons ${new Date().getFullYear()}`,
+        h1: `${cat}商家优惠码合集`,
+        keywords: [`${cat}优惠码`, `海淘${cat}折扣`],
         priority: 0.7,
       });
     }
@@ -78,13 +76,11 @@ export async function POST(request: NextRequest) {
   // 2. 高佣金优惠码优先展示 - 根据点击率和转化率排序
   if (action === 'top_coupons') {
     const coupons = await db.getCoupons({ limit: 100 });
-    const clickStats = await db.getClickStats();
-    
     // 计算每个优惠码的"价值分数"
     const scored = (coupons.data as any[]).map(c => {
-      const clicks = (clickStats as any[]).find((s: any) => s.couponId === c.id);
-      const clickRate = clicks?.count || c.clickCount || 0;
-      const useRate = clicks?.uses || c.useCount || 0;
+      // removed clickStats lookup
+      const clickRate = c.clickCount || 0;
+      const useRate = c.useCount || 0;
       
       // 价值分数 = 使用次数 * 3 + 点击次数 + 有代码的加50分
       const score = useRate * 3 + clickRate + (c.code ? 50 : 0);
