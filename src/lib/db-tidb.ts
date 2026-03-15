@@ -287,7 +287,7 @@ export const tidb = {
     if (params?.search) { where += ' AND (name LIKE ? OR description LIKE ?)'; args.push(`%${params.search}%`, `%${params.search}%`); }
     
     const countRow = await tidb.getOne<{ c: number }>(`SELECT COUNT(*) as c FROM stores ${where}`, args);
-    const data = await tidb.query(`SELECT * FROM stores ${where} ORDER BY sortOrder ASC, clickCount DESC LIMIT ? OFFSET ?`, [...args, Number(limit), Number(offset)]);
+    const data = await tidb.query(`SELECT * FROM stores ${where} ORDER BY sortOrder ASC, clickCount DESC LIMIT ${Number(limit)} OFFSET ${Number(offset)}`, args);
     
     return {
       data: data.map((s: any) => ({ ...s, tags: typeof s.tags === 'string' ? JSON.parse(s.tags) : s.tags, featured: !!s.featured, active: !!s.active })),
@@ -346,7 +346,7 @@ export const tidb = {
     if (params?.search) { where += ' AND (title LIKE ? OR code LIKE ?)'; args.push(`%${params.search}%`, `%${params.search}%`); }
     
     const countRow = await tidb.getOne<{ c: number }>(`SELECT COUNT(*) as c FROM coupons ${where}`, args);
-    const data = await tidb.query(`SELECT * FROM coupons ${where} ORDER BY featured DESC, clickCount DESC LIMIT ? OFFSET ?`, [...args, Number(limit), Number(offset)]);
+    const data = await tidb.query(`SELECT * FROM coupons ${where} ORDER BY featured DESC, clickCount DESC LIMIT ${Number(limit)} OFFSET ${Number(offset)}`, args);
     
     return {
       data: data.map((c: any) => ({ ...c, featured: !!c.featured, active: !!c.active, verified: !!c.verified })),
