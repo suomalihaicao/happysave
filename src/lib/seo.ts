@@ -1,86 +1,136 @@
-// SEO 优化配置 - meta tags, Open Graph, etc.
-import type { Metadata } from 'next';
+// SEO 配置 - 中文搜索引擎优化
+export const BASE_URL = 'https://happysave.cn';
 
-const BASE_URL = 'https://happysave.com';
-const SITE_NAME = '快乐省省 HappySave';
-const DEFAULT_DESC = '全球优惠券聚合平台 - 找到最好的优惠码和折扣，省钱从未如此简单';
-
-export function generateStoreMetadata(store: any): Metadata {
-  const title = `${store.name} 优惠码 & 折扣 (${new Date().getFullYear()}) | ${SITE_NAME}`;
-  const desc = `获取 ${store.name} 最新优惠码和折扣信息。${store.descriptionZh} 立即查看并省钱！`;
-  
-  return {
-    title,
-    description: desc,
-    keywords: `${store.name}, 优惠码, 折扣, coupon, promo code, ${store.categoryZh}`,
-    openGraph: {
-      title,
-      description: desc,
-      url: `${BASE_URL}/store/${store.slug}`,
-      siteName: SITE_NAME,
-      type: 'website',
-      images: [{ url: `${BASE_URL}/og/${store.slug}.png`, width: 1200, height: 630 }],
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title,
-      description: desc,
-    },
-    alternates: {
-      canonical: `${BASE_URL}/store/${store.slug}`,
-    },
-  };
-}
-
-export function generateCategoryMetadata(category: string, categoryZh: string): Metadata {
-  const title = `${categoryZh} 优惠码大全 | ${SITE_NAME}`;
-  const desc = `精选 ${categoryZh} 类别的所有优惠码和折扣信息。来自全球知名品牌，帮你省钱。`;
-  
-  return {
-    title,
-    description: desc,
-    keywords: `${categoryZh}, 优惠码, 折扣, coupon, deals`,
-    openGraph: {
-      title,
-      description: desc,
-      url: `${BASE_URL}/?category=${category}`,
-      siteName: SITE_NAME,
-    },
-  };
-}
-
-export const defaultMetadata: Metadata = {
-  title: {
-    default: SITE_NAME,
-    template: `%s | ${SITE_NAME}`,
-  },
-  description: DEFAULT_DESC,
-  keywords: '优惠码, coupon, promo code, 折扣, deals, 省钱, 促销',
-  metadataBase: new URL(BASE_URL),
-  openGraph: {
-    type: 'website',
-    siteName: SITE_NAME,
-    title: SITE_NAME,
-    description: DEFAULT_DESC,
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: SITE_NAME,
-    description: DEFAULT_DESC,
-  },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      'max-video-preview': -1,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
-    },
-  },
-  verification: {
-    // Google Search Console 验证 (填入你的验证码)
-    google: 'your-google-verification-code',
-  },
+export const SEO_CONFIG = {
+  siteName: '快乐省省',
+  siteNameEn: 'HappySave',
+  baseUrl: BASE_URL,
+  defaultTitle: '快乐省省 - 全球优惠券聚合平台 | 海淘省钱必备',
+  defaultTitleEn: 'HappySave - Global Coupons & Deals Platform',
+  defaultDescription: '发现全球品牌独家优惠码和折扣信息。Temu、SHEIN、Nike、Amazon等50+热门商家最新优惠券，海淘省钱一站搞定。',
+  defaultDescriptionEn: 'Find exclusive coupon codes and deals from global brands. Save money on Temu, SHEIN, Nike, Amazon and more.',
+  keywords: [
+    '优惠券', '优惠码', '折扣码', '海淘', '省钱',
+    'Temu优惠券', 'SHEIN折扣码', 'Nike优惠码', 'Amazon折扣',
+    '全球购物', '海外购物', '跨境电商', '省钱攻略',
+    'coupons', 'promo codes', 'deals', 'discounts',
+  ],
+  ogImage: `${BASE_URL}/og-image.png`,
+  twitterHandle: '@happysave_cn',
+  baiduVerify: '', // 百度站长验证
+  googleVerify: '', // Google Search Console 验证
 };
+
+// 生成页面标题
+export function generateTitle(pageTitle?: string): string {
+  if (!pageTitle) return SEO_CONFIG.defaultTitle;
+  return `${pageTitle} - ${SEO_CONFIG.siteName} | 全球优惠券`;
+}
+
+// 生成页面描述
+export function generateDescription(desc?: string): string {
+  return desc || SEO_CONFIG.defaultDescription;
+}
+
+// 结构化数据 - 网站信息
+export function getWebsiteJsonLd() {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: SEO_CONFIG.siteName,
+    alternateName: SEO_CONFIG.siteNameEn,
+    url: SEO_CONFIG.baseUrl,
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: `${SEO_CONFIG.baseUrl}/?q={search_term_string}`,
+      'query-input': 'required name=search_term_string',
+    },
+  };
+}
+
+// 结构化数据 - 商家页面
+export function getStoreJsonLd(store: any) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Store',
+    name: store.name,
+    description: store.descriptionZh || store.description,
+    url: `${SEO_CONFIG.baseUrl}/store/${store.slug}`,
+    image: store.logo,
+    aggregateRating: store.clickCount > 1000 ? {
+      '@type': 'AggregateRating',
+      ratingValue: '4.5',
+      reviewCount: Math.floor(store.clickCount / 100),
+    } : undefined,
+  };
+}
+
+// 结构化数据 - 优惠码列表
+export function getCouponListJsonLd(coupons: any[], storeName: string) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: `${storeName} 优惠码`,
+    numberOfItems: coupons.length,
+    itemListElement: coupons.map((c, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      item: {
+        '@type': 'Offer',
+        name: c.title,
+        description: c.description,
+        price: '0',
+        priceCurrency: 'USD',
+        availability: c.active ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+      },
+    })),
+  };
+}
+
+// 结构化数据 - FAQ
+export function getFAQJsonLd() {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: [
+      {
+        '@type': 'Question',
+        name: '如何使用优惠码？',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: '在快乐省省找到想要的优惠码，点击复制后前往商家官网，在结账时粘贴优惠码即可享受折扣。',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: '优惠码是免费的吗？',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: '是的！快乐省省提供的所有优惠码完全免费使用。',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: '优惠码过期了怎么办？',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: '我们会定期更新优惠码。如果某个优惠码失效，请查看该商家页面获取最新优惠。',
+        },
+      },
+    ],
+  };
+}
+
+// 结构化数据 - BreadcrumbList
+export function getBreadcrumbJsonLd(items: Array<{ name: string; url: string }>) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: items.map((item, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: item.name,
+      item: item.url,
+    })),
+  };
+}

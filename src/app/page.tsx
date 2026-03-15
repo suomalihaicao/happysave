@@ -337,6 +337,61 @@ function HomePageContent() {
       </Content>
 
       {/* Enterprise Footer */}
+      {/* SEO FAQ Section */}
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '48px 24px' }}>
+        <Title level={2} style={{ textAlign: 'center', marginBottom: 32 }}>
+          ❓ {t('常见问题', 'Frequently Asked Questions')}
+        </Title>
+        <Row gutter={[24, 24]}>
+          <Col xs={24} md={12}>
+            <Card>
+              <Title level={5}>🤔 {t('如何使用优惠码？', 'How to use coupon codes?')}</Title>
+              <Paragraph type="secondary">
+                {t('找到想要的优惠码，点击复制后前往商家官网，在结账页面粘贴优惠码即可享受折扣。', 'Find a coupon, copy it, paste at checkout on the merchant\'s website.')}
+              </Paragraph>
+            </Card>
+          </Col>
+          <Col xs={24} md={12}>
+            <Card>
+              <Title level={5}>💰 {t('优惠码是免费的吗？', 'Are coupons free?')}</Title>
+              <Paragraph type="secondary">
+                {t('是的！快乐省省所有优惠码完全免费使用，无需注册。', 'Yes! All coupons on HappySave are completely free, no registration required.')}
+              </Paragraph>
+            </Card>
+          </Col>
+          <Col xs={24} md={12}>
+            <Card>
+              <Title level={5}>⏰ {t('优惠码过期了怎么办？', 'What if a coupon expires?')}</Title>
+              <Paragraph type="secondary">
+                {t('我们会每日更新优惠码。如果某个优惠码失效，请查看该商家页面获取最新优惠。', 'We update coupons daily. Check the store page for the latest deals.')}
+              </Paragraph>
+            </Card>
+          </Col>
+          <Col xs={24} md={12}>
+            <Card>
+              <Title level={5}>🌍 {t('支持哪些商家？', 'Which merchants are supported?')}</Title>
+              <Paragraph type="secondary">
+                {t('我们覆盖50+全球品牌，包括Temu、SHEIN、Nike、Amazon、Adidas等热门商家。', 'We cover 50+ global brands including Temu, SHEIN, Nike, Amazon, Adidas and more.')}
+              </Paragraph>
+            </Card>
+          </Col>
+        </Row>
+      </div>
+
+      {/* SEO 内链 */}
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px 48px' }}>
+        <Title level={4}>{t('热门商家优惠码', 'Popular Store Coupons')}</Title>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          {stores.slice(0, 20).map(store => (
+            <Link key={store.id} href={`/store/${store.slug}`}>
+              <Tag style={{ padding: '4px 12px', fontSize: 14, cursor: 'pointer' }}>
+                {store.name} {t('优惠码', 'coupons')}
+              </Tag>
+            </Link>
+          ))}
+        </div>
+      </div>
+
       <Footer
         style={{
           background: '#001529',
@@ -367,7 +422,7 @@ function HomePageContent() {
             <Col xs={24} md={8}>
               <Title level={5} style={{ color: '#fff' }}>{t('联系我们', 'Contact')}</Title>
               <Paragraph style={{ color: 'rgba(255,255,255,0.65)' }}>
-                {t('商务合作', 'Partnership')}: partner@happysave.com
+                {t('商务合作', 'Partnership')}: partner@happysave.cn
               </Paragraph>
             </Col>
           </Row>

@@ -1,4 +1,5 @@
-import { MetadataRoute } from 'next';
+// robots.txt - 搜索引擎配置
+import type { MetadataRoute } from 'next';
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -13,7 +14,23 @@ export default function robots(): MetadataRoute.Robots {
         allow: '/',
         disallow: ['/api/'],
       },
+      {
+        userAgent: 'Baiduspider',
+        allow: '/',
+        disallow: ['/api/', '/admin'],
+      },
+      {
+        userAgent: 'Sogou web spider',
+        allow: '/',
+        disallow: ['/api/', '/admin'],
+      },
+      {
+        userAgent: '360Spider',
+        allow: '/',
+        disallow: ['/api/', '/admin'],
+      },
     ],
-    sitemap: 'https://happysave.com/sitemap.xml',
+    sitemap: 'https://happysave.cn/sitemap.xml',
+    host: 'https://happysave.cn',
   };
 }

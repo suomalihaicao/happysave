@@ -107,7 +107,7 @@ export async function GET() {
     {
       id: 'task-6',
       title: '域名绑定（自定义域名）',
-      description: '将 happysave.com 绑定到 Vercel',
+      description: '将 happysave.cn 绑定到 Vercel',
       category: 'infra',
       priority: 'low',
       status: 'pending',

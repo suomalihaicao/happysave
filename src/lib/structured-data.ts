@@ -64,10 +64,10 @@ export function generateWebsiteSchema() {
     '@type': 'WebSite',
     name: '快乐省省 HappySave',
     description: '全球优惠券聚合平台 - 找到最好的优惠码和折扣',
-    url: 'https://happysave.com',
+    url: 'https://happysave.cn',
     potentialAction: {
       '@type': 'SearchAction',
-      target: 'https://happysave.com/?q={search_term_string}',
+      target: 'https://happysave.cn/?q={search_term_string}',
       'query-input': 'required name=search_term_string',
     },
   };

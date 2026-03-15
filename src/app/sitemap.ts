@@ -3,7 +3,7 @@ import type { MetadataRoute } from 'next';
 import { db } from '@/lib/db';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = 'https://happysave.com';
+  const baseUrl = 'https://happysave.cn';
   const now = new Date();
 
   const stores = await db.getStores({ active: true, limit: 200 });

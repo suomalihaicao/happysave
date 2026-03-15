@@ -34,7 +34,7 @@ export default function PrivacyPage() {
       </ul>
 
       <h2>5. 联系我们</h2>
-      <p>如有隐私相关问题，请联系：privacy@happysave.com</p>
+      <p>如有隐私相关问题，请联系：privacy@happysave.cn</p>
       
       <p><a href="/">← 返回首页</a></p>
     </div>

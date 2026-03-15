@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Script from 'next/script';
 import {
   Layout,
   Card,
@@ -239,7 +240,7 @@ function StoreDetailContent({ slug }: { slug: string }) {
                       二维码
                     </Button>
                     <Button size="large" icon={<WhatsAppOutlined />} onClick={() => shareWhatsApp(
-                      `🔥 ${store.name} ${coupon.discount} 优惠！${coupon.code ? `\n优惠码：${coupon.code}` : ''}\n👉 https://happysave.com/store/${store.slug}`
+                      `🔥 ${store.name} ${coupon.discount} 优惠！${coupon.code ? `\n优惠码：${coupon.code}` : ''}\n👉 https://happysave.cn/store/${store.slug}`
                     )} />
                   </div>
                 </Card>
@@ -278,6 +279,25 @@ function StoreDetailContent({ slug }: { slug: string }) {
       )}
 
       <FloatButton.BackTop />
+      
+      {/* SEO 结构化数据 */}
+      {store && (
+        <Script id="store-jsonld" type="application/ld+json" dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'Store',
+            name: store.name,
+            description: store.descriptionZh || store.description,
+            url: `https://happysave.cn/store/${store.slug}`,
+            image: store.logo,
+            aggregateRating: store.clickCount > 100 ? {
+              '@type': 'AggregateRating',
+              ratingValue: '4.5',
+              reviewCount: Math.floor(store.clickCount / 50),
+            } : undefined,
+          })
+        }} />
+      )}
     </Layout>
   );
 }

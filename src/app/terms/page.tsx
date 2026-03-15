@@ -29,7 +29,7 @@ export default function TermsPage() {
       <p>本站包含联盟链接。当您通过我们的链接购买时，我们可能获得佣金。这不会影响您支付的价格。</p>
 
       <h2>6. 联系我们</h2>
-      <p>如有条款相关问题，请联系：legal@happysave.com</p>
+      <p>如有条款相关问题，请联系：legal@happysave.cn</p>
       
       <p><a href="/">← 返回首页</a></p>
     </div>
