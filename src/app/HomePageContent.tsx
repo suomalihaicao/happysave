@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Layout, Input, Space, Row, Col, Button, message, Badge, FloatButton } from 'antd';
 import {
-  SearchOutlined, ShopOutlined, TagOutlined, CopyOutlined,
+  SearchOutlined, ShopOutlined, TagOutlined,
   GlobalOutlined, GiftOutlined, SafetyOutlined, ThunderboltOutlined,
   MailOutlined, RightOutlined, FireOutlined, DollarOutlined,
 } from '@ant-design/icons';

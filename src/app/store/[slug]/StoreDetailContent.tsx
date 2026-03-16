@@ -5,7 +5,7 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import {
   Layout, Card, Button, Tag, Space, Typography, Avatar,
-  Row, Col, Badge, message, FloatButton, Breadcrumb, Spin,
+  Row, Col, Badge, message, FloatButton, Breadcrumb,
 } from 'antd';
 import {
   CopyOutlined, QrcodeOutlined, WhatsAppOutlined,

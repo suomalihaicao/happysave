@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import {
-  Table, Button, Modal, Form, Input, Select, Switch, Tag, Space,
+  Table, Button, Input, Select, Tag, Space,
   Card, Row, Col, Statistic, Tabs, message, List,
-  Typography, Alert, Progress, Descriptions, Divider, Popconfirm
+  Typography, Alert, Progress, Descriptions, Popconfirm
 } from 'antd';
 import {
   ShopOutlined, TagOutlined, BarChartOutlined, RobotOutlined,
