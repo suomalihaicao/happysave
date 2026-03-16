@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // 图片优化 - 允许外部图片域名
+  // Turbopack 需要明确根目录 (pnpm hoisting)
+  turbopack: {
+    root: __dirname,
+  },
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: '**.amazon.com' },
@@ -51,6 +54,13 @@ const nextConfig: NextConfig = {
         source: '/api/:path*',
         headers: [
           { key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate' },
+        ],
+      },
+      {
+        source: '/sw.js',
+        headers: [
+          { key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' },
+          { key: 'Service-Worker-Allowed', value: '/' },
         ],
       },
       {

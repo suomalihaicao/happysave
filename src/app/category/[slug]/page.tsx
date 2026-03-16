@@ -19,6 +19,12 @@ const CATEGORY_NAMES: Record<string, { zh: string; icon: string; desc: string }>
   education: { zh: '在线教育', icon: '📚', desc: '在线教育平台优惠码' },
 };
 
+const CATEGORY_SLUGS = Object.keys(CATEGORY_NAMES);
+
+export function generateStaticParams() {
+  return CATEGORY_SLUGS.map(slug => ({ slug }));
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const cat = CATEGORY_NAMES[slug];

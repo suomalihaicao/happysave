@@ -1,7 +1,7 @@
 // 认证中间件 - 简单 session-based auth
 import { NextRequest } from 'next/server';
 
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'happysave2026';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || (process.env.NODE_ENV === 'production' ? '' : 'admin123');
 const COOKIE_NAME = 'hs_admin';
 
 // 生成简单 token
@@ -23,6 +23,7 @@ function cleanupSessions() {
 export const auth = {
   // 登录
   login(password: string): string | null {
+    if (!ADMIN_PASSWORD) return null; // 未配置密码，拒绝登录
     if (password === ADMIN_PASSWORD) {
       const token = genToken();
       sessions.set(token, {

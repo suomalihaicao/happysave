@@ -4,6 +4,7 @@ import { AntdProvider } from '@/providers/AntdProvider';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { SEO_CONFIG, getWebsiteJsonLd } from '@/lib/seo';
+import { PWARegister } from '@/components/PWARegister';
 
 export const metadata: Metadata = {
   metadataBase: new URL(SEO_CONFIG.baseUrl),
@@ -57,6 +58,12 @@ export default function RootLayout({
   return (
     <html lang="zh-CN">
       <head>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#ff6b35" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="快乐省省" />
+        <link rel="apple-touch-icon" href="/icon-192.png" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(getWebsiteJsonLd()) }}
@@ -77,6 +84,7 @@ export default function RootLayout({
         <AntdProvider>{children}</AntdProvider>
         <Analytics />
         <SpeedInsights />
+        <PWARegister />
       </body>
     </html>
   );
