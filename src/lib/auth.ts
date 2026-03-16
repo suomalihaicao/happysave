@@ -51,6 +51,7 @@ export const auth = {
 
   // 获取 cookie 设置
   getCookieSettings(token: string) {
-    return `${COOKIE_NAME}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${7 * 24 * 60 * 60}`;
+    const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
+    return `${COOKIE_NAME}=${token}; Path=/; HttpOnly; SameSite=Lax${secure}; Max-Age=${7 * 24 * 60 * 60}`;
   },
 };

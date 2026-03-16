@@ -42,7 +42,9 @@ export default function AIPanel() {
   const runCron = async (task: string) => {
     setLoading(`cron_${task}`);
     try {
-      const res = await fetch(`/api/v1/cron?task=${task}&secret=happysave-cron-2026`);
+      const res = await fetch(`/api/v1/cron?task=${task}`, {
+        credentials: 'same-origin', // 携带 admin cookie
+      });
       const data = await res.json();
       if (data.success) {
         setResults((prev: any) => ({ ...prev, [`cron_${task}`]: data.results }));

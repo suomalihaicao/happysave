@@ -17,7 +17,11 @@ export async function GET(request: NextRequest) {
   const secret = request.nextUrl.searchParams.get('secret');
   const isValidSecret = CRON_SECRET && (secret === CRON_SECRET || auth === `Bearer ${CRON_SECRET}`);
 
-  if (!isVercelCron && !isValidSecret) {
+  // 方法3: Admin Cookie 认证（管理后台调用时用）
+  const adminCookie = request.cookies.get('hs_admin')?.value;
+  const isAdmin = !!adminCookie;
+
+  if (!isVercelCron && !isValidSecret && !isAdmin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
