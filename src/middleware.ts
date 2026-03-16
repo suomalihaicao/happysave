@@ -58,10 +58,10 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const host = request.headers.get('host') || '';
 
-  // ========== www/m 子域名重定向到主域名 ==========
-  if (host.startsWith('www.') || host.startsWith('m.')) {
+  // ========== happysave.cn 重定向到 www 主域名 ==========
+  if (host === 'happysave.cn' || host === 'm.happysave.cn') {
     const url = request.nextUrl.clone();
-    url.host = 'happysave.cn';
+    url.host = 'www.happysave.cn';
     return NextResponse.redirect(url, 301);
   }
 

@@ -443,7 +443,7 @@ function AnalyticsTab() {
           {['zhihu', 'weibo', 'xiaohongshu', 'douban', 'wechat', 'douyin'].map(platform => (
             <Col key={platform}>
               <Button size="small" onClick={() => {
-                const url = `https://happysave.cn/?utm_source=${platform}&utm_medium=forum&utm_campaign=2026spring`;
+                const url = `https://www.happysave.cn/?utm_source=${platform}&utm_medium=forum&utm_campaign=2026spring`;
                 navigator.clipboard.writeText(url);
                 message.success(`已复制 ${platform} 链接！`);
               }}>

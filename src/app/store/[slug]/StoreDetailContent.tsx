@@ -215,7 +215,7 @@ export default function StoreDetailContent({ initialData }: StoreDetailContentPr
                       二维码
                     </Button>
                     <Button size="large" icon={<WhatsAppOutlined />} onClick={() => shareWhatsApp(
-                      `🔥 ${store.name} ${coupon.discount} 优惠！${coupon.code ? `\n优惠码：${coupon.code}` : ''}\n👉 https://happysave.cn/store/${store.slug}`
+                      `🔥 ${store.name} ${coupon.discount} 优惠！${coupon.code ? `\n优惠码：${coupon.code}` : ''}\n👉 https://www.happysave.cn/store/${store.slug}`
                     )} />
                   </div>
                 </Card>
