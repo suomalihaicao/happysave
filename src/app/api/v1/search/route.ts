@@ -1,8 +1,9 @@
 // 前台搜索 API - 支持商家和优惠码联合搜索
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { withErrorHandling } from '@/lib/api-wrapper';
 
-export async function GET(request: NextRequest) {
+export const GET = withErrorHandling(async (request: NextRequest) => {
   const { searchParams } = new URL(request.url);
   const q = searchParams.get('q') || '';
   const page = parseInt(searchParams.get('page') || '1');
@@ -25,4 +26,4 @@ export async function GET(request: NextRequest) {
       query: q,
     },
   });
-}
+});

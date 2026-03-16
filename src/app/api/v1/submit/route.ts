@@ -1,9 +1,10 @@
 // 用户提交优惠码
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { withErrorHandling } from '@/lib/api-wrapper';
 
 // POST /api/v1/submit - 用户提交优惠码
-export async function POST(request: NextRequest) {
+export const POST = withErrorHandling(async (request: NextRequest) => {
   const body = await request.json();
   const { storeName, storeUrl, couponCode, couponTitle, discount, description, submitterEmail } = body;
 
@@ -61,4 +62,4 @@ export async function POST(request: NextRequest) {
     message: '提交成功！审核通过后会显示在网站上',
     data: { couponId: (coupon as any).id },
   });
-}
+});

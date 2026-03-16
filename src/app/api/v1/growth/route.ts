@@ -1,8 +1,9 @@
 // 增长变现API - /api/v1/growth
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { withErrorHandling } from '@/lib/api-wrapper';
 
-export async function GET() {
+export const GET = withErrorHandling(async () => {
   return NextResponse.json({
     success: true,
     features: [
@@ -13,9 +14,9 @@ export async function GET() {
       { id: 'auto_submit', name: '搜索引擎自动提交', status: 'ready', revenue: '加速收录' },
     ],
   });
-}
+});
 
-export async function POST(request: NextRequest) {
+export const POST = withErrorHandling(async (request: NextRequest) => {
   const body = await request.json();
   const action = body.action;
 
@@ -163,4 +164,4 @@ export async function POST(request: NextRequest) {
   }
 
   return NextResponse.json({ success: false, message: 'Unknown action' }, { status: 400 });
-}
+});

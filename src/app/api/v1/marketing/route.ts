@@ -1,6 +1,7 @@
 // 智能模板引擎 - 按优惠券批量生成多语言多平台内容
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { withErrorHandling } from '@/lib/api-wrapper';
 
 // ============ 模板库 ============
 const TEMPLATES = {
@@ -94,16 +95,16 @@ const IMAGE_TEMPLATES = {
   default: ['商品图', '价格截图', '优惠码截图'],
 };
 
-export async function GET() {
+export const GET = withErrorHandling(async () => {
   return NextResponse.json({
     success: true,
     platforms: Object.keys(TEMPLATES),
     imageTemplates: IMAGE_TEMPLATES,
     languages: ['zh', 'en', 'ja', 'ko'],
   });
-}
+});
 
-export async function POST(request: NextRequest) {
+export const POST = withErrorHandling(async (request: NextRequest) => {
   const body = await request.json();
   const { action } = body;
 
@@ -265,7 +266,7 @@ export async function POST(request: NextRequest) {
   }
 
   return NextResponse.json({ success: false, message: 'Unknown action' }, { status: 400 });
-}
+});
 
 // 构建变量字典
 function buildVars(coupon: any): Record<string, string> {

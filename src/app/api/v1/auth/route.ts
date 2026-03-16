@@ -1,9 +1,10 @@
 // 管理后台认证 API
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
+import { withErrorHandling } from '@/lib/api-wrapper';
 
 // POST /api/v1/auth - 登录
-export async function POST(request: NextRequest) {
+export const POST = withErrorHandling(async (request: NextRequest) => {
   const body = await request.json();
   const { action, password } = body;
 
@@ -26,10 +27,10 @@ export async function POST(request: NextRequest) {
   }
 
   return NextResponse.json({ success: false }, { status: 400 });
-}
+});
 
 // GET /api/v1/auth - 检查登录状态
-export async function GET(request: NextRequest) {
+export const GET = withErrorHandling(async (request: NextRequest) => {
   const loggedIn = auth.verify(request);
   return NextResponse.json({ success: true, loggedIn });
-}
+});

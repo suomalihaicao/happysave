@@ -1,9 +1,10 @@
 // REST API - 采集引擎
 import { NextRequest, NextResponse } from 'next/server';
 import { scraper } from '@/lib/scraper';
+import { withErrorHandling } from '@/lib/api-wrapper';
 
 // POST /api/v1/scraper - 触发采集
-export async function POST(request: NextRequest) {
+export const POST = withErrorHandling(async (request: NextRequest) => {
   const body = await request.json();
   const { action } = body;
 
@@ -22,9 +23,9 @@ export async function POST(request: NextRequest) {
     default:
       return NextResponse.json({ success: false, message: `Unknown action: ${action}` }, { status: 400 });
   }
-}
+});
 
 // GET /api/v1/scraper - 采集状态
-export async function GET() {
+export const GET = withErrorHandling(async () => {
   return NextResponse.json({ success: true, data: await scraper.getStats() });
-}
+});

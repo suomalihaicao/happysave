@@ -1,9 +1,10 @@
 // 用户管理 + 邮件订阅
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { withErrorHandling } from '@/lib/api-wrapper';
 
 // POST /api/v1/users - 用户注册/订阅
-export async function POST(request: NextRequest) {
+export const POST = withErrorHandling(async (request: NextRequest) => {
   const body = await request.json();
   const { action } = body;
 
@@ -36,10 +37,10 @@ export async function POST(request: NextRequest) {
     default:
       return NextResponse.json({ success: false, message: 'Unknown action' }, { status: 400 });
   }
-}
+});
 
 // GET /api/v1/users - 获取订阅列表
-export async function GET(request: NextRequest) {
+export const GET = withErrorHandling(async (request: NextRequest) => {
   const { searchParams } = new URL(request.url);
   const action = searchParams.get('action');
 
@@ -50,4 +51,4 @@ export async function GET(request: NextRequest) {
   }
 
   return NextResponse.json({ success: true, data: [], message: '用户系统已就绪' });
-}
+});

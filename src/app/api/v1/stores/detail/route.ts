@@ -1,8 +1,9 @@
 // REST API - Single Store (by slug or id)
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { withErrorHandling } from '@/lib/api-wrapper';
 
-export async function GET(request: NextRequest) {
+export const GET = withErrorHandling(async (request: NextRequest) => {
   const { searchParams } = new URL(request.url);
   const slug = searchParams.get('slug');
   const id = searchParams.get('id');
@@ -17,4 +18,4 @@ export async function GET(request: NextRequest) {
   const coupons = await db.getCouponsByStoreSlug(store.slug);
   
   return NextResponse.json({ success: true, data: { ...store, coupons } });
-}
+});

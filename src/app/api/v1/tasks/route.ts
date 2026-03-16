@@ -1,12 +1,13 @@
 // 人工任务管理 API
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { withErrorHandling } from '@/lib/api-wrapper';
 
 // 任务存储（使用 notifications 表复用）
 const TASK_PREFIX = 'task:';
 
 // POST /api/v1/tasks - 创建/更新任务
-export async function POST(request: NextRequest) {
+export const POST = withErrorHandling(async (request: NextRequest) => {
   const body = await request.json();
   const { action } = body;
 
@@ -43,10 +44,10 @@ export async function POST(request: NextRequest) {
     default:
       return NextResponse.json({ success: false }, { status: 400 });
   }
-}
+});
 
 // GET /api/v1/tasks - 获取任务列表
-export async function GET() {
+export const GET = withErrorHandling(async () => {
   // 返回预设的待办事项
   const tasks = [
     {
@@ -140,4 +141,4 @@ export async function GET() {
   ];
 
   return NextResponse.json({ success: true, data: tasks, total: tasks.length });
-}
+});

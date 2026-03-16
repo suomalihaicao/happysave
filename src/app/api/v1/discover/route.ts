@@ -1,9 +1,10 @@
 // REST API - 自动发现
 import { NextRequest, NextResponse } from 'next/server';
 import { autoDiscover } from '@/lib/auto-discover';
+import { withErrorHandling } from '@/lib/api-wrapper';
 
 // POST /api/v1/discover - 触发自动发现
-export async function POST(request: NextRequest) {
+export const POST = withErrorHandling(async (request: NextRequest) => {
   const body = await request.json();
   const { action, count } = body;
 
@@ -40,9 +41,9 @@ export async function POST(request: NextRequest) {
     default:
       return NextResponse.json({ success: false, message: 'Unknown action' }, { status: 400 });
   }
-}
+});
 
 // GET /api/v1/discover - 发现统计
-export async function GET() {
+export const GET = withErrorHandling(async () => {
   return NextResponse.json({ success: true, data: await autoDiscover.getStats() });
-}
+});

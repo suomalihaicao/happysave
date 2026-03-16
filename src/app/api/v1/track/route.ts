@@ -1,8 +1,9 @@
 // REST API - Click Tracking with UTM support
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { withErrorHandling } from '@/lib/api-wrapper';
 
-export async function POST(request: NextRequest) {
+export const POST = withErrorHandling(async (request: NextRequest) => {
   const body = await request.json();
   const { storeId, couponId, shortCode } = body;
   const url = new URL(request.url);
@@ -33,14 +34,14 @@ export async function POST(request: NextRequest) {
   }
   
   return NextResponse.json({ success: true, data: { id, utm } });
-}
+});
 
 // GET - 查看点击统计（管理员）
-export async function GET(request: NextRequest) {
+export const GET = withErrorHandling(async (request: NextRequest) => {
   const url = new URL(request.url);
   const days = parseInt(url.searchParams.get('days') || '7');
   const storeId = url.searchParams.get('storeId') || undefined;
   
   const stats = await db.getClickStats({ days, storeId });
   return NextResponse.json({ success: true, data: stats });
-}
+});
