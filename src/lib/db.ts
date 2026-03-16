@@ -9,9 +9,17 @@ async function loadDb() {
   const hasTiDB = !!(process.env.DATABASE_URL || process.env.TIDB_URL);
 
   if (hasTiDB) {
-    const { tidb } = await import('./db-tidb');
-    await tidb.init();
-    _db = tidb;
+    try {
+      const { tidb, initTiDB } = await import('./db-tidb');
+      await initTiDB();
+      _db = tidb;
+      console.log('✅ Using TiDB database');
+    } catch (err) {
+      console.error('❌ TiDB connection failed:', err);
+      console.log('⚠️  Falling back to SQLite/memory storage');
+      const { database } = await import('./sqlite-db');
+      _db = database;
+    }
   } else {
     const { database } = await import('./sqlite-db');
     _db = database;

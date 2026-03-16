@@ -1,13 +1,13 @@
 // sitemap.ts - Next.js Metadata API
 import type { MetadataRoute } from 'next';
-import { db } from '@/lib/db';
+import { cached } from '@/lib/cache';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://happysave.vercel.app';
   const now = new Date();
 
-  const stores = await db.getStores({ active: true, limit: 200 });
-  const seoPages = await db.getSeoPages();
+  const stores = await cached.getStores({ active: true, limit: 200 });
+  const seoPages = await cached.getSeoPages();
 
   const urls: MetadataRoute.Sitemap = [
     {

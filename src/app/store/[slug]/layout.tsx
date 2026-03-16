@@ -1,14 +1,14 @@
 // 商店页面 - Server Component metadata + JSON-LD
-import { cache } from 'react';
+import { cache as reactCache } from 'react';
 import type { Metadata } from 'next';
-import { db } from '@/lib/db';
+import { cached } from '@/lib/cache';
 
 type Props = { params: Promise<{ slug: string }> };
 
-// React cache: 避免 layout 和 page 重复调用
-const getStoreData = cache(async (slug: string) => {
-  const store = await db.getStoreBySlug(slug);
-  const coupons = store ? await db.getCouponsByStoreSlug(slug) : [];
+// React cache + 数据缓存: 避免重复查询
+const getStoreData = reactCache(async (slug: string) => {
+  const store = await cached.getStoreBySlug(slug);
+  const coupons = store ? await cached.getCouponsByStoreSlug(slug) : [];
   return { store, coupons };
 });
 

@@ -1,8 +1,8 @@
 // 首页 - 服务端数据获取 + SEO
 import { Metadata } from 'next';
-import { db } from '@/lib/db';
 import { SEO_CONFIG, getFAQJsonLd } from '@/lib/seo';
 import { AntdProvider } from '@/providers/AntdProvider';
+import { cached } from '@/lib/cache';
 import HomePageContent from './HomePageContent';
 
 // ISR: 每30分钟重新验证
@@ -25,16 +25,16 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  // 服务端获取数据
+  // 服务端获取数据（通过缓存层）
   let stores: any[] = [];
   let coupons: any[] = [];
   let categories: any[] = [];
 
   try {
     const [s, c, cat] = await Promise.all([
-      db.getStores({ active: true, limit: 100 }),
-      db.getCoupons({ active: true, limit: 200 }),
-      db.getCategories(),
+      cached.getStores({ active: true, limit: 100 }),
+      cached.getCoupons({ active: true, limit: 200 }),
+      cached.getCategories(),
     ]);
     stores = (s.data as any[]) || [];
     coupons = (c.data as any[]) || [];

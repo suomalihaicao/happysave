@@ -278,7 +278,7 @@ export const tidb = {
   },
 
   async getOne<T = any>(sql: string, params?: any[]): Promise<T | null> {
-    const rows = await tidb.query<T>(sql, params);
+    const rows = await this.query<T>(sql, params);
     return rows[0] || null;
   },
 
@@ -296,8 +296,8 @@ export const tidb = {
     if (params?.active !== undefined) { where += ' AND active = ?'; args.push(params.active); }
     if (params?.search) { where += ' AND (name LIKE ? OR description LIKE ?)'; args.push(`%${params.search}%`, `%${params.search}%`); }
     
-    const countRow = await tidb.getOne<{ c: number }>(`SELECT COUNT(*) as c FROM stores ${where}`, args);
-    const data = await tidb.query(`SELECT * FROM stores ${where} ORDER BY sortOrder ASC, clickCount DESC LIMIT ${Number(limit)} OFFSET ${Number(offset)}`, args);
+    const countRow = await this.getOne<{ c: number }>(`SELECT COUNT(*) as c FROM stores ${where}`, args);
+    const data = await this.query(`SELECT * FROM stores ${where} ORDER BY sortOrder ASC, clickCount DESC LIMIT ${Number(limit)} OFFSET ${Number(offset)}`, args);
     
     return {
       data: data.map((s: any) => ({ ...s, tags: typeof s.tags === 'string' ? JSON.parse(s.tags) : s.tags, featured: !!s.featured, active: !!s.active })),
@@ -306,37 +306,37 @@ export const tidb = {
   },
 
   async getStoreById(id: string) {
-    const s = await tidb.getOne('SELECT * FROM stores WHERE id = ?', [id]);
+    const s = await this.getOne('SELECT * FROM stores WHERE id = ?', [id]);
     return s ? { ...s, tags: typeof (s as any).tags === 'string' ? JSON.parse((s as any).tags) : (s as any).tags, featured: !!(s as any).featured, active: !!(s as any).active } : null;
   },
 
   async getStoreBySlug(slug: string) {
-    const s = await tidb.getOne('SELECT * FROM stores WHERE slug = ? AND active = 1', [slug]);
+    const s = await this.getOne('SELECT * FROM stores WHERE slug = ? AND active = 1', [slug]);
     return s ? { ...s, tags: typeof (s as any).tags === 'string' ? JSON.parse((s as any).tags) : (s as any).tags, featured: !!(s as any).featured, active: !!(s as any).active } : null;
   },
 
   async createStore(data: any) {
     const id = 's-' + Math.random().toString(36).substring(2, 15);
-    await tidb.query(
+    await this.query(
       'INSERT INTO stores (id, slug, name, nameZh, description, descriptionZh, logo, website, affiliateUrl, category, categoryZh, tags, featured, active, sortOrder) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [id, data.slug, data.name, data.nameZh || '', data.description || '', data.descriptionZh || '', data.logo || '', data.website || '', data.affiliateUrl || '', data.category || '', data.categoryZh || '', JSON.stringify(data.tags || []), data.featured || false, data.active !== false, data.sortOrder || 0]
     );
-    return await tidb.getStoreById(id);
+    return await this.getStoreById(id);
   },
 
   async updateStore(id: string, data: any) {
-    const existing = await tidb.getStoreById(id);
+    const existing = await this.getStoreById(id);
     if (!existing) return null;
     const fields = Object.entries(data).filter(([k, v]) => v !== undefined && k !== 'id');
     if (fields.length === 0) return existing;
     const sets = fields.map(([k]) => `${k} = ?`).join(', ');
     const values = fields.map(([k, v]) => k === 'tags' ? JSON.stringify(v) : k === 'featured' || k === 'active' ? !!v : v);
-    await tidb.query(`UPDATE stores SET ${sets}, updatedAt = NOW() WHERE id = ?`, [...values, id]);
-    return await tidb.getStoreById(id);
+    await this.query(`UPDATE stores SET ${sets}, updatedAt = NOW() WHERE id = ?`, [...values, id]);
+    return await this.getStoreById(id);
   },
 
   async deleteStore(id: string) {
-    await tidb.query('DELETE FROM stores WHERE id = ?', [id]);
+    await this.query('DELETE FROM stores WHERE id = ?', [id]);
     return true;
   },
 
@@ -355,8 +355,8 @@ export const tidb = {
     if (params?.active !== undefined) { where += ' AND active = ?'; args.push(params.active); }
     if (params?.search) { where += ' AND (title LIKE ? OR code LIKE ?)'; args.push(`%${params.search}%`, `%${params.search}%`); }
     
-    const countRow = await tidb.getOne<{ c: number }>(`SELECT COUNT(*) as c FROM coupons ${where}`, args);
-    const data = await tidb.query(`SELECT * FROM coupons ${where} ORDER BY featured DESC, clickCount DESC LIMIT ${Number(limit)} OFFSET ${Number(offset)}`, args);
+    const countRow = await this.getOne<{ c: number }>(`SELECT COUNT(*) as c FROM coupons ${where}`, args);
+    const data = await this.query(`SELECT * FROM coupons ${where} ORDER BY featured DESC, clickCount DESC LIMIT ${Number(limit)} OFFSET ${Number(offset)}`, args);
     
     return {
       data: data.map((c: any) => ({ ...c, featured: !!c.featured, active: !!c.active, verified: !!c.verified })),
@@ -365,49 +365,49 @@ export const tidb = {
   },
 
   async getCouponById(id: string) {
-    const c = await tidb.getOne('SELECT * FROM coupons WHERE id = ?', [id]);
+    const c = await this.getOne('SELECT * FROM coupons WHERE id = ?', [id]);
     return c ? { ...c, featured: !!(c as any).featured, active: !!(c as any).active, verified: !!(c as any).verified } : null;
   },
 
   async getCouponsByStoreSlug(slug: string) {
-    const store = await tidb.getStoreBySlug(slug);
+    const store = await this.getStoreBySlug(slug);
     if (!store) return [];
-    const rows = await tidb.query('SELECT * FROM coupons WHERE storeId = ? AND active = 1 ORDER BY featured DESC', [(store as any).id]);
+    const rows = await this.query('SELECT * FROM coupons WHERE storeId = ? AND active = 1 ORDER BY featured DESC', [(store as any).id]);
     return rows.map((c: any) => ({ ...c, featured: !!c.featured, active: !!c.active, verified: !!c.verified }));
   },
 
   async createCoupon(data: any) {
     const id = 'c-' + Math.random().toString(36).substring(2, 15);
-    await tidb.query(
+    await this.query(
       'INSERT INTO coupons (id, storeId, storeName, code, title, titleZh, description, descriptionZh, discount, discountType, type, affiliateUrl, startDate, endDate, featured, active, verified) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, ?, ?, ?)',
       [id, data.storeId, data.storeName || '', data.code || null, data.title, data.titleZh || '', data.description || '', data.descriptionZh || '', data.discount || '', data.discountType || 'percentage', data.type || 'code', data.affiliateUrl || '', data.endDate || null, data.featured || false, data.active !== false, data.verified || false]
     );
-    return await tidb.getCouponById(id);
+    return await this.getCouponById(id);
   },
 
   async updateCoupon(id: string, data: any) {
-    const existing = await tidb.getCouponById(id);
+    const existing = await this.getCouponById(id);
     if (!existing) return null;
     const fields = Object.entries(data).filter(([k, v]) => v !== undefined && k !== 'id');
     if (fields.length === 0) return existing;
     const sets = fields.map(([k]) => `${k} = ?`).join(', ');
     const values = fields.map(([k, v]) => k === 'featured' || k === 'active' || k === 'verified' ? !!v : v);
-    await tidb.query(`UPDATE coupons SET ${sets}, updatedAt = NOW() WHERE id = ?`, [...values, id]);
-    return await tidb.getCouponById(id);
+    await this.query(`UPDATE coupons SET ${sets}, updatedAt = NOW() WHERE id = ?`, [...values, id]);
+    return await this.getCouponById(id);
   },
 
   async deleteCoupon(id: string) {
-    await tidb.query('DELETE FROM coupons WHERE id = ?', [id]);
+    await this.query('DELETE FROM coupons WHERE id = ?', [id]);
     return true;
   },
 
   async incrementCouponClick(id: string) {
-    await tidb.query('UPDATE coupons SET clickCount = clickCount + 1, useCount = useCount + 1 WHERE id = ?', [id]);
+    await this.query('UPDATE coupons SET clickCount = clickCount + 1, useCount = useCount + 1 WHERE id = ?', [id]);
   },
 
   // Bulk update coupon stats
   async fixCouponStats() {
-    await tidb.query("UPDATE coupons SET clickCount = FLOOR(RAND() * 500) + 50, useCount = FLOOR(RAND() * 200) + 10 WHERE clickCount = 0");
+    await this.query("UPDATE coupons SET clickCount = FLOOR(RAND() * 500) + 50, useCount = FLOOR(RAND() * 200) + 10 WHERE clickCount = 0");
   },
 
   // ===== Short Links =====
@@ -415,30 +415,30 @@ export const tidb = {
     const id = 'l-' + Math.random().toString(36).substring(2, 15);
     const code = Math.random().toString(36).substring(2, 9);
     let storeName = '';
-    if (data.storeId) { const s = await tidb.getStoreById(data.storeId); if (s) storeName = (s as any).name; }
-    await tidb.query('INSERT INTO short_links (id, code, originalUrl, shortUrl, storeId, storeName, couponId) VALUES (?, ?, ?, ?, ?, ?, ?)', [id, code, data.originalUrl, `/s/${code}`, data.storeId || '', storeName, data.couponId || null]);
-    return await tidb.getOne('SELECT * FROM short_links WHERE id = ?', [id]);
+    if (data.storeId) { const s = await this.getStoreById(data.storeId); if (s) storeName = (s as any).name; }
+    await this.query('INSERT INTO short_links (id, code, originalUrl, shortUrl, storeId, storeName, couponId) VALUES (?, ?, ?, ?, ?, ?, ?)', [id, code, data.originalUrl, `/s/${code}`, data.storeId || '', storeName, data.couponId || null]);
+    return await this.getOne('SELECT * FROM short_links WHERE id = ?', [id]);
   },
 
   async getShortLinkByCode(code: string) {
-    return await tidb.getOne('SELECT * FROM short_links WHERE code = ?', [code]);
+    return await this.getOne('SELECT * FROM short_links WHERE code = ?', [code]);
   },
 
   async getShortLinks() {
-    const data = await tidb.query('SELECT * FROM short_links ORDER BY createdAt DESC');
+    const data = await this.query('SELECT * FROM short_links ORDER BY createdAt DESC');
     return { data, total: data.length };
   },
 
   async incrementLinkClick(code: string) {
-    await tidb.query('UPDATE short_links SET clicks = clicks + 1, lastClickedAt = NOW() WHERE code = ?', [code]);
+    await this.query('UPDATE short_links SET clicks = clicks + 1, lastClickedAt = NOW() WHERE code = ?', [code]);
   },
 
   // ===== Click Logs =====
   async logClick(data: any) {
     const id = 'cl-' + Math.random().toString(36).substring(2, 15);
     const device = /mobile/i.test(data.userAgent || '') ? 'mobile' : /tablet/i.test(data.userAgent || '') ? 'tablet' : 'desktop';
-    await tidb.query('INSERT INTO click_logs (id, shortCode, storeId, couponId, ip, userAgent, referer, device, utmSource, utmMedium, utmCampaign) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [id, data.shortCode || '', data.storeId || '', data.couponId || '', data.ip || '', data.userAgent || '', data.referer || '', device, data.utmSource || '', data.utmMedium || '', data.utmCampaign || '']);
-    if (data.storeId) await tidb.query('UPDATE stores SET clickCount = clickCount + 1 WHERE id = ?', [data.storeId]);
+    await this.query('INSERT INTO click_logs (id, shortCode, storeId, couponId, ip, userAgent, referer, device, utmSource, utmMedium, utmCampaign) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [id, data.shortCode || '', data.storeId || '', data.couponId || '', data.ip || '', data.userAgent || '', data.referer || '', device, data.utmSource || '', data.utmMedium || '', data.utmCampaign || '']);
+    if (data.storeId) await this.query('UPDATE stores SET clickCount = clickCount + 1 WHERE id = ?', [data.storeId]);
     return id;
   },
 
@@ -448,12 +448,12 @@ export const tidb = {
     const where = storeId ? 'AND cl.storeId = ?' : '';
     const params = storeId ? [since, storeId] : [since];
     
-    const totalRes = await tidb.query(`SELECT COUNT(*) as cnt FROM click_logs cl WHERE cl.timestamp >= ? ${where}`, params);
-    const byDevice = await tidb.query(`SELECT cl.device, COUNT(*) as cnt FROM click_logs cl WHERE cl.timestamp >= ? ${where} GROUP BY cl.device ORDER BY cnt DESC`, params);
-    const byReferer = await tidb.query(`SELECT CASE WHEN cl.referer = '' THEN '直接访问' ELSE cl.referer END as source, COUNT(*) as cnt FROM click_logs cl WHERE cl.timestamp >= ? ${where} GROUP BY source ORDER BY cnt DESC LIMIT 20`, params);
-    const byDay = await tidb.query(`SELECT DATE(cl.timestamp) as day, COUNT(*) as cnt FROM click_logs cl WHERE cl.timestamp >= ? ${where} GROUP BY day ORDER BY day DESC`, params);
-    const byStore = await tidb.query(`SELECT s.name, COUNT(cl.id) as cnt FROM click_logs cl LEFT JOIN stores s ON cl.storeId = s.id WHERE cl.timestamp >= ? ${where} GROUP BY cl.storeId ORDER BY cnt DESC LIMIT 10`, params);
-    const byUTMSource = await tidb.query(`SELECT CASE WHEN cl.utmSource = '' THEN '直接' ELSE cl.utmSource END as source, COUNT(*) as cnt FROM click_logs cl WHERE cl.timestamp >= ? ${where} AND cl.utmSource != '' GROUP BY source ORDER BY cnt DESC LIMIT 10`, params);
+    const totalRes = await this.query(`SELECT COUNT(*) as cnt FROM click_logs cl WHERE cl.timestamp >= ? ${where}`, params);
+    const byDevice = await this.query(`SELECT cl.device, COUNT(*) as cnt FROM click_logs cl WHERE cl.timestamp >= ? ${where} GROUP BY cl.device ORDER BY cnt DESC`, params);
+    const byReferer = await this.query(`SELECT CASE WHEN cl.referer = '' THEN '直接访问' ELSE cl.referer END as source, COUNT(*) as cnt FROM click_logs cl WHERE cl.timestamp >= ? ${where} GROUP BY source ORDER BY cnt DESC LIMIT 20`, params);
+    const byDay = await this.query(`SELECT DATE(cl.timestamp) as day, COUNT(*) as cnt FROM click_logs cl WHERE cl.timestamp >= ? ${where} GROUP BY day ORDER BY day DESC`, params);
+    const byStore = await this.query(`SELECT s.name, COUNT(cl.id) as cnt FROM click_logs cl LEFT JOIN stores s ON cl.storeId = s.id WHERE cl.timestamp >= ? ${where} GROUP BY cl.storeId ORDER BY cnt DESC LIMIT 10`, params);
+    const byUTMSource = await this.query(`SELECT CASE WHEN cl.utmSource = '' THEN '直接' ELSE cl.utmSource END as source, COUNT(*) as cnt FROM click_logs cl WHERE cl.timestamp >= ? ${where} AND cl.utmSource != '' GROUP BY source ORDER BY cnt DESC LIMIT 10`, params);
 
     return {
       totalClicks: totalRes?.[0]?.cnt || 0,
@@ -464,57 +464,57 @@ export const tidb = {
 
   // ===== Categories =====
   async getCategories() {
-    return await tidb.query('SELECT * FROM categories ORDER BY sortOrder ASC');
+    return await this.query('SELECT * FROM categories ORDER BY sortOrder ASC');
   },
 
   // ===== SEO =====
   async createSeoPage(data: any) {
     const id = 'seo-' + Math.random().toString(36).substring(2, 15);
-    await tidb.query('INSERT INTO seo_pages (id, slug, title, content, metaDesc, keywords, pageType, storeId) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [id, data.slug, data.title, data.content || '', data.metaDesc || '', data.keywords || '', data.pageType || 'store', data.storeId || null]);
-    return await tidb.getOne('SELECT * FROM seo_pages WHERE id = ?', [id]);
+    await this.query('INSERT INTO seo_pages (id, slug, title, content, metaDesc, keywords, pageType, storeId) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [id, data.slug, data.title, data.content || '', data.metaDesc || '', data.keywords || '', data.pageType || 'store', data.storeId || null]);
+    return await this.getOne('SELECT * FROM seo_pages WHERE id = ?', [id]);
   },
 
   async getSeoPageBySlug(slug: string) {
-    return await tidb.getOne('SELECT * FROM seo_pages WHERE slug = ?', [slug]);
+    return await this.getOne('SELECT * FROM seo_pages WHERE slug = ?', [slug]);
   },
 
   async getSeoPages() {
-    const data = await tidb.query('SELECT * FROM seo_pages ORDER BY createdAt DESC');
+    const data = await this.query('SELECT * FROM seo_pages ORDER BY createdAt DESC');
     return { data, total: data.length };
   },
 
   async incrementPageView(slug: string) {
-    await tidb.query('UPDATE seo_pages SET views = views + 1 WHERE slug = ?', [slug]);
+    await this.query('UPDATE seo_pages SET views = views + 1 WHERE slug = ?', [slug]);
   },
 
   // ===== Favorites =====
   async toggleFavorite(userId: string, itemType: string, itemId: string) {
-    const existing = await tidb.getOne('SELECT * FROM favorites WHERE userId = ? AND itemType = ? AND itemId = ?', [userId, itemType, itemId]);
-    if (existing) { await tidb.query('DELETE FROM favorites WHERE id = ?', [(existing as any).id]); return { favorited: false }; }
+    const existing = await this.getOne('SELECT * FROM favorites WHERE userId = ? AND itemType = ? AND itemId = ?', [userId, itemType, itemId]);
+    if (existing) { await this.query('DELETE FROM favorites WHERE id = ?', [(existing as any).id]); return { favorited: false }; }
     const id = 'fav-' + Math.random().toString(36).substring(2, 15);
-    await tidb.query('INSERT INTO favorites (id, userId, itemType, itemId) VALUES (?, ?, ?, ?)', [id, userId, itemType, itemId]);
+    await this.query('INSERT INTO favorites (id, userId, itemType, itemId) VALUES (?, ?, ?, ?)', [id, userId, itemType, itemId]);
     return { favorited: true };
   },
 
   async getFavorites(userId: string) {
-    return await tidb.query('SELECT * FROM favorites WHERE userId = ? ORDER BY createdAt DESC', [userId]);
+    return await this.query('SELECT * FROM favorites WHERE userId = ? ORDER BY createdAt DESC', [userId]);
   },
 
   // ===== Notifications =====
   async createNotification(data: any) {
     const id = 'n-' + Math.random().toString(36).substring(2, 15);
-    await tidb.query('INSERT INTO notifications (id, userId, email, type, storeId, keyword) VALUES (?, ?, ?, ?, ?, ?)', [id, data.userId || '', data.email || '', data.type || 'coupon_alert', data.storeId || '', data.keyword || '']);
+    await this.query('INSERT INTO notifications (id, userId, email, type, storeId, keyword) VALUES (?, ?, ?, ?, ?, ?)', [id, data.userId || '', data.email || '', data.type || 'coupon_alert', data.storeId || '', data.keyword || '']);
     return id;
   },
 
   // ===== Dashboard =====
   async getDashboardStats() {
     const [stores, coupons, clicks, links, seo, topStores, featured, recent] = await Promise.all([
-      await tidb.getOne<{ c: number }>('SELECT COUNT(*) as c FROM stores WHERE active = 1'),
-      await tidb.getOne<{ c: number }>('SELECT COUNT(*) as c FROM coupons WHERE active = 1'),
-      await tidb.getOne<{ c: number }>('SELECT COALESCE(SUM(clickCount), 0) as c FROM stores'),
-      await tidb.getOne<{ c: number }>('SELECT COUNT(*) as c FROM short_links'),
-      await tidb.getOne<{ c: number }>('SELECT COUNT(*) as c FROM seo_pages'),
+      await this.getOne<{ c: number }>('SELECT COUNT(*) as c FROM stores WHERE active = 1'),
+      await this.getOne<{ c: number }>('SELECT COUNT(*) as c FROM coupons WHERE active = 1'),
+      await this.getOne<{ c: number }>('SELECT COALESCE(SUM(clickCount), 0) as c FROM stores'),
+      await this.getOne<{ c: number }>('SELECT COUNT(*) as c FROM short_links'),
+      await this.getOne<{ c: number }>('SELECT COUNT(*) as c FROM seo_pages'),
       tidb.query('SELECT name, slug, clickCount as clicks, conversionRate FROM stores WHERE active = 1 ORDER BY clickCount DESC LIMIT 5'),
       tidb.query('SELECT * FROM coupons WHERE featured = 1 AND active = 1'),
       tidb.query('SELECT * FROM coupons WHERE active = 1 ORDER BY createdAt DESC LIMIT 5'),
@@ -524,7 +524,7 @@ export const tidb = {
       totalStores: stores?.c || 0, totalCoupons: coupons?.c || 0,
       totalClicks: clicks?.c || 0, totalLinks: links?.c || 0,
       totalSeoPages: seo?.c || 0, topStores, featuredCoupons: featured, recentCoupons: recent,
-      storeStats: await tidb.query("SELECT name, slug, (SELECT COUNT(*) FROM coupons WHERE storeId = stores.id) as couponCount FROM stores WHERE active = 1"),
+      storeStats: await this.query("SELECT name, slug, (SELECT COUNT(*) FROM coupons WHERE storeId = stores.id) as couponCount FROM stores WHERE active = 1"),
     };
   },
 

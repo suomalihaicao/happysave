@@ -1,6 +1,6 @@
 // Store Detail - 服务端数据获取 + 客户端交互
 import { notFound } from 'next/navigation';
-import { db } from '@/lib/db';
+import { cached } from '@/lib/cache';
 import { AntdProvider } from '@/providers/AntdProvider';
 import StoreDetailContent from './StoreDetailContent';
 
@@ -10,7 +10,7 @@ export const revalidate = 3600;
 // 静态预渲染已知商家
 export async function generateStaticParams() {
   try {
-    const { data: stores } = await db.getStores({ active: true, limit: 100 });
+    const { data: stores } = await cached.getStores({ active: true, limit: 100 });
     return (stores as any[]).map((store) => ({ slug: store.slug }));
   } catch {
     return [];
@@ -29,9 +29,9 @@ export default async function StoreDetailPage({ params }: Props) {
   let coupons: any[] = [];
   
   try {
-    store = await db.getStoreBySlug(slug);
+    store = await cached.getStoreBySlug(slug);
     if (store) {
-      coupons = await db.getCouponsByStoreSlug(slug);
+      coupons = await cached.getCouponsByStoreSlug(slug);
     }
   } catch (err) {
     console.error('Failed to fetch store data:', err);

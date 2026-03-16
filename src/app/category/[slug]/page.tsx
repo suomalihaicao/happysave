@@ -1,7 +1,7 @@
 // 分类页面 - /category/[slug]
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { db } from '@/lib/db';
+import { cached } from '@/lib/cache';
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -42,7 +42,7 @@ export default async function CategoryPage({ params }: Props) {
   const cat = CATEGORY_NAMES[slug];
   if (!cat) notFound();
 
-  const stores = await db.getStores({ category: slug, active: true, limit: 50 });
+  const stores = await cached.getStores({ category: slug, active: true, limit: 50 });
 
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '40px 20px', fontFamily: 'system-ui' }}>

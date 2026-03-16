@@ -1,6 +1,6 @@
 // SEO Guide Pages - AI 生成的商家攻略
 import { Metadata } from 'next';
-import { db } from '@/lib/db';
+import { cached } from '@/lib/cache';
 import { notFound } from 'next/navigation';
 
 // ISR: 每6小时重新验证
@@ -9,7 +9,7 @@ export const revalidate = 21600;
 // 静态预渲染已有的攻略页
 export async function generateStaticParams() {
   try {
-    const seoPages = await db.getSeoPages();
+    const seoPages = await cached.getSeoPages();
     return (seoPages.data as any[]).map((page) => ({ slug: page.slug }));
   } catch {
     return [];
@@ -22,7 +22,7 @@ interface Props {
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const page = await db.getSeoPageBySlug(slug);
+  const page = await cached.getSeoPageBySlug(slug);
   if (!page) return { title: 'Not Found' };
   
   return {
@@ -39,7 +39,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function GuidePage({ params }: Props) {
   const { slug } = await params;
-  const page = await db.getSeoPageBySlug(slug);
+  const page = await cached.getSeoPageBySlug(slug);
   
   if (!page) notFound();
   const p = page as any;
