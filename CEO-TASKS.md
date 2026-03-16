@@ -127,9 +127,22 @@
 - TypeScript 0错误 + Next.js 构建通过
 - git commit b39b190 → 已推送
 
+## ✅ 第10轮 (2026-03-16 13:30) — 代码质量审计 (DB层类型安全强化)
+- 新增 Database 接口: db.ts 定义 40+ 方法完整类型签名 (Store/Coupon/Category)
+- db-postgres.ts: toCamel → Record<string, unknown>; catch块 err: unknown + instanceof Error
+- db-tidb.ts: 新增 TiDbStoreInput/TiDbCouponInput/TiDbClickInput/TiDbSeoPageInput/TiDbNotificationInput 接口
+- db-tidb.ts: parseBoolFields/parseStoreRow/parseCouponRow 辅助函数替换内联 !! 转换
+- cache.ts: 新增 StoreQueryParams/CouponQueryParams; cached 函数返回类型 any→Store/Coupon/Category
+- affiliate.ts: 新增 MerchantRecord/CouponRecord 接口; API map回调类型化
+- api-wrapper.ts: 新增 RouteContext 接口 (Next.js 15 params: Promise 兼容)
+- auto-discover.ts: createStore 返回 null 安全检查
+- `: any` 58→25 (↓57%), `as any` 37→31 (↓16%)
+- TypeScript 0错误 + Next.js 构建通过 (21.3s)
+- git commit 2f13367 → 已推送
+
 ## 📌 下一轮重点
-- 客户端 Bundle 大小优化
-- Ant Design tree-shaking
+- 客户端 Bundle 大小优化 (Ant Design tree-shaking)
+- `as any` 继续消除 (31→20)
 - 数据库连接池监控
 - 首页预热策略
 - API 响应时间监控
