@@ -16,8 +16,8 @@ async function loadDb() {
       await initPostgres();
       _db = postgres;
       console.log('✅ Using PostgreSQL database');
-    } catch (err: any) {
-      console.error('❌ PostgreSQL connection failed:', err?.message);
+    } catch (err: unknown) {
+      console.error('❌ PostgreSQL connection failed:', err instanceof Error ? err.message : String(err));
       console.log('⚠️  Falling back to SQLite/memory storage');
       const { database } = await import('./sqlite-db');
       _db = database;
@@ -28,8 +28,8 @@ async function loadDb() {
       await initTiDB();
       _db = tidb;
       console.log('✅ Using TiDB database');
-    } catch (err: any) {
-      console.error('❌ TiDB connection failed:', err?.message);
+    } catch (err: unknown) {
+      console.error('❌ TiDB connection failed:', err instanceof Error ? err.message : String(err));
       console.log('⚠️  Falling back to SQLite/memory storage');
       const { database } = await import('./sqlite-db');
       _db = database;

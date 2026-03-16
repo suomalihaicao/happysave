@@ -1,4 +1,5 @@
 // SEO 配置 - 中文搜索引擎优化
+import type { Store, Coupon } from '@/types';
 export const BASE_URL = 'https://www.happysave.cn';
 
 export const SEO_CONFIG = {
@@ -49,7 +50,7 @@ export function getWebsiteJsonLd() {
 }
 
 // 结构化数据 - 商家页面
-export function getStoreJsonLd(store: any) {
+export function getStoreJsonLd(store: Store) {
   return {
     '@context': 'https://schema.org',
     '@type': 'Store',
@@ -66,7 +67,7 @@ export function getStoreJsonLd(store: any) {
 }
 
 // 结构化数据 - 优惠码列表
-export function getCouponListJsonLd(coupons: any[], storeName: string) {
+export function getCouponListJsonLd(coupons: Coupon[], storeName: string) {
   return {
     '@context': 'https://schema.org',
     '@type': 'ItemList',

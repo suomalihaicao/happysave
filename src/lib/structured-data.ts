@@ -1,7 +1,8 @@
 // 结构化数据 (JSON-LD) - 让搜索引擎展示富片段
 import { db } from '@/lib/db';
+import type { Store, Coupon } from '@/types';
 
-export function generateStoreSchema(store: any) {
+export function generateStoreSchema(store: Store) {
   return {
     '@context': 'https://schema.org',
     '@type': 'Store',
@@ -25,7 +26,7 @@ export function generateStoreSchema(store: any) {
   };
 }
 
-export function generateCouponSchema(coupon: any, storeName: string) {
+export function generateCouponSchema(coupon: Coupon, storeName: string) {
   return {
     '@context': 'https://schema.org',
     '@type': 'Offer',

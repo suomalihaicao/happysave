@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import {
-  Table, Button, Input, Select, Tag, Space,
+  Table, Button, Input, Tag, Space,
   Card, Row, Col, Statistic, Tabs, message, List,
   Typography, Alert, Descriptions, Popconfirm
 } from 'antd';
