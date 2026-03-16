@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   Card, Button, Space, Typography, message, Divider, Alert,
   Select, Row, Col, Tag, List,
@@ -13,12 +13,28 @@ import {
 const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AIResults = Record<string, any>;
+
+interface CouponSuggestion {
+  storeName: string;
+  discount: string;
+  couponCode?: string;
+  reason: string;
+}
+
+interface SocialPost {
+  store: string;
+  weibo?: string;
+  wechat?: string;
+}
+
 export default function AIPanel() {
   const [loading, setLoading] = useState<string | null>(null);
-  const [results, setResults] = useState<any>({});
+  const [results, setResults] = useState<AIResults>({});
   const [messageApi, contextHolder] = message.useMessage();
 
-  const runAI = async (action: string, body: any = {}) => {
+  const runAI = async (action: string, body: Record<string, unknown> = {}) => {
     setLoading(action);
     try {
       const res = await fetch('/api/v1/ai', {
@@ -28,13 +44,13 @@ export default function AIPanel() {
       });
       const data = await res.json();
       if (data.success) {
-        setResults((prev: any) => ({ ...prev, [action]: data.data }));
+        setResults((prev) => ({ ...prev, [action]: data.data }));
         messageApi.success('AI 执行成功');
       } else {
         messageApi.error(data.message || 'AI 执行失败');
       }
-    } catch (e: any) {
-      messageApi.error(e.message);
+    } catch (e: unknown) {
+      messageApi.error(e instanceof Error ? e.message : '执行失败');
     }
     setLoading(null);
   };
@@ -47,13 +63,13 @@ export default function AIPanel() {
       });
       const data = await res.json();
       if (data.success) {
-        setResults((prev: any) => ({ ...prev, [`cron_${task}`]: data.results }));
+        setResults((prev) => ({ ...prev, [`cron_${task}`]: data.results }));
         messageApi.success('定时任务执行成功');
       } else {
         messageApi.error(data.error || '任务失败');
       }
-    } catch (e: any) {
-      messageApi.error(e.message);
+    } catch (e: unknown) {
+      messageApi.error(e instanceof Error ? e.message : '任务失败');
     }
     setLoading(null);
   };
@@ -130,21 +146,24 @@ export default function AIPanel() {
                 size="small"
                 style={{ marginTop: 16 }}
                 dataSource={results.suggest_coupons.suggestions}
-                renderItem={(item: any) => (
-                  <List.Item>
-                    <List.Item.Meta
-                      title={<Text strong>{item.storeName}</Text>}
-                      description={
-                        <div>
-                          <Tag color="orange">{item.discount}</Tag>
-                          {item.couponCode && <Tag>{item.couponCode}</Tag>}
-                          <br />
-                          <Text type="secondary" style={{ fontSize: 12 }}>{item.reason}</Text>
-                        </div>
-                      }
-                    />
-                  </List.Item>
-                )}
+                renderItem={(item: unknown) => {
+                  const s = item as CouponSuggestion;
+                  return (
+                    <List.Item>
+                      <List.Item.Meta
+                        title={<Text strong>{s.storeName}</Text>}
+                        description={
+                          <div>
+                            <Tag color="orange">{s.discount}</Tag>
+                            {s.couponCode && <Tag>{s.couponCode}</Tag>}
+                            <br />
+                            <Text type="secondary" style={{ fontSize: 12 }}>{s.reason}</Text>
+                          </div>
+                        }
+                      />
+                    </List.Item>
+                  );
+                }}
               />
             )}
           </Card>
@@ -213,19 +232,22 @@ export default function AIPanel() {
                 size="small"
                 style={{ marginTop: 16 }}
                 dataSource={results.cron_social}
-                renderItem={(item: any) => (
+                renderItem={(item: unknown) => {
+                  const post = item as SocialPost;
+                  return (
                   <List.Item>
                     <List.Item.Meta
-                      title={<Text strong>{item.store}</Text>}
+                      title={<Text strong>{post.store}</Text>}
                       description={
                         <div>
-                          <div><Text type="secondary">微博：</Text>{item.weibo?.substring(0, 60)}...</div>
-                          <div><Text type="secondary">微信：</Text>{item.wechat?.substring(0, 60)}...</div>
+                          <div><Text type="secondary">微博：</Text>{post.weibo?.substring(0, 60)}...</div>
+                          <div><Text type="secondary">微信：</Text>{post.wechat?.substring(0, 60)}...</div>
                         </div>
                       }
                     />
                   </List.Item>
-                )}
+                  );
+                }}
               />
             )}
           </Card>

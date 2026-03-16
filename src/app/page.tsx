@@ -2,6 +2,7 @@
 import { Metadata } from 'next';
 import { SEO_CONFIG, getFAQJsonLd } from '@/lib/seo';
 import { cached } from '@/lib/cache';
+import { Store, Coupon, Category } from '@/types';
 import dynamic from 'next/dynamic';
 
 // 首页内容动态加载 (antd 内部自行处理)
@@ -30,9 +31,9 @@ export const metadata: Metadata = {
 
 export default async function HomePage() {
   // 服务端获取数据（通过缓存层）
-  let stores: any[] = [];
-  let coupons: any[] = [];
-  let categories: any[] = [];
+  let stores: Store[] = [];
+  let coupons: Coupon[] = [];
+  let categories: Category[] = [];
 
   try {
     const [s, c, cat] = await Promise.all([
@@ -40,9 +41,9 @@ export default async function HomePage() {
       cached.getCoupons({ active: true, limit: 200 }),
       cached.getCategories(),
     ]);
-    stores = (s.data as any[]) || [];
-    coupons = (c.data as any[]) || [];
-    categories = (cat as any[]) || [];
+    stores = (s.data as Store[]) || [];
+    coupons = (c.data as Coupon[]) || [];
+    categories = (cat as Category[]) || [];
   } catch (err) {
     console.error('Failed to fetch homepage data:', err);
   }
