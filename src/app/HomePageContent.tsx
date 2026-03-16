@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { Layout, Input, Space, Row, Col, Button, message, Badge, FloatButton } from 'antd';
 import {
@@ -136,7 +136,7 @@ export default function HomePageContent({ initialStores, initialCoupons, initial
             { q: t('如何使用优惠码？', 'How to use coupons?'), a: t('找到心仪优惠码，点击复制按钮，前往商家官网结账页面粘贴使用即可。', 'Find a coupon, copy it, paste at checkout.') },
             { q: t('优惠码是免费的吗？', 'Are coupons free?'), a: t('是的，所有优惠码完全免费使用，无需注册或付费。', 'Yes, all coupons are completely free.') },
             { q: t('优惠码过期了怎么办？', 'What if a coupon expires?'), a: t('我们每日更新优惠码，如遇失效请查看该商家页面获取最新优惠。', 'We update daily. Check the store page for latest deals.') },
-            { q: t('如何成为合作商家？', 'How to partner?'), a: t('访问商务合作页面或发送邮件至 partner@happysave.vercel.app 联系我们。', 'Visit our advertise page or email us.') },
+            { q: t('如何成为合作商家？', 'How to partner?'), a: t('访问商务合作页面或发送邮件至 partner@happysave.cn 联系我们。', 'Visit our advertise page or email us.') },
           ].map((item, i) => (
             <div className="hs-faq-item" key={i}>
               <div className="hs-faq-q">{item.q}</div>
@@ -193,7 +193,7 @@ export default function HomePageContent({ initialStores, initialCoupons, initial
             </Col>
             <Col xs={24} md={8}>
               <h4>{t('联系我们', 'Contact')}</h4>
-              <p style={{ fontSize: 13 }}>📧 partner@happysave.vercel.app</p>
+              <p style={{ fontSize: 13 }}>📧 partner@happysave.cn</p>
               <p style={{ fontSize: 13 }}>{t('工作时间：周一至周五 9:00-18:00', 'Mon-Fri 9:00-18:00 UTC+8')}</p>
             </Col>
           </Row>

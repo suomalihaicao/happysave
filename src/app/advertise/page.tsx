@@ -71,7 +71,7 @@ export default function AdvertisePage() {
                 </div>
               ))}
               <Button type="primary" size="large" style={{ marginTop: 24, background: plan.color, borderColor: plan.color }}
-                href="mailto:partner@happysave.vercel.app">
+                href="mailto:partner@happysave.cn">
                 立即咨询
               </Button>
             </Card>
@@ -84,7 +84,7 @@ export default function AdvertisePage() {
       <div style={{ textAlign: 'center' }}>
         <Title level={3}>联系我们</Title>
         <Paragraph>
-          📧 partner@happysave.vercel.app<br />
+          📧 partner@happysave.cn<br />
           📱 微信: happysave2026
         </Paragraph>
         <Link href="/"><Button size="large">← 返回首页</Button></Link>

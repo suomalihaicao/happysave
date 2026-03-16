@@ -3,7 +3,7 @@ import type { MetadataRoute } from 'next';
 import { cached } from '@/lib/cache';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = 'https://happysave.vercel.app';
+  const baseUrl = 'https://happysave.cn';
   const now = new Date();
 
   const stores = await cached.getStores({ active: true, limit: 200 });

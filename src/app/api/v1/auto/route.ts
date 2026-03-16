@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
     const topCoupons = (coupons.data as any[]).slice(0, 10).map(c => `${c.title}: ${c.discount} ${c.code ? `码:${c.code}` : ''}`).join('\n');
 
     const [zhihu, xiaohongshu, weibo] = await Promise.all([
-      callAI(`请写一篇知乎风格的海淘省钱攻略文章（800字），推荐以下商家和优惠码：\n商家：${storeList}\n优惠码：\n${topCoupons}\n\n要求：专业实用，文末引导访问 happysave.vercel.app`),
+      callAI(`请写一篇知乎风格的海淘省钱攻略文章（800字），推荐以下商家和优惠码：\n商家：${storeList}\n优惠码：\n${topCoupons}\n\n要求：专业实用，文末引导访问 happysave.cn`),
       callAI(`请写3条小红书风格种草笔记（每条150字），推荐海淘优惠码：\n${topCoupons}\n\n要求：带emoji，口语化，#海淘优惠码 #省钱攻略`),
       callAI(`请写5条微博短帖（每条140字内），推广海淘优惠码：\n${topCoupons}\n\n要求：带话题标签`),
     ]);

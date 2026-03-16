@@ -3,15 +3,13 @@
 import { useState, useEffect } from 'react';
 import {
   Table, Button, Modal, Form, Input, Select, Switch, Tag, Space,
-  Card, Row, Col, Statistic, Tabs, message, Badge, List, Checkbox,
+  Card, Row, Col, Statistic, Tabs, message, List,
   Typography, Alert, Progress, Descriptions, Divider, Popconfirm
 } from 'antd';
 import {
   ShopOutlined, TagOutlined, BarChartOutlined, RobotOutlined,
-  LinkOutlined, EyeOutlined, DeleteOutlined, EditOutlined,
-  PlusOutlined, ThunderboltOutlined, CheckCircleOutlined,
-  ClockCircleOutlined, ExclamationCircleOutlined, LockOutlined,
-  UserOutlined, MailOutlined, SafetyOutlined, FileTextOutlined,
+  LinkOutlined, EyeOutlined, PlusOutlined, ThunderboltOutlined,
+  LockOutlined, UserOutlined, FileTextOutlined,
   ExportOutlined, LineChartOutlined, RiseOutlined, FireOutlined, CopyOutlined
 } from '@ant-design/icons';
 
@@ -445,7 +443,7 @@ function AnalyticsTab() {
           {['zhihu', 'weibo', 'xiaohongshu', 'douban', 'wechat', 'douyin'].map(platform => (
             <Col key={platform}>
               <Button size="small" onClick={() => {
-                const url = `https://happysave.vercel.app/?utm_source=${platform}&utm_medium=forum&utm_campaign=2026spring`;
+                const url = `https://happysave.cn/?utm_source=${platform}&utm_medium=forum&utm_campaign=2026spring`;
                 navigator.clipboard.writeText(url);
                 message.success(`已复制 ${platform} 链接！`);
               }}>

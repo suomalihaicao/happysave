@@ -133,8 +133,8 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
     
     const links = (stores.data as any[]).map(store => ({
       store: store.name,
-      url: `https://happysave.vercel.app/store/${store.slug}?utm_source=referral&utm_medium=${refCode}&utm_campaign=share`,
-      shortUrl: `https://happysave.vercel.app/s/${store.slug}?r=${refCode}`,
+      url: `https://happysave.cn/store/${store.slug}?utm_source=referral&utm_medium=${refCode}&utm_campaign=share`,
+      shortUrl: `https://happysave.cn/s/${store.slug}?r=${refCode}`,
     }));
     
     return NextResponse.json({ success: true, data: links });
@@ -143,8 +143,8 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
   // 5. 搜索引擎自动提交 - 把新URL提交给百度和Google
   if (action === 'submit_urls') {
     const stores = await db.getStores({ active: true, limit: 50 });
-    const urls = (stores.data as any[]).map(s => `https://happysave.vercel.app/store/${s.slug}`);
-    urls.unshift('https://happysave.vercel.app/');
+    const urls = (stores.data as any[]).map(s => `https://happysave.cn/store/${s.slug}`);
+    urls.unshift('https://happysave.cn/');
     
     // 返回URL列表，可用于手动提交或Ping服务
     return NextResponse.json({
@@ -152,7 +152,7 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
       data: {
         urls,
         total: urls.length,
-        baiduPing: `http://data.zz.baidu.com/urls?site=happysave.vercel.app&token=YOUR_TOKEN`,
+        baiduPing: `http://data.zz.baidu.com/urls?site=happysave.cn&token=YOUR_TOKEN`,
         googlePing: '通过 Google Search Console API 提交',
         instructions: [
           '百度：打开 https://ziyuan.baidu.com/linksubmit/url 提交URL',

@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
           <div style={{
             fontSize: 24, color: 'rgba(255,255,255,0.6)', marginTop: 40,
           }}>
-            happysave.vercel.app/store/{storeName.toLowerCase()}
+            happysave.cn/store/{storeName.toLowerCase()}
           </div>
         </div>
       ),

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, lazy } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import {
@@ -215,7 +215,7 @@ export default function StoreDetailContent({ initialData }: StoreDetailContentPr
                       二维码
                     </Button>
                     <Button size="large" icon={<WhatsAppOutlined />} onClick={() => shareWhatsApp(
-                      `🔥 ${store.name} ${coupon.discount} 优惠！${coupon.code ? `\n优惠码：${coupon.code}` : ''}\n👉 https://happysave.vercel.app/store/${store.slug}`
+                      `🔥 ${store.name} ${coupon.discount} 优惠！${coupon.code ? `\n优惠码：${coupon.code}` : ''}\n👉 https://happysave.cn/store/${store.slug}`
                     )} />
                   </div>
                 </Card>
