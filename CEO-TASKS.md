@@ -88,6 +88,18 @@
 - TypeScript 编译通过 + Next.js 构建通过
 - git commit c44a5cb → 已推送
 
+## ✅ 第8轮 (2026-03-16 12:30) — 代码质量审计
+- 新增强类型输入接口: sqlite-db.ts 引入 StoreInput/CouponInput/ClickInput/SeoPageInput/NotificationInput
+- createStore/updateStore/createCoupon/updateCoupon/logClick/createSeoPage/createNotification/updateNotification 参数强类型化
+- SQL 查询参数 args: any[] → (string|number|boolean)[]
+- HomePageContent.tsx: 移除 6 处多余 any 标注（利用已有 Store/Coupon/Category 类型）
+- auto-discover.ts: 4 处 any 替换为内联类型 { slug: string } 等
+- types/index.ts: Category 接口补全 id 字段
+- 修复 auto-discover.ts 隐式 any 编译错误
+- : any 从 83→64 (↓23%), as any 从 40→37 (↓8%)
+- TypeScript 0 错误 + Next.js 构建通过
+- git commit 9990f0f → 已推送
+
 ## 📌 下一轮重点
 - 客户端 Bundle 大小优化
 - Ant Design tree-shaking
@@ -105,3 +117,19 @@
 - `: any` 从113→83 (下降27%), `as any` 从61→40 (下降34%)
 - TypeScript 0错误 + Next.js 构建通过
 - git commit d47b278 → 已推送
+
+## ✅ 第9轮 (2026-03-16 13:00) — 代码质量审计
+- 移除未使用导入: admin/page.tsx `Select` (antd, 仅导入行出现1次)
+- 类型替换: structured-data.ts `generateStoreSchema(store: any)` → `store: Store`; `generateCouponSchema(coupon: any)` → `coupon: Coupon`
+- 类型替换: seo.ts `getStoreJsonLd(store: any)` → `store: Store`; `getCouponListJsonLd(coupons: any[])` → `coupons: Coupon[]`
+- catch块: db.ts 2处 `err: any` → `err: unknown` + `instanceof Error` 检查
+- : any 从 64→58 (↓9%), as any 37 (持平)
+- TypeScript 0错误 + Next.js 构建通过
+- git commit b39b190 → 已推送
+
+## 📌 下一轮重点
+- 客户端 Bundle 大小优化
+- Ant Design tree-shaking
+- 数据库连接池监控
+- 首页预热策略
+- API 响应时间监控
