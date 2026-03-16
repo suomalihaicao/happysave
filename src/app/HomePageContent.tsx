@@ -33,7 +33,7 @@ export default function HomePageContent({ initialStores, initialCoupons, initial
     if (selectedCat !== 'all' && s.category !== selectedCat) return false;
     if (searchText && !s.name.toLowerCase().includes(searchText.toLowerCase())) return false;
     return true;
-  }).sort((a, b) => ((b as any).featured ? 1 : 0) - ((a as any).featured ? 1 : 0));
+  }).sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
 
   return (
     <Layout className="min-h-screen">
@@ -82,7 +82,7 @@ export default function HomePageContent({ initialStores, initialCoupons, initial
         <button className={`hs-cat-chip ${selectedCat === 'all' ? 'active' : ''}`} onClick={() => setSelectedCat('all')}>
           <FireOutlined /> {t('全部', 'All')}
         </button>
-        {categories.map((cat: any) => (
+        {categories.map((cat) => (
           <button key={cat.id} className={`hs-cat-chip ${selectedCat === cat.name ? 'active' : ''}`} onClick={() => setSelectedCat(cat.name)}>
             {cat.icon} {lang === 'zh' ? cat.nameZh : cat.name}
           </button>
@@ -93,7 +93,7 @@ export default function HomePageContent({ initialStores, initialCoupons, initial
       <section className="hs-section">
         <h2 className="hs-section-title"><ShopOutlined style={{ color: '#FF6B35' }} /> {t('品牌商家', 'Featured Stores')}</h2>
         <Row gutter={[10, 10]}>
-          {filtered.map((store: any) => (
+          {filtered.map((store) => (
             <Col xs={8} sm={6} md={4} lg={3} key={store.id}>
               <Link href={`/store/${store.slug}`}>
                 <div className="hs-store-card">
@@ -102,7 +102,7 @@ export default function HomePageContent({ initialStores, initialCoupons, initial
                   <div className="hs-store-name">{store.name}</div>
                   <div className="hs-store-cat">{lang === 'zh' ? store.categoryZh : store.category}</div>
                   <div style={{ marginTop: 6 }}>
-                    <Badge count={coupons.filter((c: any) => c.storeId === store.id).length} showZero style={{ backgroundColor: '#FF6B35', fontSize: 10 }} size="small" />
+                    <Badge count={coupons.filter((c) => c.storeId === store.id).length} showZero style={{ backgroundColor: '#FF6B35', fontSize: 10 }} size="small" />
                   </div>
                 </div>
               </Link>
@@ -188,7 +188,7 @@ export default function HomePageContent({ initialStores, initialCoupons, initial
             </Col>
             <Col xs={12} md={4}>
               <h4>{t('热门分类', 'Categories')}</h4>
-              {categories.slice(0, 5).map((cat: any) => (
+              {categories.slice(0, 5).map((cat) => (
                 <Link key={cat.id} href={`/?cat=${cat.name}`} className="hs-footer-link">{lang === 'zh' ? cat.nameZh : cat.name}</Link>
               ))}
             </Col>

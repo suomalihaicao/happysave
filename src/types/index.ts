@@ -107,6 +107,7 @@ export interface ApiResponse<T> {
 }
 
 export interface Category {
+  id: string;
   name: string;
   nameZh: string;
   icon: string;

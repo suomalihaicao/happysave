@@ -42,6 +42,15 @@ type SeoPage = {
 type Favorite = { id: string; userId: string; itemType: string; itemId: string; createdAt: string };
 type Notification = { id: string; userId: string; email: string; type: string; storeId: string; keyword: string; active: number; createdAt: string };
 
+// Input types for create/update operations
+type StoreInput = { slug: string; name: string; nameZh?: string; description?: string; descriptionZh?: string; logo?: string; website?: string; affiliateUrl?: string; category?: string; categoryZh?: string; tags?: string[]; featured?: boolean; active?: boolean; sortOrder?: number };
+type StoreUpdate = Partial<StoreInput>;
+type CouponInput = { storeId: string; storeName?: string; code?: string | null; title: string; titleZh?: string; description?: string; descriptionZh?: string; discount?: string; discountType?: string; type?: string; affiliateUrl?: string; startDate?: string; endDate?: string | null; featured?: boolean; active?: boolean; verified?: boolean };
+type CouponUpdate = Partial<CouponInput>;
+type ClickInput = { shortCode: string; storeId?: string; couponId?: string | null; ip?: string; userAgent?: string; referer?: string; country?: string; device?: string; utmSource?: string; utmMedium?: string; utmCampaign?: string };
+type SeoPageInput = { slug: string; title: string; content?: string; metaDesc?: string; keywords?: string; pageType?: string; storeId?: string; aiGenerated?: boolean };
+type NotificationInput = { userId?: string; email?: string; type?: string; storeId?: string; keyword?: string; active?: boolean };
+
 // Try to load better-sqlite3 (only available locally, not on Vercel)
 // Use eval to avoid Turbopack static analysis
 const dynamicRequire = eval('require') as NodeRequire;
@@ -292,7 +301,7 @@ export const database = {
 
     if (dbType === 'sqlite') {
       let where = 'WHERE 1=1';
-      const args: any[] = [];
+      const args: (string | number | boolean)[] = [];
       if (params?.category) { where += ' AND category = ?'; args.push(params.category); }
       if (params?.featured !== undefined) { where += ' AND featured = ?'; args.push(params.featured ? 1 : 0); }
       if (params?.active !== undefined) { where += ' AND active = ?'; args.push(params.active ? 1 : 0); }
@@ -328,7 +337,7 @@ export const database = {
     return store ? { ...store, tags: parseTags(store.tags), featured: !!store.featured, active: !!store.active } : null;
   },
 
-  createStore(data: any) {
+  createStore(data: StoreInput) {
     const id = genId();
     const now = new Date().toISOString();
     const store: Store = {
@@ -354,7 +363,7 @@ export const database = {
     return database.getStoreById(id);
   },
 
-  updateStore(id: string, data: any) {
+  updateStore(id: string, data: StoreUpdate) {
     const existing = database.getStoreById(id);
     if (!existing) return null;
     if (dbType === 'sqlite') {
@@ -384,7 +393,7 @@ export const database = {
 
     if (dbType === 'sqlite') {
       let where = 'WHERE 1=1';
-      const args: any[] = [];
+      const args: (string | number | boolean)[] = [];
       if (params?.storeId) { where += ' AND storeId = ?'; args.push(params.storeId); }
       if (params?.type) { where += ' AND type = ?'; args.push(params.type); }
       if (params?.featured !== undefined) { where += ' AND featured = ?'; args.push(params.featured ? 1 : 0); }
@@ -420,7 +429,7 @@ export const database = {
     return memory.coupons.filter(c => c.storeId === store.id && c.active).map(c => ({ ...c, featured: !!c.featured, active: !!c.active, verified: !!c.verified }));
   },
 
-  createCoupon(data: any) {
+  createCoupon(data: CouponInput) {
     const id = genId();
     const now = new Date().toISOString();
     const coupon: Coupon = {
@@ -447,7 +456,7 @@ export const database = {
     return database.getCouponById(id);
   },
 
-  updateCoupon(id: string, data: any) {
+  updateCoupon(id: string, data: CouponUpdate) {
     const existing = database.getCouponById(id);
     if (!existing) return null;
     if (dbType === 'sqlite') {
@@ -477,7 +486,7 @@ export const database = {
       const coupons = sqliteDb.prepare('SELECT * FROM coupons WHERE storeId = ? AND active = 1 ORDER BY featured DESC, clickCount DESC').all((store as any).id);
       return {
         store: { ...(store as any), tags: parseTags((store as any).tags), featured: !!(store as any).featured, active: !!(store as any).active },
-        coupons: coupons.map((c: any) => ({ ...c, featured: !!c.featured, active: !!c.active, verified: !!c.verified })),
+        coupons: coupons.map((c: Coupon) => ({ ...c, featured: !!c.featured, active: !!c.active, verified: !!c.verified })),
       };
     }
     const store = memory.stores.find(s => s.slug === slug && s.active);
@@ -546,7 +555,7 @@ export const database = {
   },
 
   // ===== Click Logs =====
-  logClick(data: any) {
+  logClick(data: ClickInput) {
     const id = genId();
     const now = new Date().toISOString();
     const device = /mobile/i.test(data.userAgent || '') ? 'mobile' : /tablet/i.test(data.userAgent || '') ? 'tablet' : 'desktop';
@@ -622,7 +631,7 @@ export const database = {
   },
 
   // ===== SEO Pages =====
-  createSeoPage(data: any) {
+  createSeoPage(data: SeoPageInput) {
     const id = genId();
     const now = new Date().toISOString();
     const page: SeoPage = { id, slug: data.slug, title: data.title, content: data.content || '', metaDesc: data.metaDesc || '', keywords: data.keywords || '', pageType: data.pageType || 'store', storeId: data.storeId || '', views: 0, aiGenerated: 1, createdAt: now, updatedAt: now };
@@ -663,7 +672,7 @@ export const database = {
   },
 
   // ===== Notifications =====
-  createNotification(data: any) {
+  createNotification(data: NotificationInput) {
     const id = genId();
     const now = new Date().toISOString();
     const notif: Notification = { id, userId: data.userId || '', email: data.email || '', type: data.type || 'coupon_alert', storeId: data.storeId || '', keyword: data.keyword || '', active: 1, createdAt: now };
@@ -711,7 +720,7 @@ export const database = {
   },
 
   // Update notification/task
-  updateNotification(id: string, data: any) {
+  updateNotification(id: string, data: Partial<NotificationInput>) {
     if (dbType === 'sqlite') {
       if (data.active !== undefined) sqliteDb.prepare('UPDATE notifications SET active = ? WHERE id = ?').run(data.active ? 1 : 0, id);
     } else {

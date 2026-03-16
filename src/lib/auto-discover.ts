@@ -54,13 +54,13 @@ const COUPON_TEMPLATES = [
 export const autoDiscover = {
   async discoverNewStores(count: number = 5) {
     const existing = await db.getStores({ limit: 500 });
-    const existingSlugs = new Set(existing.data.map((s: any) => s.slug));
+    const existingSlugs = new Set(existing.data.map((s: { slug: string }) => s.slug));
     const categoryNames: Record<string, string> = {
       shopping: '综合购物', fashion: '时尚服饰', electronics: '电子产品',
       ai: 'AI工具', hosting: '主机服务', beauty: '美妆个护', travel: '旅行酒店',
     };
 
-    const allBrands: any[] = [];
+    const allBrands: Array<{ name: string; url: string; slug: string; category: string; catZh: string }> = [];
     for (const [cat, brands] of Object.entries(BRAND_POOLS)) {
       for (const brand of brands) {
         if (!existingSlugs.has(brand.slug)) {
@@ -70,7 +70,7 @@ export const autoDiscover = {
     }
 
     const toAdd = allBrands.sort(() => Math.random() - 0.5).slice(0, count);
-    const added: any[] = [];
+    const added: Array<{ id: string; slug: string; name: string }> = [];
 
     for (const brand of toAdd) {
       const store = await db.createStore({
@@ -89,7 +89,7 @@ export const autoDiscover = {
       for (const tpl of templates) {
         const code = tpl.codePrefix ? `${tpl.codePrefix}${Math.random().toString(36).substring(2, 5).toUpperCase()}` : null;
         await db.createCoupon({
-          storeId: (store as any).id, storeName: brand.name, code,
+          storeId: store.id as string, storeName: brand.name, code,
           title: `${tpl.title} - ${brand.name}`, titleZh: `${brand.name} ${tpl.titleZh}`,
           description: `Save with ${brand.name} ${tpl.title}`,
           descriptionZh: `${brand.name} ${tpl.titleZh}优惠`,
@@ -109,7 +109,7 @@ export const autoDiscover = {
     const stores = await db.getStores({ active: true, limit: 200 });
     const targetStores = stores.data.sort(() => Math.random() - 0.5).slice(0, count);
     let added = 0;
-    for (const store of targetStores as any[]) {
+    for (const store of targetStores) {
       const tpl = COUPON_TEMPLATES[Math.floor(Math.random() * COUPON_TEMPLATES.length)];
       const code = tpl.codePrefix ? `${tpl.codePrefix}${Math.random().toString(36).substring(2, 5).toUpperCase()}` : null;
       await db.createCoupon({
@@ -131,7 +131,7 @@ export const autoDiscover = {
   async getStats() {
     const stores = await db.getStores({ limit: 500 });
     const coupons = await db.getCoupons({ limit: 5000 });
-    const existingSlugs = new Set(stores.data.map((s: any) => s.slug));
+    const existingSlugs = new Set(stores.data.map((s: { slug: string }) => s.slug));
     let remaining = 0;
     for (const brands of Object.values(BRAND_POOLS)) {
       remaining += brands.filter(b => !existingSlugs.has(b.slug)).length;
