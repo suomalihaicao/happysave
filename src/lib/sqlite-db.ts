@@ -469,6 +469,23 @@ export const database = {
     return true;
   },
 
+  // 一次查询获取商家+优惠码 (性能优化)
+  getStoreWithCoupons(slug: string) {
+    if (dbType === 'sqlite') {
+      const store = sqliteDb.prepare('SELECT * FROM stores WHERE slug = ? AND active = 1').get(slug);
+      if (!store) return { store: null, coupons: [] };
+      const coupons = sqliteDb.prepare('SELECT * FROM coupons WHERE storeId = ? AND active = 1 ORDER BY featured DESC, clickCount DESC').all((store as any).id);
+      return {
+        store: { ...(store as any), tags: parseTags((store as any).tags), featured: !!(store as any).featured, active: !!(store as any).active },
+        coupons: coupons.map((c: any) => ({ ...c, featured: !!c.featured, active: !!c.active, verified: !!c.verified })),
+      };
+    }
+    const store = memory.stores.find(s => s.slug === slug && s.active);
+    if (!store) return { store: null, coupons: [] };
+    const coupons = memory.coupons.filter(c => c.storeId === store.id && c.active);
+    return { store, coupons };
+  },
+
   incrementCouponClick(id: string) {
     if (dbType === 'sqlite') sqliteDb.prepare('UPDATE coupons SET clickCount = clickCount + 1, useCount = useCount + 1 WHERE id = ?').run(id);
     else { const c = memory.coupons.find(c => c.id === id); if (c) { c.clickCount++; c.useCount++; } }

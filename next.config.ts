@@ -65,6 +65,24 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        source: '/store/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'public, s-maxage=3600, stale-while-revalidate=86400' },
+        ],
+      },
+      {
+        source: '/category/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'public, s-maxage=3600, stale-while-revalidate=86400' },
+        ],
+      },
+      {
+        source: '/guide/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'public, s-maxage=21600, stale-while-revalidate=86400' },
+        ],
+      },
+      {
         source: '/s/:path*',
         headers: [
           { key: 'Cache-Control', value: 'public, max-age=0, must-revalidate' },

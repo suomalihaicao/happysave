@@ -24,15 +24,14 @@ interface Props {
 export default async function StoreDetailPage({ params }: Props) {
   const { slug } = await params;
 
-  // 服务端获取数据
+  // 一次查询获取商家+优惠码
   let store: any = null;
   let coupons: any[] = [];
   
   try {
-    store = await cached.getStoreBySlug(slug);
-    if (store) {
-      coupons = await cached.getCouponsByStoreSlug(slug);
-    }
+    const result = await cached.getStoreWithCoupons(slug);
+    store = result.store;
+    coupons = result.coupons;
   } catch (err) {
     console.error('Failed to fetch store data:', err);
   }

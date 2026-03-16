@@ -197,4 +197,9 @@ export const cached = {
     const key = `seo:${slug}`;
     return cache.get(key, () => db.getSeoPageBySlug(slug), { staleMs: 10 * 60 * 1000, expiresMs: 60 * 60 * 1000 });
   },
+
+  getStoreWithCoupons: (slug: string): Promise<{ store: any; coupons: any[] }> => {
+    const key = `store+coupons:${slug}`;
+    return cache.get(key, () => db.getStoreWithCoupons(slug), { staleMs: 5 * 60 * 1000, expiresMs: 30 * 60 * 1000 });
+  },
 };

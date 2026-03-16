@@ -5,11 +5,12 @@ import { cached } from '@/lib/cache';
 
 type Props = { params: Promise<{ slug: string }> };
 
+// ISR: 每小时重新验证
+export const revalidate = 3600;
+
 // React cache + 数据缓存: 避免重复查询
 const getStoreData = reactCache(async (slug: string) => {
-  const store = await cached.getStoreBySlug(slug);
-  const coupons = store ? await cached.getCouponsByStoreSlug(slug) : [];
-  return { store, coupons };
+  return await cached.getStoreWithCoupons(slug);
 });
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

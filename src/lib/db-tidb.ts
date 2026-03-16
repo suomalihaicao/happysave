@@ -401,6 +401,19 @@ export const tidb = {
     return true;
   },
 
+  // 一次查询获取商家+优惠码 (性能优化)
+  async getStoreWithCoupons(slug: string) {
+    const store = await this.getOne<any>('SELECT * FROM stores WHERE slug = ? AND active = 1', [slug]);
+    if (!store) return { store: null, coupons: [] };
+    
+    const coupons = await this.query('SELECT * FROM coupons WHERE storeId = ? AND active = 1 ORDER BY featured DESC, clickCount DESC', [store.id]);
+    
+    return {
+      store: { ...store, tags: typeof store.tags === 'string' ? JSON.parse(store.tags) : store.tags, featured: !!store.featured, active: !!store.active },
+      coupons: coupons.map((c: any) => ({ ...c, featured: !!c.featured, active: !!c.active, verified: !!c.verified })),
+    };
+  },
+
   async incrementCouponClick(id: string) {
     await this.query('UPDATE coupons SET clickCount = clickCount + 1, useCount = useCount + 1 WHERE id = ?', [id]);
   },
