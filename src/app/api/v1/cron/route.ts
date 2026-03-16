@@ -5,15 +5,19 @@ import { db } from '@/lib/db';
 import { ai } from '@/lib/ai-engine';
 import { autoDiscover } from '@/lib/auto-discover';
 
-// 验证 cron secret（防止外部调用）
-const CRON_SECRET = process.env.CRON_SECRET || 'happysave-cron-2026';
+// 验证 cron（防止外部调用）
+const CRON_SECRET = process.env.CRON_SECRET || '';
 
 export async function GET(request: NextRequest) {
+  // 方法1: Vercel Cron 自带的 header（最可靠）
+  const isVercelCron = request.headers.get('x-vercel-cron') !== null;
+  
+  // 方法2: Secret 验证（手动触发时用）
   const auth = request.headers.get('authorization');
   const secret = request.nextUrl.searchParams.get('secret');
+  const isValidSecret = CRON_SECRET && (secret === CRON_SECRET || auth === `Bearer ${CRON_SECRET}`);
 
-  // 简单验证
-  if (secret !== CRON_SECRET && auth !== `Bearer ${CRON_SECRET}`) {
+  if (!isVercelCron && !isValidSecret) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

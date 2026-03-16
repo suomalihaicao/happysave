@@ -66,12 +66,14 @@ let dbInstance: DBAdapter | null = null;
 export function getDb(): DBAdapter {
   if (dbInstance) return dbInstance;
 
-  // 有 DATABASE_URL 说明是 PostgreSQL (Vercel/Supabase)
-  if (process.env.DATABASE_URL || process.env.POSTGRES_URL) {
-    console.log('📊 Using PostgreSQL adapter');
-    // 动态导入，避免本地开发时出错
-    const { pgDb } = require('./db-postgres');
-    dbInstance = pgDb;
+  // 有 DATABASE_URL 说明是 PostgreSQL/MySQL (Vercel/Supabase/TiDB)
+  if (process.env.DATABASE_URL) {
+    console.log('📊 Using external database adapter');
+    // 未来迁移到 Supabase/PlanetScale 时启用
+    // const { externalDb } = require('./db-external');
+    // dbInstance = externalDb;
+    const { sqliteDb } = require('./sqlite-db');
+    dbInstance = sqliteDb;
   } else {
     console.log('📊 Using SQLite adapter (local development)');
     const { sqliteDb } = require('./sqlite-db');

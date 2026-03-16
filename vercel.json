@@ -4,19 +4,19 @@
   "buildCommand": "next build",
   "crons": [
     {
-      "path": "/api/v1/cron?task=discover&secret=happysave-cron-2026",
+      "path": "/api/v1/cron?task=discover",
       "schedule": "0 2 * * *"
     },
     {
-      "path": "/api/v1/cron?task=seo&secret=happysave-cron-2026",
+      "path": "/api/v1/cron?task=seo",
       "schedule": "0 3 * * 1"
     },
     {
-      "path": "/api/v1/cron?task=social&secret=happysave-cron-2026",
+      "path": "/api/v1/cron?task=social",
       "schedule": "0 9 * * *"
     },
     {
-      "path": "/api/v1/cron?task=report&secret=happysave-cron-2026",
+      "path": "/api/v1/cron?task=report",
       "schedule": "0 23 * * *"
     }
   ]
