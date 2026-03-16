@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
   // Turbopack 需要明确根目录 (pnpm hoisting)
@@ -73,4 +74,13 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// Sentry 配置包装
+export default withSentryConfig(nextConfig, {
+  org: process.env.SENTRY_ORG || 'happy-save',
+  project: process.env.SENTRY_PROJECT || 'happysave',
+  silent: true,
+  widenClientFileUpload: true,
+  reactComponentAnnotation: { enabled: true },
+  tunnelRoute: '/api/v1/sentry-tunnel',
+  disableLogger: true,
+});

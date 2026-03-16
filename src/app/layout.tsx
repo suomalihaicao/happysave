@@ -5,6 +5,7 @@ import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { SEO_CONFIG, getWebsiteJsonLd } from '@/lib/seo';
 import { PWARegister } from '@/components/PWARegister';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 export const metadata: Metadata = {
   metadataBase: new URL(SEO_CONFIG.baseUrl),
@@ -81,7 +82,11 @@ export default function RootLayout({
         }} />
       </head>
       <body>
-        <AntdProvider>{children}</AntdProvider>
+        <AntdProvider>
+          <ErrorBoundary>
+            {children}
+          </ErrorBoundary>
+        </AntdProvider>
         <Analytics />
         <SpeedInsights />
         <PWARegister />
