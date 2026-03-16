@@ -10,7 +10,8 @@ interface AdSlotProps {
 
 export function AdSlot({ type, label = '广告位' }: AdSlotProps) {
   // 未配置广告时显示占位提示，配置后替换为真实广告代码
-  const hasAds = process.env.NEXT_PUBLIC_ADSENSE_ID;
+  const hasAds = process.env.NEXT_PUBLIC_ADSENSE_ID || 'ca-pub-3022741090651583';
+  const adClientId = hasAds;
 
   const styles: Record<string, React.CSSProperties> = {
     banner: { width: '100%', height: 90, background: '#f5f5f5', borderRadius: 8 },
@@ -42,7 +43,7 @@ export function AdSlot({ type, label = '广告位' }: AdSlotProps) {
       <ins
         className="adsbygoogle"
         style={{ display: 'block' }}
-        data-ad-client={process.env.NEXT_PUBLIC_ADSENSE_ID}
+        data-ad-client={adClientId}
         data-ad-slot={type}
         data-ad-format="auto"
         data-full-width-responsive="true"

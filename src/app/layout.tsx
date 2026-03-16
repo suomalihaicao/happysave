@@ -75,6 +75,9 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{
           __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-PLACEHOLDER');`
         }} />
+        {/* Google AdSense */}
+        <meta name="google-adsense-account" content="ca-pub-3022741090651583" />
+        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3022741090651583" crossOrigin="anonymous" />
         {/* 百度统计 */}
         <script dangerouslySetInnerHTML={{
           __html: `var _hmt=_hmt||[];(function(){var hm=document.createElement("script");hm.src="https://hm.baidu.com/hm.js?PLACEHOLDER";var s=document.getElementsByTagName("script")[0];s.parentNode.insertBefore(hm,s);})();`
