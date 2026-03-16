@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     // 任务 1: 每日生成 SEO 文章（为还没有文章的商家）
     if (task === 'seo' || task === 'all') {
       const stores = await db.getStores({ active: true, limit: 100 });
-      const seoPages = await db.getSeoPages() as { data: Array<{ slug: string }> };
+      const seoPages = (await db.getSeoPages()) as unknown as { data: Array<{ slug: string }> };
       const existingSlugs = new Set(seoPages.data.map((p) => p.slug));
       
       let generated = 0;

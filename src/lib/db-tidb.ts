@@ -268,16 +268,111 @@ async function seedTiDB() {
 }
 
 // ============================================================
+// Input type interfaces for TiDB
+// ============================================================
+interface TiDbStoreInput {
+  slug?: string;
+  name?: string;
+  nameZh?: string;
+  description?: string;
+  descriptionZh?: string;
+  logo?: string;
+  website?: string;
+  affiliateUrl?: string;
+  category?: string;
+  categoryZh?: string;
+  tags?: string[];
+  featured?: boolean;
+  active?: boolean;
+  sortOrder?: number;
+  [key: string]: unknown;
+}
+
+interface TiDbCouponInput {
+  storeId?: string;
+  storeName?: string;
+  code?: string | null;
+  title?: string;
+  titleZh?: string;
+  description?: string;
+  descriptionZh?: string;
+  discount?: string;
+  discountType?: string;
+  type?: string;
+  affiliateUrl?: string;
+  endDate?: string | null;
+  featured?: boolean;
+  active?: boolean;
+  verified?: boolean;
+  [key: string]: unknown;
+}
+
+interface TiDbClickInput {
+  shortCode?: string;
+  storeId?: string;
+  couponId?: string;
+  ip?: string;
+  userAgent?: string;
+  referer?: string;
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+}
+
+interface TiDbSeoPageInput {
+  slug?: string;
+  title?: string;
+  content?: string;
+  metaDesc?: string;
+  keywords?: string;
+  pageType?: string;
+  storeId?: string | null;
+}
+
+interface TiDbNotificationInput {
+  userId?: string;
+  email?: string;
+  type?: string;
+  storeId?: string;
+  keyword?: string;
+}
+
+// Helper to parse boolean-like fields from DB rows
+function parseBoolFields<T extends Record<string, unknown>>(row: T, fields: string[]): T {
+  const result = { ...row };
+  for (const f of fields) {
+    if (f in result) (result as Record<string, unknown>)[f] = !!result[f];
+  }
+  return result;
+}
+
+function parseStoreRow(s: Record<string, unknown>) {
+  return {
+    ...s,
+    tags: typeof s.tags === 'string' ? JSON.parse(s.tags as string) : s.tags,
+    ...parseBoolFields({ featured: s.featured, active: s.active }, ['featured', 'active']),
+  };
+}
+
+function parseCouponRow(c: Record<string, unknown>) {
+  return {
+    ...c,
+    ...parseBoolFields({ featured: c.featured, active: c.active, verified: c.verified }, ['featured', 'active', 'verified']),
+  };
+}
+
+// ============================================================
 // Database API (same interface as SQLite/Memory)
 // ============================================================
 export const tidb = {
-  async query<T = any>(sql: string, params?: any[]): Promise<T[]> {
+  async query<T = Record<string, unknown>>(sql: string, params?: unknown[]): Promise<T[]> {
     const db = getPool();
-    const [rows] = await db.execute(sql, params);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [rows] = await db.execute(sql, params as any);
     return rows as T[];
   },
 
-  async getOne<T = any>(sql: string, params?: any[]): Promise<T | null> {
+  async getOne<T = Record<string, unknown>>(sql: string, params?: unknown[]): Promise<T | null> {
     const rows = await this.query<T>(sql, params);
     return rows[0] || null;
   },
@@ -289,7 +384,7 @@ export const tidb = {
     const offset = (page - 1) * limit;
     
     let where = 'WHERE 1=1';
-    const args: any[] = [];
+    const args: unknown[] = [];
     
     if (params?.category) { where += ' AND category = ?'; args.push(params.category); }
     if (params?.featured !== undefined) { where += ' AND featured = ?'; args.push(params.featured); }
@@ -300,31 +395,31 @@ export const tidb = {
     const data = await this.query(`SELECT * FROM stores ${where} ORDER BY sortOrder ASC, clickCount DESC LIMIT ${Number(limit)} OFFSET ${Number(offset)}`, args);
     
     return {
-      data: data.map((s: any) => ({ ...s, tags: typeof s.tags === 'string' ? JSON.parse(s.tags) : s.tags, featured: !!s.featured, active: !!s.active })),
+      data: data.map((s) => parseStoreRow(s as Record<string, unknown>)),
       total: countRow?.c || 0, page, limit,
     };
   },
 
   async getStoreById(id: string) {
     const s = await this.getOne('SELECT * FROM stores WHERE id = ?', [id]);
-    return s ? { ...s, tags: typeof (s as any).tags === 'string' ? JSON.parse((s as any).tags) : (s as any).tags, featured: !!(s as any).featured, active: !!(s as any).active } : null;
+    return s ? parseStoreRow(s as Record<string, unknown>) : null;
   },
 
   async getStoreBySlug(slug: string) {
     const s = await this.getOne('SELECT * FROM stores WHERE slug = ? AND active = 1', [slug]);
-    return s ? { ...s, tags: typeof (s as any).tags === 'string' ? JSON.parse((s as any).tags) : (s as any).tags, featured: !!(s as any).featured, active: !!(s as any).active } : null;
+    return s ? parseStoreRow(s as Record<string, unknown>) : null;
   },
 
-  async createStore(data: any) {
+  async createStore(data: TiDbStoreInput) {
     const id = 's-' + Math.random().toString(36).substring(2, 15);
     await this.query(
       'INSERT INTO stores (id, slug, name, nameZh, description, descriptionZh, logo, website, affiliateUrl, category, categoryZh, tags, featured, active, sortOrder) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [id, data.slug, data.name, data.nameZh || '', data.description || '', data.descriptionZh || '', data.logo || '', data.website || '', data.affiliateUrl || '', data.category || '', data.categoryZh || '', JSON.stringify(data.tags || []), data.featured || false, data.active !== false, data.sortOrder || 0]
+      [id, data.slug || '', data.name || '', data.nameZh || '', data.description || '', data.descriptionZh || '', data.logo || '', data.website || '', data.affiliateUrl || '', data.category || '', data.categoryZh || '', JSON.stringify(data.tags || []), data.featured || false, data.active !== false, data.sortOrder || 0]
     );
     return await this.getStoreById(id);
   },
 
-  async updateStore(id: string, data: any) {
+  async updateStore(id: string, data: TiDbStoreInput) {
     const existing = await this.getStoreById(id);
     if (!existing) return null;
     const fields = Object.entries(data).filter(([k, v]) => v !== undefined && k !== 'id');
@@ -347,7 +442,7 @@ export const tidb = {
     const offset = (page - 1) * limit;
     
     let where = 'WHERE 1=1';
-    const args: any[] = [];
+    const args: unknown[] = [];
     
     if (params?.storeId) { where += ' AND storeId = ?'; args.push(params.storeId); }
     if (params?.type) { where += ' AND type = ?'; args.push(params.type); }
@@ -359,24 +454,24 @@ export const tidb = {
     const data = await this.query(`SELECT * FROM coupons ${where} ORDER BY featured DESC, clickCount DESC LIMIT ${Number(limit)} OFFSET ${Number(offset)}`, args);
     
     return {
-      data: data.map((c: any) => ({ ...c, featured: !!c.featured, active: !!c.active, verified: !!c.verified })),
+      data: data.map((c) => parseCouponRow(c as Record<string, unknown>)),
       total: countRow?.c || 0, page, limit,
     };
   },
 
   async getCouponById(id: string) {
     const c = await this.getOne('SELECT * FROM coupons WHERE id = ?', [id]);
-    return c ? { ...c, featured: !!(c as any).featured, active: !!(c as any).active, verified: !!(c as any).verified } : null;
+    return c ? parseCouponRow(c as Record<string, unknown>) : null;
   },
 
   async getCouponsByStoreSlug(slug: string) {
     const store = await this.getStoreBySlug(slug);
     if (!store) return [];
-    const rows = await this.query('SELECT * FROM coupons WHERE storeId = ? AND active = 1 ORDER BY featured DESC', [(store as any).id]);
-    return rows.map((c: any) => ({ ...c, featured: !!c.featured, active: !!c.active, verified: !!c.verified }));
+    const rows = await this.query('SELECT * FROM coupons WHERE storeId = ? AND active = 1 ORDER BY featured DESC', [(store as Record<string, unknown>).id]);
+    return rows.map((c) => parseCouponRow(c as Record<string, unknown>));
   },
 
-  async createCoupon(data: any) {
+  async createCoupon(data: TiDbCouponInput) {
     const id = 'c-' + Math.random().toString(36).substring(2, 15);
     await this.query(
       'INSERT INTO coupons (id, storeId, storeName, code, title, titleZh, description, descriptionZh, discount, discountType, type, affiliateUrl, startDate, endDate, featured, active, verified) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, ?, ?, ?)',
@@ -385,7 +480,7 @@ export const tidb = {
     return await this.getCouponById(id);
   },
 
-  async updateCoupon(id: string, data: any) {
+  async updateCoupon(id: string, data: TiDbCouponInput) {
     const existing = await this.getCouponById(id);
     if (!existing) return null;
     const fields = Object.entries(data).filter(([k, v]) => v !== undefined && k !== 'id');
@@ -410,7 +505,7 @@ export const tidb = {
     
     return {
       store: { ...store, tags: typeof store.tags === 'string' ? JSON.parse(store.tags) : store.tags, featured: !!store.featured, active: !!store.active },
-      coupons: coupons.map((c: any) => ({ ...c, featured: !!c.featured, active: !!c.active, verified: !!c.verified })),
+      coupons: coupons.map((c) => parseCouponRow(c as Record<string, unknown>)),
     };
   },
 
@@ -428,7 +523,7 @@ export const tidb = {
     const id = 'l-' + Math.random().toString(36).substring(2, 15);
     const code = Math.random().toString(36).substring(2, 9);
     let storeName = '';
-    if (data.storeId) { const s = await this.getStoreById(data.storeId); if (s) storeName = (s as any).name; }
+    if (data.storeId) { const s = await this.getStoreById(data.storeId); if (s) storeName = (s as Record<string, unknown>).name as string; }
     await this.query('INSERT INTO short_links (id, code, originalUrl, shortUrl, storeId, storeName, couponId) VALUES (?, ?, ?, ?, ?, ?, ?)', [id, code, data.originalUrl, `/s/${code}`, data.storeId || '', storeName, data.couponId || null]);
     return await this.getOne('SELECT * FROM short_links WHERE id = ?', [id]);
   },
@@ -447,7 +542,7 @@ export const tidb = {
   },
 
   // ===== Click Logs =====
-  async logClick(data: any) {
+  async logClick(data: TiDbClickInput) {
     const id = 'cl-' + Math.random().toString(36).substring(2, 15);
     const device = /mobile/i.test(data.userAgent || '') ? 'mobile' : /tablet/i.test(data.userAgent || '') ? 'tablet' : 'desktop';
     await this.query('INSERT INTO click_logs (id, shortCode, storeId, couponId, ip, userAgent, referer, device, utmSource, utmMedium, utmCampaign) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [id, data.shortCode || '', data.storeId || '', data.couponId || '', data.ip || '', data.userAgent || '', data.referer || '', device, data.utmSource || '', data.utmMedium || '', data.utmCampaign || '']);
@@ -481,7 +576,7 @@ export const tidb = {
   },
 
   // ===== SEO =====
-  async createSeoPage(data: any) {
+  async createSeoPage(data: TiDbSeoPageInput) {
     const id = 'seo-' + Math.random().toString(36).substring(2, 15);
     await this.query('INSERT INTO seo_pages (id, slug, title, content, metaDesc, keywords, pageType, storeId) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [id, data.slug, data.title, data.content || '', data.metaDesc || '', data.keywords || '', data.pageType || 'store', data.storeId || null]);
     return await this.getOne('SELECT * FROM seo_pages WHERE id = ?', [id]);
@@ -503,7 +598,7 @@ export const tidb = {
   // ===== Favorites =====
   async toggleFavorite(userId: string, itemType: string, itemId: string) {
     const existing = await this.getOne('SELECT * FROM favorites WHERE userId = ? AND itemType = ? AND itemId = ?', [userId, itemType, itemId]);
-    if (existing) { await this.query('DELETE FROM favorites WHERE id = ?', [(existing as any).id]); return { favorited: false }; }
+    if (existing) { await this.query('DELETE FROM favorites WHERE id = ?', [(existing as Record<string, unknown>).id as string]); return { favorited: false }; }
     const id = 'fav-' + Math.random().toString(36).substring(2, 15);
     await this.query('INSERT INTO favorites (id, userId, itemType, itemId) VALUES (?, ?, ?, ?)', [id, userId, itemType, itemId]);
     return { favorited: true };
@@ -514,7 +609,7 @@ export const tidb = {
   },
 
   // ===== Notifications =====
-  async createNotification(data: any) {
+  async createNotification(data: TiDbNotificationInput) {
     const id = 'n-' + Math.random().toString(36).substring(2, 15);
     await this.query('INSERT INTO notifications (id, userId, email, type, storeId, keyword) VALUES (?, ?, ?, ?, ?, ?)', [id, data.userId || '', data.email || '', data.type || 'coupon_alert', data.storeId || '', data.keyword || '']);
     return id;

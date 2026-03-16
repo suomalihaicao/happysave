@@ -84,15 +84,17 @@ export const autoDiscover = {
         featured: false, active: true,
       });
 
+      if (!store) continue;
+
       const numCoupons = 2 + Math.floor(Math.random() * 2);
       const templates = [...COUPON_TEMPLATES].sort(() => Math.random() - 0.5).slice(0, numCoupons);
       for (const tpl of templates) {
         const code = tpl.codePrefix ? `${tpl.codePrefix}${Math.random().toString(36).substring(2, 5).toUpperCase()}` : null;
         await db.createCoupon({
-          storeId: store.id as string, storeName: brand.name, code,
-          title: `${tpl.title} - ${brand.name}`, titleZh: `${brand.name} ${tpl.titleZh}`,
-          description: `Save with ${brand.name} ${tpl.title}`,
-          descriptionZh: `${brand.name} ${tpl.titleZh}优惠`,
+          storeId: store.id, storeName: store.name, code,
+          title: `${tpl.title} - ${store.name}`, titleZh: `${store.name} ${tpl.titleZh}`,
+          description: `Save with ${store.name} ${tpl.title}`,
+          descriptionZh: `${store.name} ${tpl.titleZh}优惠`,
           discount: tpl.discount, discountType: 'percentage', type: tpl.type,
           affiliateUrl: code ? `${brand.url}?aff=happysave&cpn=${code}` : `${brand.url}?aff=happysave`,
           startDate: new Date().toISOString(),
@@ -100,7 +102,7 @@ export const autoDiscover = {
           featured: false, active: true, verified: true,
         });
       }
-      added.push(store);
+      added.push({ id: store.id, slug: store.slug, name: store.name });
     }
     return { added: added.length, stores: added };
   },

@@ -36,6 +36,32 @@ const AFFILIATE_CONFIG = {
   },
 };
 
+// ============================================================
+// Affiliate network response types
+// ============================================================
+interface MerchantRecord {
+  source: string;
+  merchantId: string;
+  name: string;
+  website: string;
+  category: string;
+  commissionRate: string;
+  cookieLength?: string;
+  affiliateUrl: string;
+}
+
+interface CouponRecord {
+  source: string;
+  merchantId: string;
+  code: string;
+  title: string;
+  description: string;
+  discount: string;
+  startDate: string;
+  endDate: string;
+  affiliateUrl: string;
+}
+
 // ===== ShareASale API =====
 async function fetchShareASaleMerchants(limit = 50) {
   const token = process.env.SHAREASALE_TOKEN;
@@ -60,7 +86,7 @@ async function fetchShareASaleMerchants(limit = 50) {
       return [];
     }
     const data = await res.json();
-    return (data.merchants || []).map((m: any) => ({
+    return (data.merchants || []).map((m: Record<string, string>) => ({
       source: 'shareasale',
       merchantId: m.merchantId,
       name: m.merchantName,
@@ -95,7 +121,7 @@ async function fetchShareASaleCoupons(merchantId?: string) {
     });
     if (!res.ok) return [];
     const data = await res.json();
-    return (data.coupons || []).map((c: any) => ({
+    return (data.coupons || []).map((c: Record<string, string>) => ({
       source: 'shareasale',
       merchantId: c.merchantId,
       code: c.couponCode,
@@ -130,7 +156,7 @@ async function fetchCJMerchants(limit = 50) {
     );
     if (!res.ok) return [];
     const data = await res.json();
-    return (data.advertisers || []).map((a: any) => ({
+    return (data.advertisers || []).map((a: Record<string, string>) => ({
       source: 'cj',
       merchantId: a.advertiserId,
       name: a.advertiserName,
@@ -163,7 +189,7 @@ async function fetchImpactMerchants(limit = 50) {
     );
     if (!res.ok) return [];
     const data = await res.json();
-    return (data.Advertisers || []).map((a: any) => ({
+    return (data.Advertisers || []).map((a: Record<string, string>) => ({
       source: 'impact',
       merchantId: a.Id,
       name: a.Name,
@@ -196,12 +222,12 @@ async function fetchAwinMerchants(limit = 50) {
     );
     if (!res.ok) return [];
     const data = await res.json();
-    return (data || []).map((a: any) => ({
+    return (data || []).map((a: Record<string, string>) => ({
       source: 'awin',
       merchantId: a.id,
       name: a.name,
       website: a.url,
-      category: mapCategory(a.sector?.name || ''),
+      category: mapCategory((a['sector'] as unknown as Record<string, string>)?.name || ''),
       commissionRate: a.commissionString,
       affiliateUrl: `https://www.awin1.com/cread.php?awinmid=${a.id}&awinaffid=${pubId}&clickref=happysave`,
     }));

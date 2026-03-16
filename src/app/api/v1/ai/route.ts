@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
               pageType: 'store',
               storeId: store.id,
             });
-            results.push({ store: store.name, page: page?.id });
+            results.push({ store: store.name, page: (page as { id: string })?.id });
           }
           // Avoid rate limiting
           await new Promise(r => setTimeout(r, 1000));

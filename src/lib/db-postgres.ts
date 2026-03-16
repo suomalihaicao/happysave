@@ -164,9 +164,9 @@ function nowISO(): string {
 }
 
 // Convert snake_case rows to camelCase
-function toCamel(obj: any): any {
+function toCamel(obj: Record<string, unknown>): Record<string, unknown> {
   if (!obj) return obj;
-  const result: any = {};
+  const result: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(obj)) {
     const camelKey = key.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
     result[camelKey] = value;
@@ -493,8 +493,8 @@ export const postgres = {
     try {
       await db.query('INSERT INTO subscribers (id, email, name) VALUES ($1,$2,$3)', [id, data.email, data.name || '']);
       return { id, ...data };
-    } catch (err: any) {
-      if (err.code === '23505') return this.getSubscriberByEmail(data.email);
+    } catch (err: unknown) {
+      if (err instanceof Error && (err as NodeJS.ErrnoException).code === '23505') return this.getSubscriberByEmail(data.email);
       throw err;
     }
   },
@@ -527,8 +527,8 @@ export const postgres = {
         [id, data.userId, data.itemId, data.itemType || 'store']
       );
       return { id, ...data };
-    } catch (err: any) {
-      if (err.code === '23505') return { alreadyExists: true };
+    } catch (err: unknown) {
+      if (err instanceof Error && (err as NodeJS.ErrnoException).code === '23505') return { alreadyExists: true };
       throw err;
     }
   },

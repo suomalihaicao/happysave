@@ -2,6 +2,31 @@
 // 解决远程数据库慢 + Vercel 冷启动无数据的问题
 
 import { db } from './db';
+import { Store, Coupon, Category } from '@/types';
+
+// ============================================================
+// Query option types for cache layer
+// ============================================================
+interface StoreQueryParams {
+  [key: string]: unknown;
+  active?: boolean;
+  featured?: boolean;
+  category?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
+interface CouponQueryParams {
+  [key: string]: unknown;
+  active?: boolean;
+  featured?: boolean;
+  storeId?: string;
+  type?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+}
 
 // ============================================================
 // 缓存配置
@@ -126,7 +151,7 @@ class DataCache {
 
   // 获取缓存状态
   getStats() {
-    const stats: Record<string, any> = {};
+    const stats: Record<string, { age: string; status: string }> = {};
     for (const [key, entry] of this.store) {
       const now = Date.now();
       stats[key] = {
@@ -165,40 +190,40 @@ export async function ensureWarmup() {
 // 便捷缓存查询函数 - 供 API 路由使用
 // ============================================================
 export const cached = {
-  getStores: (params?: any): Promise<{ data: any[]; total: number; page: number; limit: number }> => {
+  getStores: (params?: StoreQueryParams): Promise<{ data: Store[]; total: number; page: number; limit: number }> => {
     const key = `stores:${JSON.stringify(params || {})}`;
     return cache.get(key, () => db.getStores(params), { staleMs: 10 * 60 * 1000, expiresMs: 60 * 60 * 1000 });
   },
 
-  getStoreBySlug: (slug: string): Promise<any> => {
+  getStoreBySlug: (slug: string): Promise<Store | null> => {
     const key = `store:${slug}`;
     return cache.get(key, () => db.getStoreBySlug(slug), { staleMs: 5 * 60 * 1000, expiresMs: 30 * 60 * 1000 });
   },
 
-  getCoupons: (params?: any): Promise<{ data: any[]; total: number; page: number; limit: number }> => {
+  getCoupons: (params?: CouponQueryParams): Promise<{ data: Coupon[]; total: number; page: number; limit: number }> => {
     const key = `coupons:${JSON.stringify(params || {})}`;
     return cache.get(key, () => db.getCoupons(params), { staleMs: 5 * 60 * 1000, expiresMs: 30 * 60 * 1000 });
   },
 
-  getCouponsByStoreSlug: (slug: string): Promise<any[]> => {
+  getCouponsByStoreSlug: (slug: string): Promise<Coupon[]> => {
     const key = `coupons:store:${slug}`;
     return cache.get(key, () => db.getCouponsByStoreSlug(slug), { staleMs: 5 * 60 * 1000, expiresMs: 30 * 60 * 1000 });
   },
 
-  getCategories: (): Promise<any[]> => {
+  getCategories: (): Promise<Category[]> => {
     return cache.get('categories', () => db.getCategories(), { staleMs: 30 * 60 * 1000, expiresMs: 24 * 60 * 60 * 1000 });
   },
 
-  getSeoPages: (): Promise<{ data: any[]; total: number }> => {
+  getSeoPages: (): Promise<{ data: Record<string, unknown>[]; total: number }> => {
     return cache.get('seo:all', () => db.getSeoPages(), { staleMs: 10 * 60 * 1000, expiresMs: 60 * 60 * 1000 });
   },
 
-  getSeoPageBySlug: (slug: string): Promise<any> => {
+  getSeoPageBySlug: (slug: string): Promise<Record<string, unknown> | null> => {
     const key = `seo:${slug}`;
     return cache.get(key, () => db.getSeoPageBySlug(slug), { staleMs: 10 * 60 * 1000, expiresMs: 60 * 60 * 1000 });
   },
 
-  getStoreWithCoupons: (slug: string): Promise<{ store: any; coupons: any[] }> => {
+  getStoreWithCoupons: (slug: string): Promise<{ store: Store | null; coupons: Coupon[] }> => {
     const key = `store+coupons:${slug}`;
     return cache.get(key, () => db.getStoreWithCoupons(slug), { staleMs: 5 * 60 * 1000, expiresMs: 30 * 60 * 1000 });
   },

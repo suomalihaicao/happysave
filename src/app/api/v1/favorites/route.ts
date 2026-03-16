@@ -12,6 +12,6 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
 
 export const POST = withErrorHandling(async (request: NextRequest) => {
   const body = await request.json();
-  const result = await db.toggleFavorite(body.userId || 'anonymous', body.itemType, body.itemId);
+  const result = await db.toggleFavorite(body.userId || 'anonymous', body.itemType, body.itemId) as Record<string, unknown>;
   return NextResponse.json({ success: true, ...result });
 });
