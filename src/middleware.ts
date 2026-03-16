@@ -56,6 +56,15 @@ function rateLimit(ip: string, limit = 60, windowMs = 60000): boolean {
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const host = request.headers.get('host') || '';
+
+  // ========== www/m 子域名重定向到主域名 ==========
+  if (host.startsWith('www.') || host.startsWith('m.')) {
+    const url = request.nextUrl.clone();
+    url.host = 'happysave.cn';
+    return NextResponse.redirect(url, 301);
+  }
+
   const response = NextResponse.next();
 
   // ========== 安全头 ==========
@@ -92,7 +101,7 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // 匹配所有 API 路由和 admin 页面
-    '/api/:path*',
+    // 所有路由 (域名重定向 + 安全头 + API鉴权)
+    '/((?!_next/static|_next/image|favicon.ico|icon-|sw.js|manifest.json).*)',
   ],
 };
