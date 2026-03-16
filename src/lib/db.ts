@@ -1,21 +1,35 @@
 // Database - Runtime auto-select
-// TiDB (production, when DATABASE_URL set) → Memory/SQLite (dev)
+// PostgreSQL (when DATABASE_URL starts with postgres://) → TiDB (mysql) → SQLite/Memory (dev)
 
 let _db: any = null;
 
 async function loadDb() {
   if (_db) return _db;
 
-  const hasTiDB = !!(process.env.DATABASE_URL || process.env.TIDB_URL);
+  const dbUrl = process.env.DATABASE_URL || '';
+  const isPostgres = dbUrl.startsWith('postgres://') || dbUrl.startsWith('postgresql://');
+  const hasTiDB = !isPostgres && (!!dbUrl || !!process.env.TIDB_URL);
 
-  if (hasTiDB) {
+  if (isPostgres) {
+    try {
+      const { postgres, initPostgres } = await import('./db-postgres');
+      await initPostgres();
+      _db = postgres;
+      console.log('✅ Using PostgreSQL database');
+    } catch (err: any) {
+      console.error('❌ PostgreSQL connection failed:', err?.message);
+      console.log('⚠️  Falling back to SQLite/memory storage');
+      const { database } = await import('./sqlite-db');
+      _db = database;
+    }
+  } else if (hasTiDB) {
     try {
       const { tidb, initTiDB } = await import('./db-tidb');
       await initTiDB();
       _db = tidb;
       console.log('✅ Using TiDB database');
-    } catch (err) {
-      console.error('❌ TiDB connection failed:', err);
+    } catch (err: any) {
+      console.error('❌ TiDB connection failed:', err?.message);
       console.log('⚠️  Falling back to SQLite/memory storage');
       const { database } = await import('./sqlite-db');
       _db = database;
@@ -23,6 +37,7 @@ async function loadDb() {
   } else {
     const { database } = await import('./sqlite-db');
     _db = database;
+    console.log('✅ Using SQLite/memory database');
   }
 
   return _db;
