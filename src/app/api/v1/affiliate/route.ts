@@ -3,10 +3,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { syncAllAffiliateData, getAffiliateStatus } from '@/lib/affiliate';
 import { db } from '@/lib/db';
 
+interface AffiliateNetworkStatus {
+  enabled: boolean;
+  name: string;
+  description: string;
+}
+
 // GET - 查看联盟状态
 export async function GET() {
-  const status = getAffiliateStatus();
-  const enabledCount = Object.values(status).filter((s: any) => s.enabled).length;
+  const status: Record<string, AffiliateNetworkStatus> = getAffiliateStatus();
+  const enabledCount = Object.values(status).filter((s) => s.enabled).length;
   
   return NextResponse.json({
     success: true,

@@ -32,8 +32,9 @@ async function callAI(prompt: string) {
     const data = await res.json();
     if (!res.ok) return `API错误 (${res.status}): ${data.error?.message || JSON.stringify(data).slice(0, 100)}`;
     return data.choices?.[0]?.message?.content || '生成失败（无返回内容）';
-  } catch (e: any) {
-    return `请求失败: ${e.message}`;
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : 'Unknown error';
+    return `请求失败: ${message}`;
   }
 }
 

@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { ai } from '@/lib/ai-engine';
 import { autoDiscover } from '@/lib/auto-discover';
+import type { Store, Coupon } from '@/types';
 
 // 验证 cron（防止外部调用）
 const CRON_SECRET = process.env.CRON_SECRET || '';
@@ -26,24 +27,24 @@ export async function GET(request: NextRequest) {
   }
 
   const task = request.nextUrl.searchParams.get('task') || 'all';
-  const results: any = {};
+  const results: Record<string, unknown> = {};
 
   try {
     // 任务 1: 每日生成 SEO 文章（为还没有文章的商家）
     if (task === 'seo' || task === 'all') {
       const stores = await db.getStores({ active: true, limit: 100 });
-      const seoPages = await db.getSeoPages();
-      const existingSlugs = new Set(seoPages.data.map((p: any) => p.slug));
+      const seoPages = await db.getSeoPages() as { data: Array<{ slug: string }> };
+      const existingSlugs = new Set(seoPages.data.map((p) => p.slug));
       
       let generated = 0;
-      for (const store of stores.data as any[]) {
+      for (const store of stores.data) {
         const slug = `guide-${store.slug}`;
         if (!existingSlugs.has(slug)) {
-          const coupons = await db.getCouponsByStoreSlug(store.slug);
+          const coupons: Coupon[] = await db.getCouponsByStoreSlug(store.slug);
           const article = await ai.generateStoreArticle(
             store.name,
             store.categoryZh || store.category,
-            coupons.map((c: any) => c.titleZh || c.title)
+            coupons.map((c) => c.titleZh || c.title)
           );
           if (article.title) {
             await db.createSeoPage({
@@ -65,11 +66,11 @@ export async function GET(request: NextRequest) {
 
     // 任务 2: 每日运营报告
     if (task === 'report' || task === 'all') {
-      const stats = await db.getDashboardStats();
+      const stats = await db.getDashboardStats() as import('@/types').DashboardStats;
       const report = await ai.generateDailyReport({
         totalClicks: stats.totalClicks,
         newCoupons: 0,
-        topStores: (stats.topStores as any[]).map((s: any) => ({ name: s.name, clicks: s.clicks })),
+        topStores: stats.topStores.map((s) => ({ name: s.name, clicks: s.clicks })),
         conversions: 0,
       });
       results.report = report;
@@ -86,15 +87,15 @@ export async function GET(request: NextRequest) {
     if (task === 'social' || task === 'all') {
       const coupons = await db.getCoupons({ featured: true, active: true, limit: 3 });
       const posts = [];
-      for (const coupon of coupons.data as any[]) {
-        const store = await db.getStoreById(coupon.storeId);
+      for (const coupon of coupons.data) {
+        const store: Store | null = await db.getStoreById(coupon.storeId);
         if (store) {
           const post = await ai.generateSocialPost(
-            (store as any).name,
+            store.name,
             coupon.discount,
             coupon.code || undefined
           );
-          posts.push({ store: (store as any).name, ...post });
+          posts.push({ store: store.name, ...post });
           await new Promise(r => setTimeout(r, 1000));
         }
       }
@@ -107,8 +108,9 @@ export async function GET(request: NextRequest) {
       task,
       results,
     });
-  } catch (e: any) {
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : 'Unknown error';
     console.error('Cron error:', e);
-    return NextResponse.json({ success: false, error: e.message }, { status: 500 });
+    return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }

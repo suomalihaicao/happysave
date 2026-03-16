@@ -2,6 +2,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { withErrorHandling } from '@/lib/api-wrapper';
+import type { Coupon } from '@/types';
+
+interface MarketingTemplate {
+  name: string;
+  tpl: string;
+}
+
+interface PlatformTemplates {
+  [lang: string]: MarketingTemplate[];
+}
 
 // ============ 模板库 ============
 const TEMPLATES = {
@@ -111,18 +121,26 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
   // === 单个优惠券生成所有平台内容 ===
   if (action === 'generate_all') {
     const couponId = body.couponId;
-    const coupons = await db.getCoupons({ limit: 100 });
+    const { data: couponList } = await db.getCoupons({ limit: 100 }) as { data: Coupon[] };
     const coupon = couponId 
-      ? (coupons.data as any[]).find(c => c.id === couponId)
-      : (coupons.data as any[]).sort((a, b) => (b.clickCount || 0) - (a.clickCount || 0))[0];
+      ? couponList.find((c) => c.id === couponId)
+      : couponList.sort((a, b) => (b.clickCount || 0) - (a.clickCount || 0))[0];
     
     if (!coupon) return NextResponse.json({ success: false, message: 'Coupon not found' }, { status: 404 });
 
     const vars = buildVars(coupon);
-    const results: any[] = [];
+    const results: Array<{
+      platform: string;
+      platformKey: string;
+      language: string;
+      templateName: string;
+      content: string;
+      imageGuide: string[];
+      vars: Record<string, string>;
+    }> = [];
 
     // 遍历所有平台模板
-    for (const [platformKey, langs] of Object.entries(TEMPLATES)) {
+    for (const [platformKey, langs] of Object.entries(TEMPLATES as Record<string, PlatformTemplates>)) {
       for (const [lang, templates] of Object.entries(langs)) {
         for (const tpl of templates) {
           const content = fillTemplate(tpl.tpl, vars);
@@ -153,17 +171,25 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
 
   // === 批量：所有优惠券 × 所有模板 ===
   if (action === 'batch_all') {
-    const coupons = await db.getCoupons({ limit: body.limit || 20 });
-    const couponList = (coupons.data as any[])
+    const { data: allCoupons } = await db.getCoupons({ limit: body.limit || 20 }) as { data: Coupon[] };
+    const batchList = allCoupons
       .sort((a, b) => (b.clickCount || 0) - (a.clickCount || 0))
       .slice(0, body.limit || 10);
     
-    const allResults: any[] = [];
+    const allResults: Array<{
+      couponId: string;
+      couponTitle: string;
+      store: string | undefined;
+      platform: string;
+      language: string;
+      templateName: string;
+      content: string;
+    }> = [];
     
-    for (const coupon of couponList) {
+    for (const coupon of batchList) {
       const vars = buildVars(coupon);
       
-      for (const [platformKey, langs] of Object.entries(TEMPLATES)) {
+      for (const [platformKey, langs] of Object.entries(TEMPLATES as Record<string, PlatformTemplates>)) {
         for (const [lang, templates] of Object.entries(langs)) {
           for (const tpl of templates) {
             const content = fillTemplate(tpl.tpl, vars);
@@ -192,7 +218,7 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
     return NextResponse.json({
       success: true,
       data: {
-        couponsProcessed: couponList.length,
+        couponsProcessed: batchList.length,
         totalGenerated: allResults.length,
         byPlatform: summary,
         contents: allResults,
@@ -206,13 +232,21 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
     const lang = body.lang || 'zh';
     const limit = body.limit || 5;
     
-    const coupons = await db.getCoupons({ limit });
-    const couponList = (coupons.data as any[]).sort((a, b) => (b.clickCount || 0) - (a.clickCount || 0));
+    const { data: couponList } = await db.getCoupons({ limit }) as { data: Coupon[] };
+    couponList.sort((a, b) => (b.clickCount || 0) - (a.clickCount || 0));
     
     const platformKey = lang === 'zh' ? platform : `${platform}_${lang}`;
-    const templates = (TEMPLATES as any)[platformKey]?.[lang] || (TEMPLATES as any)[platform]?.[lang] || [];
+    const templates = (TEMPLATES as Record<string, PlatformTemplates>)[platformKey]?.[lang]
+      || (TEMPLATES as Record<string, PlatformTemplates>)?.[platform]?.[lang]
+      || [];
     
-    const results: any[] = [];
+    const results: Array<{
+      coupon: string;
+      store: string | undefined;
+      templateName: string;
+      content: string;
+      imageGuide: string[];
+    }> = [];
     for (const coupon of couponList) {
       const vars = buildVars(coupon);
       for (const tpl of templates) {
@@ -242,10 +276,10 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
     const tpl = body.template; // e.g., "{store}有{discount}！码{code}"
     const couponId = body.couponId;
     
-    const coupons = await db.getCoupons({ limit: 50 });
+    const { data: couponList } = await db.getCoupons({ limit: 50 }) as { data: Coupon[] };
     const coupon = couponId 
-      ? (coupons.data as any[]).find(c => c.id === couponId)
-      : (coupons.data as any[]).sort((a, b) => (b.clickCount || 0) - (a.clickCount || 0))[0];
+      ? couponList.find((c) => c.id === couponId)
+      : couponList.sort((a, b) => (b.clickCount || 0) - (a.clickCount || 0))[0];
     
     if (!coupon) return NextResponse.json({ success: false, message: 'No coupon found' }, { status: 404 });
     
@@ -269,7 +303,7 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
 });
 
 // 构建变量字典
-function buildVars(coupon: any): Record<string, string> {
+function buildVars(coupon: Coupon): Record<string, string> {
   const originalPrice = Math.floor(Math.random() * 200) + 50;
   const discountPercent = parseInt(coupon.discount) || 20;
   const finalPrice = Math.floor(originalPrice * (1 - discountPercent / 100));

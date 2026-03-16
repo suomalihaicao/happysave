@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { cached } from '@/lib/cache';
 import dynamic from 'next/dynamic';
 import { AntdProvider } from '@/providers/AntdProvider';
+import type { Store, Coupon } from '@/types';
 
 const StoreDetailContent = dynamic(() => import('./StoreDetailContent'), {
   ssr: true,
@@ -16,7 +17,7 @@ export const revalidate = 3600;
 export async function generateStaticParams() {
   try {
     const { data: stores } = await cached.getStores({ active: true, limit: 100 });
-    return (stores as any[]).map((store) => ({ slug: store.slug }));
+    return stores.map((store) => ({ slug: store.slug }));
   } catch {
     return [];
   }
@@ -30,8 +31,8 @@ export default async function StoreDetailPage({ params }: Props) {
   const { slug } = await params;
 
   // 一次查询获取商家+优惠码
-  let store: any = null;
-  let coupons: any[] = [];
+  let store: Store | null = null;
+  let coupons: Coupon[] = [];
   
   try {
     const result = await cached.getStoreWithCoupons(slug);

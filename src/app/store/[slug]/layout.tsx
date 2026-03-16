@@ -2,6 +2,7 @@
 import { cache as reactCache } from 'react';
 import type { Metadata } from 'next';
 import { cached } from '@/lib/cache';
+import type { Store, Coupon } from '@/types';
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -21,7 +22,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return { title: '商家未找到 | 快乐省省', description: '该商家页面不存在。' };
   }
 
-  const s = store as any;
+  const s: Store = store;
   const baseUrl = 'https://www.happysave.cn';
   
   return {
@@ -42,7 +43,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function StoreSEOWrapper({ params }: Props) {
   const { slug } = await params;
   const { store, coupons } = await getStoreData(slug);
-  const s = store as any;
+  const s: Store | null = store;
   
   if (!s) return null;
 
@@ -60,7 +61,7 @@ export default async function StoreSEOWrapper({ params }: Props) {
       ratingValue: '4.5',
       reviewCount: Math.floor((s.clickCount || 0) / 50),
     } : undefined,
-    offers: coupons.slice(0, 10).map((c: any) => ({
+    offers: coupons.slice(0, 10).map((c: Coupon) => ({
       '@type': 'Offer',
       name: c.title,
       price: '0',

@@ -9,13 +9,14 @@ import {
   MailOutlined, RightOutlined, FireOutlined, DollarOutlined,
 } from '@ant-design/icons';
 import { AdSlot } from '@/components/AdSlot';
+import type { Store, Coupon, Category } from '@/types';
 
 const { Content, Footer } = Layout;
 
 interface HomePageContentProps {
-  initialStores: any[];
-  initialCoupons: any[];
-  initialCategories: any[];
+  initialStores: Store[];
+  initialCoupons: Coupon[];
+  initialCategories: Category[];
 }
 
 export default function HomePageContent({ initialStores, initialCoupons, initialCategories }: HomePageContentProps) {

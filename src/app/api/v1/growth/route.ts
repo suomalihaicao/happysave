@@ -2,6 +2,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { withErrorHandling } from '@/lib/api-wrapper';
+import type { Store, Coupon } from '@/types';
+
+interface ScoredCoupon extends Coupon {
+  score: number;
+  clickRate: number;
+  useRate: number;
+}
+
+interface SeoPage {
+  url: string;
+  type: string;
+  title: string;
+  h1: string;
+  keywords: string[];
+  priority: number;
+}
 
 export const GET = withErrorHandling(async () => {
   return NextResponse.json({
@@ -22,10 +38,9 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
 
   // 1. 生成SEO落地页 - 每个商家+分类组合自动生成页面
   if (action === 'generate_seo_pages') {
-    const stores = await db.getStores({ active: true, limit: 50 });
-    const pages: any[] = [];
-    const storeList = stores.data as any[];
-    const catList = [...new Set(storeList.map((s: any) => s.categoryZh))];
+    const { data: storeList } = await db.getStores({ active: true, limit: 50 }) as { data: Store[] };
+    const pages: SeoPage[] = [];
+    const catList = [...new Set(storeList.map((s) => s.categoryZh))];
     
     // 为每个商家生成落地页
     for (const store of storeList) {
@@ -44,7 +59,7 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
       pages.push({
         url: `/category/${encodeURIComponent(cat)}`,
         type: 'category',
-        title: `${cat}优惠码大全 | ${cat.name} Coupons ${new Date().getFullYear()}`,
+        title: `${cat}优惠码大全 | ${cat} Coupons ${new Date().getFullYear()}`,
         h1: `${cat}商家优惠码合集`,
         keywords: [`${cat}优惠码`, `海淘${cat}折扣`],
         priority: 0.7,
@@ -76,40 +91,35 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
 
   // 2. 高佣金优惠码优先展示 - 根据点击率和转化率排序
   if (action === 'top_coupons') {
-    const coupons = await db.getCoupons({ limit: 100 });
-    // 计算每个优惠码的"价值分数"
-    const scored = (coupons.data as any[]).map(c => {
-      // removed clickStats lookup
+    const { data: couponList } = await db.getCoupons({ limit: 100 }) as { data: Coupon[] };
+    const scored: ScoredCoupon[] = couponList.map((c) => {
       const clickRate = c.clickCount || 0;
       const useRate = c.useCount || 0;
-      
-      // 价值分数 = 使用次数 * 3 + 点击次数 + 有代码的加50分
       const score = useRate * 3 + clickRate + (c.code ? 50 : 0);
-      
       return { ...c, score, clickRate, useRate };
-    }).sort((a: any, b: any) => b.score - a.score);
+    }).sort((a, b) => b.score - a.score);
     
     return NextResponse.json({
       success: true,
       data: {
-        topCoupons: scored.slice(0, 20).map((c: any) => ({
+        topCoupons: scored.slice(0, 20).map((c) => ({
           id: c.id, title: c.title, storeId: c.storeId, score: c.score,
           clickRate: c.clickRate, useRate: c.useRate,
         })),
-        total: coupons.total,
+        total: scored.length,
       },
     });
   }
 
   // 3. 转化率分析 - 哪些商家/优惠码效果最好
   if (action === 'conversion_stats') {
-    const stores = await db.getStores({ active: true, limit: 50 });
-    const coupons = await db.getCoupons({ limit: 100 });
+    const { data: storeData } = await db.getStores({ active: true, limit: 50 }) as { data: Store[] };
+    const { data: couponData } = await db.getCoupons({ limit: 100 }) as { data: Coupon[] };
     
-    const analysis = (stores.data as any[]).map(store => {
-      const storeCoupons = (coupons.data as any[]).filter(c => c.storeId === store.id);
-      const totalClicks = storeCoupons.reduce((sum, c) => sum + (c.clickCount || 0), 0);
-      const totalUses = storeCoupons.reduce((sum, c) => sum + (c.useCount || 0), 0);
+    const analysis = storeData.map((store) => {
+      const storeCoupons = couponData.filter((c) => c.storeId === store.id);
+      const totalClicks = storeCoupons.reduce((sum: number, c) => sum + (c.clickCount || 0), 0);
+      const totalUses = storeCoupons.reduce((sum: number, c) => sum + (c.useCount || 0), 0);
       const conversionRate = totalClicks > 0 ? ((totalUses / totalClicks) * 100).toFixed(1) : '0';
       
       return {
@@ -128,10 +138,10 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
 
   // 4. 推荐链接生成器 - 生成带追踪参数的推广链接
   if (action === 'referral_links') {
-    const stores = await db.getStores({ active: true, limit: 20 });
+    const { data: storeData } = await db.getStores({ active: true, limit: 20 }) as { data: Store[] };
     const refCode = body.refCode || 'default';
     
-    const links = (stores.data as any[]).map(store => ({
+    const links = storeData.map((store) => ({
       store: store.name,
       url: `https://www.happysave.cn/store/${store.slug}?utm_source=referral&utm_medium=${refCode}&utm_campaign=share`,
       shortUrl: `https://www.happysave.cn/s/${store.slug}?r=${refCode}`,
@@ -142,11 +152,10 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
 
   // 5. 搜索引擎自动提交 - 把新URL提交给百度和Google
   if (action === 'submit_urls') {
-    const stores = await db.getStores({ active: true, limit: 50 });
-    const urls = (stores.data as any[]).map(s => `https://www.happysave.cn/store/${s.slug}`);
+    const { data: storeData } = await db.getStores({ active: true, limit: 50 }) as { data: Store[] };
+    const urls = storeData.map((s) => `https://www.happysave.cn/store/${s.slug}`);
     urls.unshift('https://www.happysave.cn/');
     
-    // 返回URL列表，可用于手动提交或Ping服务
     return NextResponse.json({
       success: true,
       data: {

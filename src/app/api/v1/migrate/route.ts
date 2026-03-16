@@ -68,10 +68,11 @@ export async function POST(request: NextRequest) {
     results.message = `迁移完成: 商家${storeOk} 优惠码${couponOk} 分类${catOk} 文章${seoOk}`;
 
     return NextResponse.json(results);
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
     return NextResponse.json({
       success: false,
-      message: err?.message,
+      message,
       steps: results.steps,
     }, { status: 500 });
   }

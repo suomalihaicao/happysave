@@ -13,6 +13,7 @@ import {
   HeartOutlined, HeartFilled, TagOutlined,
 } from '@ant-design/icons';
 import { AdSlot } from '@/components/AdSlot';
+import type { Store, Coupon } from '@/types';
 
 // QRCode组件动态加载 (约100KB，用户点击才加载)
 const QRCodeComp = dynamic(() => import('antd').then(m => m.QRCode), {
@@ -25,8 +26,8 @@ const { Title, Text, Paragraph } = Typography;
 
 interface StoreDetailContentProps {
   initialData: {
-    store: any;
-    coupons: any[];
+    store: Store;
+    coupons: Coupon[];
   };
 }
 
@@ -147,7 +148,7 @@ export default function StoreDetailContent({ initialData }: StoreDetailContentPr
           </Title>
 
           <Row gutter={[16, 16]}>
-            {coupons.map((coupon: any) => (
+            {coupons.map((coupon) => (
               <Col xs={24} sm={24} md={12} key={coupon.id}>
                 <Card className="coupon-card" hoverable style={{ borderLeft: '4px solid #ff6b35' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -192,7 +193,7 @@ export default function StoreDetailContent({ initialData }: StoreDetailContentPr
                         {coupon.code}
                       </div>
                       <Button type="primary" icon={<CopyOutlined />} onClick={() => {
-                        copyText(coupon.code);
+                        if (coupon.code) copyText(coupon.code);
                         trackClick(store.id, coupon.id);
                       }}>
                         复制
