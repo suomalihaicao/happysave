@@ -64,6 +64,14 @@
 27. [✅] 404 页面
 28. [✅] 静态页面
 
+## ✅ 第4轮 (2026-03-16 20:30) — 代码质量审计
+- 修复未使用导入 (admin/page.tsx: 移除 Modal, Form, Switch, Divider)
+- 修复未使用导入 (HomePageContent.tsx: 移除 CopyOutlined)
+- 修复未使用导入 (StoreDetailContent.tsx: 移除 Spin)
+- 修复未使用导入 (ai-panel.tsx: 移除 Input, Spin)
+- TypeScript 编译通过，无类型错误
+- 构建通过，4文件5处清理
+
 ## 📌 下一轮重点
 - 客户端 Bundle 大小优化
 - Ant Design tree-shaking
