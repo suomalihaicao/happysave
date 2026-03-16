@@ -3,6 +3,9 @@ import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { cached } from '@/lib/cache';
 
+// ISR: 每小时重新验证
+export const revalidate = 3600;
+
 interface Props {
   params: Promise<{ slug: string }>;
 }

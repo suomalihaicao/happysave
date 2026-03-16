@@ -83,6 +83,24 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        source: '/advertise',
+        headers: [
+          { key: 'Cache-Control', value: 'public, s-maxage=86400, stale-while-revalidate=604800' },
+        ],
+      },
+      {
+        source: '/privacy',
+        headers: [
+          { key: 'Cache-Control', value: 'public, s-maxage=604800, stale-while-revalidate=2592000' },
+        ],
+      },
+      {
+        source: '/terms',
+        headers: [
+          { key: 'Cache-Control', value: 'public, s-maxage=604800, stale-while-revalidate=2592000' },
+        ],
+      },
+      {
         source: '/s/:path*',
         headers: [
           { key: 'Cache-Control', value: 'public, max-age=0, must-revalidate' },
