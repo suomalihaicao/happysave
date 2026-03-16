@@ -1,13 +1,10 @@
 // /advertise page - 商务合作
 'use client';
 
-import type { Metadata } from 'next';
 import Link from 'next/link';
-import { Card, Button, Row, Col, Typography, Tag, Divider, List, Statistic } from 'antd';
+import { Card, Button, Row, Col, Typography, Divider, Statistic } from 'antd';
 
-const { Title, Paragraph, Text } = Typography;
-
-const PAGE_TITLE = '商务合作 / 广告投放';
+const { Title, Paragraph } = Typography;
 
 const plans = [
   {
@@ -35,7 +32,7 @@ export default function AdvertisePage() {
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '48px 24px' }}>
       <div style={{ textAlign: 'center', marginBottom: 48 }}>
-        <Title level={1}>📢 {PAGE_TITLE}</Title>
+        <Title level={1}>📢 商务合作 / 广告投放</Title>
         <Paragraph style={{ fontSize: 18, maxWidth: 600, margin: '0 auto' }}>
           面向全球海淘消费者，精准触达高购买力用户群体。
         </Paragraph>
@@ -65,13 +62,14 @@ export default function AdvertisePage() {
           <Col xs={24} md={8} key={i}>
             <Card
               style={{ textAlign: 'center', borderColor: plan.popular ? plan.color : undefined, borderWidth: plan.popular ? 2 : 1 }}
-              title={<span style={{ color: plan.color }}>{plan.popular && '⭐ '}{plan.name}</span>}
+              title={<span style={{ color: plan.color }}>{plan.popular ? '⭐ ' : ''}{plan.name}</span>}
             >
               <div style={{ fontSize: 32, fontWeight: 'bold', color: plan.color, marginBottom: 16 }}>{plan.price}</div>
-              <List
-                dataSource={plan.features}
-                renderItem={(f: string) => <List.Item style={{ justifyContent: 'center' }}>✅ {f}</List.Item>}
-              />
+              {plan.features.map((f, j) => (
+                <div key={j} style={{ padding: '8px 0', borderBottom: j < plan.features.length - 1 ? '1px solid #f0f0f0' : undefined, textAlign: 'center' }}>
+                  ✅ {f}
+                </div>
+              ))}
               <Button type="primary" size="large" style={{ marginTop: 24, background: plan.color, borderColor: plan.color }}
                 href="mailto:partner@happysave.vercel.app">
                 立即咨询

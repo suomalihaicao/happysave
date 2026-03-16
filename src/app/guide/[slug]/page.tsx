@@ -3,6 +3,19 @@ import { Metadata } from 'next';
 import { db } from '@/lib/db';
 import { notFound } from 'next/navigation';
 
+// ISR: 每6小时重新验证
+export const revalidate = 21600;
+
+// 静态预渲染已有的攻略页
+export async function generateStaticParams() {
+  try {
+    const seoPages = await db.getSeoPages();
+    return (seoPages.data as any[]).map((page) => ({ slug: page.slug }));
+  } catch {
+    return [];
+  }
+}
+
 interface Props {
   params: Promise<{ slug: string }>;
 }
@@ -29,10 +42,6 @@ export default async function GuidePage({ params }: Props) {
   const page = await db.getSeoPageBySlug(slug);
   
   if (!page) notFound();
-
-  // Increment view count
-  await db.incrementPageView(slug);
-
   const p = page as any;
 
   return (

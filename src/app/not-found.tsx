@@ -1,5 +1,12 @@
 // 404 页面
+import type { Metadata } from 'next';
 import Link from 'next/link';
+
+export const metadata: Metadata = {
+  title: '404 - 页面未找到 | 快乐省省',
+  description: '您访问的页面不存在或已移除。',
+  robots: { index: false, follow: false },
+};
 
 export default function NotFound() {
   return (

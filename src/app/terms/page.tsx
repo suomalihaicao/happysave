@@ -1,4 +1,12 @@
 // 服务条款
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: '服务条款 - 快乐省省',
+  description: '快乐省省服务条款 - 使用我们平台前请仔细阅读。',
+  robots: { index: true, follow: true },
+};
+
 export default function TermsPage() {
   return (
     <div style={{ maxWidth: 800, margin: '0 auto', padding: '40px 20px', fontFamily: 'system-ui', lineHeight: 1.8 }}>

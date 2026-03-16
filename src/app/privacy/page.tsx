@@ -1,4 +1,12 @@
 // 隐私政策
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: '隐私政策 - 快乐省省',
+  description: '快乐省省隐私政策 - 我们如何收集、使用和保护您的个人信息。',
+  robots: { index: true, follow: true },
+};
+
 export default function PrivacyPage() {
   return (
     <div style={{ maxWidth: 800, margin: '0 auto', padding: '40px 20px', fontFamily: 'system-ui', lineHeight: 1.8 }}>

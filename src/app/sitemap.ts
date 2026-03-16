@@ -16,6 +16,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'daily',
       priority: 1,
     },
+    {
+      url: `${baseUrl}/advertise`,
+      lastModified: now,
+      changeFrequency: 'monthly',
+      priority: 0.5,
+    },
+    // 分类页
+    ...['shopping', 'fashion', 'electronics', 'ai', 'hosting', 'beauty', 'travel', 'food', 'education'].map(slug => ({
+      url: `${baseUrl}/category/${slug}`,
+      lastModified: now,
+      changeFrequency: 'daily' as const,
+      priority: 0.7,
+    })),
     ...(stores.data as any[]).map(store => ({
       url: `${baseUrl}/store/${store.slug}`,
       lastModified: now,

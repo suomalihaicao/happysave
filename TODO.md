@@ -1,6 +1,6 @@
 # happysave 改进 TODO
 
-## ✅ 已完成
+## ✅ 已完成 (2026-03-16)
 - [x] 添加 Vercel Speed Insights
 - [x] 移除已弃用的 @vercel/postgres 依赖
 - [x] Admin API 加鉴权保护 (middleware)
@@ -9,10 +9,15 @@
 - [x] 清理冗余数据库适配器 (db-adapter.ts, universal-db.ts)
 - [x] Admin 密码要求环境变量配置 (production 环境)
 - [x] Robots.txt 禁止爬取 admin/API
-- [x] 分类页 generateStaticParams 预渲染
+- [x] 分类页 generateStaticParams 预渲染 (9个分类)
 - [x] PWA 支持 (manifest + SW + icons + 注册)
 - [x] 修复 pnpm Turbopack 构建问题 (.npmrc shamefully-hoist)
+- [x] Store 页改造为服务端渲染 + ISR (40个商家页预渲染)
+- [x] Sentry 错误监控 (@sentry/nextjs 10.43 + tunnel)
+- [x] 全局 React ErrorBoundary
 
-## 🔧 进行中
-- [ ] Store 页改造为 Server Component (支持预渲染/ISR)
-- [ ] 错误监控 (Sentry)
+## 部署后配置
+- [ ] Vercel 环境变量: ADMIN_PASSWORD, CRON_SECRET
+- [ ] Vercel Dashboard: Speed Insights 点 Enable
+- [ ] Sentry DSN: NEXT_PUBLIC_SENTRY_DSN + SENTRY_DSN
+- [ ] Sentry: 创建组织 + 项目, 获取 DSN

@@ -1,19 +1,26 @@
-// 商店页面 - Server Component metadata
+// 商店页面 - Server Component metadata + JSON-LD
+import { cache } from 'react';
 import type { Metadata } from 'next';
 import { db } from '@/lib/db';
 
 type Props = { params: Promise<{ slug: string }> };
 
+// React cache: 避免 layout 和 page 重复调用
+const getStoreData = cache(async (slug: string) => {
+  const store = await db.getStoreBySlug(slug);
+  const coupons = store ? await db.getCouponsByStoreSlug(slug) : [];
+  return { store, coupons };
+});
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const store = await db.getStoreBySlug(slug);
+  const { store, coupons } = await getStoreData(slug);
   
   if (!store) {
     return { title: '商家未找到 | 快乐省省', description: '该商家页面不存在。' };
   }
 
   const s = store as any;
-  const coupons = await db.getCouponsByStoreSlug(slug);
   const baseUrl = 'https://happysave.vercel.app';
   
   return {
@@ -24,7 +31,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: `${s.name} 优惠码 | 快乐省省`,
       description: `${s.name} ${coupons.length} 个优惠码，最高 50% 折扣！`,
       url: `${baseUrl}/store/${slug}`,
-      images: [{ url: `${baseUrl}/og-image?store=${slug}`, width: 1200, height: 630, alt: `${s.name} 优惠码` }],
+      images: [{ url: `${baseUrl}/og-image?store=${encodeURIComponent(s.name)}`, width: 1200, height: 630, alt: `${s.name} 优惠码` }],
     },
     alternates: { canonical: `${baseUrl}/store/${slug}` },
   };
@@ -33,8 +40,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 // Server Component - 仅渲染 JSON-LD 结构化数据
 export default async function StoreSEOWrapper({ params }: Props) {
   const { slug } = await params;
-  const store = await db.getStoreBySlug(slug);
-  const coupons = store ? await db.getCouponsByStoreSlug(slug) : [];
+  const { store, coupons } = await getStoreData(slug);
   const s = store as any;
   
   if (!s) return null;
