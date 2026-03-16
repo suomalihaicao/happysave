@@ -1,9 +1,13 @@
 // 首页 - 服务端数据获取 + SEO
 import { Metadata } from 'next';
 import { SEO_CONFIG, getFAQJsonLd } from '@/lib/seo';
-import { AntdProvider } from '@/providers/AntdProvider';
 import { cached } from '@/lib/cache';
-import HomePageContent from './HomePageContent';
+import dynamic from 'next/dynamic';
+
+// 首页内容动态加载 (antd 内部自行处理)
+const HomePageContent = dynamic(() => import('./HomePageContent'), {
+  loading: () => <div style={{ minHeight: 600, display: 'flex', justifyContent: 'center', alignItems: 'center' }}><div>加载中...</div></div>,
+});
 
 // ISR: 每30分钟重新验证
 export const revalidate = 1800;
@@ -46,7 +50,7 @@ export default async function HomePage() {
   const faqJsonLd = getFAQJsonLd();
 
   return (
-    <AntdProvider>
+    <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
@@ -56,6 +60,6 @@ export default async function HomePage() {
         initialCoupons={coupons}
         initialCategories={categories}
       />
-    </AntdProvider>
+    </>
   );
 }

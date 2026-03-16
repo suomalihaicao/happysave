@@ -45,6 +45,7 @@ export default async function CategoryPage({ params }: Props) {
   const cat = CATEGORY_NAMES[slug];
   if (!cat) notFound();
 
+  // 分类页获取商家 (配合客户端加载更多)
   const stores = await cached.getStores({ category: slug, active: true, limit: 50 });
 
   return (

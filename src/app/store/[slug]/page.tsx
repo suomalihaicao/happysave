@@ -1,8 +1,13 @@
 // Store Detail - 服务端数据获取 + 客户端交互
 import { notFound } from 'next/navigation';
 import { cached } from '@/lib/cache';
+import dynamic from 'next/dynamic';
 import { AntdProvider } from '@/providers/AntdProvider';
-import StoreDetailContent from './StoreDetailContent';
+
+const StoreDetailContent = dynamic(() => import('./StoreDetailContent'), {
+  ssr: true,
+  loading: () => <div style={{ minHeight: 400, display: 'flex', justifyContent: 'center', alignItems: 'center' }}><div className="animate-pulse">加载中...</div></div>,
+});
 
 // ISR: 每小时重新验证
 export const revalidate = 3600;

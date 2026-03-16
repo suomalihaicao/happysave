@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, lazy } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import {
   Layout, Card, Button, Tag, Space, Typography, Avatar,
-  QRCode, Row, Col, Badge, message, FloatButton, Breadcrumb, Spin,
+  Row, Col, Badge, message, FloatButton, Breadcrumb, Spin,
 } from 'antd';
 import {
   CopyOutlined, QrcodeOutlined, WhatsAppOutlined,
@@ -12,6 +13,12 @@ import {
   HeartOutlined, HeartFilled, TagOutlined,
 } from '@ant-design/icons';
 import { AdSlot } from '@/components/AdSlot';
+
+// QRCode组件动态加载 (约100KB，用户点击才加载)
+const QRCodeComp = dynamic(() => import('antd').then(m => m.QRCode), {
+  ssr: false,
+  loading: () => <div style={{ width: 200, height: 200, background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>加载中...</div>,
+});
 
 const { Content } = Layout;
 const { Title, Text, Paragraph } = Typography;
@@ -230,7 +237,7 @@ export default function StoreDetailContent({ initialData }: StoreDetailContentPr
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={() => setQrVisible(null)}>
           <Card title={qrVisible.title} style={{ width: 320 }} onClick={e => e.stopPropagation()}>
             <div style={{ textAlign: 'center' }}>
-              <QRCode value={qrVisible.url} size={200} />
+              <QRCodeComp value={qrVisible.url} size={200} />
               {qrVisible.code && (
                 <div style={{ marginTop: 16, background: '#f6ffed', border: '2px dashed #52c41a', borderRadius: 8, padding: 8, fontFamily: 'monospace', fontSize: 18, fontWeight: 'bold', color: '#52c41a' }}>
                   {qrVisible.code}

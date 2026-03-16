@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import { AntdProvider } from '@/providers/AntdProvider';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { SEO_CONFIG, getWebsiteJsonLd } from '@/lib/seo';
@@ -82,11 +81,9 @@ export default function RootLayout({
         }} />
       </head>
       <body>
-        <AntdProvider>
-          <ErrorBoundary>
-            {children}
-          </ErrorBoundary>
-        </AntdProvider>
+        <ErrorBoundary>
+          {children}
+        </ErrorBoundary>
         <Analytics />
         <SpeedInsights />
         <PWARegister />
