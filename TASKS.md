@@ -1,6 +1,52 @@
 # TASKS.md - 技术审计记录
 
-## 2026-03-17 03:30 UTC — 方向0: 代码质量 (第14轮)
+## 2026-03-17 04:00 UTC — 方向0: 代码质量 (第15轮)
+
+### 检查项
+- ✅ TypeScript 类型检查 (`tsc --noEmit`) — 0 错误
+- ✅ 未使用导入检查 — 全部文件干净
+- ✅ `: any` / `as any` 残留分析
+- ✅ Next.js 构建通过
+- ✅ 新增代码审查 (StoreDetailInteractive.tsx, page.tsx, layout.tsx)
+- ✅ 大文件分析 (>200行)
+- ✅ TODO/FIXME 注释扫描
+- ✅ eslint-disable 注释审计 (2处，均合理)
+
+### 新增代码审查 (自上次审计以来)
+**3个新提交:** SSR白屏修复系列 (0482cf4, e9aa7aa, ee2c303)
+- `StoreDetailInteractive.tsx` (153行) — 新Client Component，交互功能提取（复制/QR/分享）
+  - ✅ Props 接口强类型 (`{ store: Store; coupon?: Coupon }`)
+  - ✅ useCallback 优化回调
+  - ✅ QRCode dynamic import + SSR false（正确）
+  - ✅ 粘贴板 API fallback 机制完整
+- `store/[slug]/page.tsx` — 重构为纯 Server Component 直出 HTML
+  - ✅ Server/Client 分离清晰（SEO 友好）
+  - ✅ `revalidate = 3600` ISR 配置
+  - ✅ `generateStaticParams` 包含 try/catch
+- `layout.tsx` — 移除 ErrorBoundary 包裹（SSR bail out 修复）
+
+### 发现的问题
+- 无新增问题！新增代码质量良好，类型安全完整。
+
+### 类型安全状态
+| 指标 | 上轮 (03:30) | 本轮 | 变化 |
+|------|-------------|------|------|
+| `: any` | 1 | 1 | 持平 |
+| `as any` | 9 | 9 | 持平 |
+| TS 错误 | 0 | 0 | 持平 |
+| eslint-disable | 2 | 2 | 持平 |
+
+### 代码状态汇总
+| 项目 | 状态 |
+|------|------|
+| TypeScript 编译 | ✅ 0 错误 |
+| 未使用导入 | ✅ 全部文件干净 |
+| Next.js 构建 | ✅ 通过 |
+| 类型安全覆盖率 | 🟢 ~99% (稳定) |
+| 新增代码质量 | ✅ 良好 |
+
+### 下次轮次
+方向1: 安全审计 — 密钥泄露、API鉴权、Cookie安全、依赖漏洞
 
 ### 检查项
 - ✅ TypeScript 类型检查 (`tsc --noEmit`) — 0 错误
