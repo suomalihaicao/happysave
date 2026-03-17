@@ -30,13 +30,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'daily' as const,
       priority: 0.7,
     })),
-    ...(stores.data as Store[]).map(store => ({
+    ...(stores.data as unknown as Store[]).map(store => ({
       url: `${baseUrl}/store/${store.slug}`,
       lastModified: now,
       changeFrequency: 'daily' as const,
       priority: 0.8,
     })),
-    ...(seoPages.data as SeoPage[]).map(page => ({
+    ...(seoPages.data as unknown as SeoPage[]).map(page => ({
       url: `${baseUrl}/guide/${page.slug}`,
       lastModified: new Date(page.updatedAt || now),
       changeFrequency: 'weekly' as const,

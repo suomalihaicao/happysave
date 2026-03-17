@@ -6,9 +6,9 @@ import { Pool } from 'pg';
 // ============================================================
 // Input types for create/update operations
 // ============================================================
-type StoreInput = { slug: string; name: string; nameZh?: string; description?: string; descriptionZh?: string; logo?: string; website?: string; affiliateUrl?: string; category?: string; categoryZh?: string; tags?: string[]; featured?: boolean; active?: boolean; sortOrder?: number; clickCount?: number; conversionRate?: number };
+type StoreInput = { slug: string; name: string; nameZh?: string; description?: string; descriptionZh?: string; logo?: string; website?: string; affiliateUrl?: string; category?: string; categoryZh?: string; tags?: string[]; featured?: boolean; active?: boolean; sortOrder?: number; clickCount?: number; conversionRate?: number; [key: string]: unknown };
 type StoreUpdate = Partial<StoreInput>;
-type CouponInput = { storeId: string; storeName?: string; code?: string | null; title: string; titleZh?: string; description?: string; descriptionZh?: string; discount?: string; discountType?: string; type?: string; affiliateUrl?: string; startDate?: string; endDate?: string | null; featured?: boolean; active?: boolean; verified?: boolean; value?: number; minPurchase?: number; usageLimit?: number; sortOrder?: number; usageCount?: number };
+type CouponInput = { storeId: string; storeName?: string; code?: string | null; title: string; titleZh?: string; description?: string; descriptionZh?: string; discount?: string; discountType?: string; type?: string; affiliateUrl?: string; startDate?: string; endDate?: string | null; featured?: boolean; active?: boolean; verified?: boolean; value?: number; minPurchase?: number; usageLimit?: number; sortOrder?: number; usageCount?: number; [key: string]: unknown };
 type CouponUpdate = Partial<CouponInput>;
 type ClickInput = { itemId: string; itemType?: string; ip?: string; userAgent?: string; referer?: string };
 type SeoPageInput = { slug: string; title: string; content?: string; metaDesc?: string; keywords?: string; type?: string; published?: boolean };
@@ -274,7 +274,7 @@ export const postgres = {
     for (const [key, dbKey] of Object.entries(fieldMap)) {
       if (data[key] !== undefined) {
         sets.push(`${dbKey} = $${idx++}`);
-        params.push(key === 'tags' ? JSON.stringify(data[key]) : data[key]);
+        params.push(key === 'tags' ? JSON.stringify(data[key]) : data[key] as string | number | boolean);
       }
     }
 
@@ -297,7 +297,7 @@ export const postgres = {
   async getCoupons(opts: CouponQueryOpts = {}) {
     const db = getPool();
     let where = 'WHERE 1=1';
-    const params: (string | number | boolean)[] = [];
+    const params: (string | number | boolean | null)[] = [];
     let idx = 1;
 
     if (opts.storeId) { where += ` AND c.store_id = $${idx++}`; params.push(opts.storeId); }
@@ -363,7 +363,7 @@ export const postgres = {
     for (const [key, dbKey] of Object.entries(fieldMap)) {
       if (data[key] !== undefined) {
         sets.push(`${dbKey} = $${idx++}`);
-        params.push(data[key]);
+        params.push(data[key] as string | number | boolean | null);
       }
     }
 

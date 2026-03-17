@@ -11,7 +11,7 @@ export const revalidate = 21600;
 export async function generateStaticParams() {
   try {
     const seoPages = await cached.getSeoPages();
-    return (seoPages.data as SeoPage[]).map((page) => ({ slug: page.slug }));
+    return (seoPages.data as unknown as SeoPage[]).map((page) => ({ slug: page.slug }));
   } catch {
     return [];
   }
