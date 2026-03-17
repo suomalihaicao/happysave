@@ -171,7 +171,7 @@ export default async function StoreDetailPage({ params }: Props) {
             <h2 style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 16, color: '#111' }}>
               🔥 同类商家推荐
             </h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220, 1fr))', gap: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
               {relatedStores.map((s: Store) => (
                 <a key={s.id} href={`/store/${s.slug}`} style={{
                   background: '#fff', borderRadius: 12, padding: 16,
