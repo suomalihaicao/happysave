@@ -81,6 +81,16 @@ export interface AdminUser {
   lastLogin: string;
 }
 
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  active: number;
+  createdAt: string;
+  lastLogin?: string;
+}
+
 export interface DashboardStats {
   totalStores: number;
   totalCoupons: number;

@@ -1,7 +1,7 @@
 // Database - Runtime auto-select
 // PostgreSQL (when DATABASE_URL starts with postgres://) → TiDB (mysql) → SQLite/Memory (dev)
 
-import { Store, Coupon, Category } from '@/types';
+import { Store, Coupon, Category, User } from '@/types';
 
 // ============================================================
 // Database interface — all backends implement this
@@ -85,8 +85,8 @@ export interface Database {
   setConfig(key: string, value: string): Promise<boolean>;
 
   // Users
-  getUsers(): Promise<Record<string, unknown>[]>;
-  createUser(input: { email: string; name?: string; role?: string }): Promise<Record<string, unknown>>;
+  getUsers(): Promise<User[]>;
+  createUser(input: { email: string; name?: string; role?: string }): Promise<User>;
   deleteUser(id: string): Promise<boolean>;
 }
 

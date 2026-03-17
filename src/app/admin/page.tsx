@@ -57,6 +57,15 @@ interface DashboardStats {
   totalLinks: number;
 }
 
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  active: number;
+  createdAt: string;
+}
+
 // ============================================================
 // Login Component
 // ============================================================
@@ -569,7 +578,7 @@ function SettingsTab() {
             <List
               size="small"
               dataSource={users}
-              renderItem={(u: any) => (
+              renderItem={(u: User) => (
                 <List.Item actions={[
                   <Button size="small" danger onClick={() => deleteUser(u.id)}>删除</Button>
                 ]}>
