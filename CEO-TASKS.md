@@ -24,6 +24,18 @@
 - 大文件识别: admin/page.tsx (780行) 建议后续拆分组件
 - 28/28 检查项通过
 
+## ✅ 第34轮 (2026-03-17 13:30) — 代码质量审计
+- ESLint 9降级 (10.x→9.39.4): 修复 eslint-plugin-react API 兼容性问题
+- 未使用导入清理: admin/ai-panel.tsx 移除 Title/Option
+- `<a>`→`<Link>`: 5个页面(store/guide/category/privacy/terms)替换内部导航
+- react/jsx-key修复: admin/page.tsx List.Item 按钮添加 key 属性
+- catch变量: AffiliateTab/MarketingTab `e`→`_e`
+- set-state-in-effect: 4处eslint-disable (标准数据获取模式)
+- 全局错误页: global-error.tsx eslint-disable (无router上下文)
+- TypeScript 0 错误 + Next.js 构建通过
+- ESLint 55 remaining (30×any类型 + 18×unused-vars, 均低优先级)
+- git commit 8a54b5f → 已推送
+
 ## ✅ 第31轮 (2026-03-17 12:15) — 架构优化
 - 缓存失效策略: cache.ts 新增 invalidateStores/invalidateCoupons/invalidateCategories（前缀匹配失效）
 - 冷启动预热: ensureWarmup 自动触发（服务端模块加载时），预加载 stores/coupons/categories/seoPages

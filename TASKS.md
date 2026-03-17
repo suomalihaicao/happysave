@@ -1,3 +1,39 @@
+## 2026-03-17 13:30 UTC — 方向0: 代码质量 (第34轮)
+
+### 本轮方向
+分钟%5 = 0 → 方向0: 代码质量 — TypeScript错误、未使用导入、ESLint、Link组件规范
+
+### 检查项
+- ✅ TypeScript 编译 — 0 错误
+- ✅ Next.js 构建通过 (exit code 0)
+- ✅ ESLint 新增安装并运行 (eslint@9.39.4 + eslint-config-next@16.1.7)
+
+### 发现问题 & 修复
+1. **ESLint 10→9 降级** — eslint-plugin-react 与 ESLint 10 API 不兼容，降级修复
+2. **未使用导入清理** — ai-panel.tsx 移除 Title/Option，HomePageContent.tsx 标记未用变量
+3. **`<a>`→`<Link>` 替换** — 5个页面(store/guide/category/privacy/terms)内部导航使用 Next.js Link 组件
+4. **react/jsx-key** — admin/page.tsx List.Item 中 Button 添加 key 属性
+5. **catch变量重命名** — AffiliateTab/MarketingTab `e`→`_e`
+6. **set-state-in-effect** — 4处添加 eslint-disable (标准数据获取模式，非真正问题)
+7. **全局错误页** — global-error.tsx 无 router 上下文，添加 eslint-disable
+
+### ESLint 现状 (55 remaining)
+- `@typescript-eslint/no-explicit-any`: 30处 (DB适配器运行时断言，可接受)
+- `@typescript-eslint/no-unused-vars`: 18处 (catch块/可选导入，低优先级)
+- `@typescript-eslint/no-require-imports`: 2处 (动态加载)
+- Next.js 建议类: 4处 (img→Image, third-party scripts)
+- **无阻塞性错误，TypeScript + Build 均通过**
+
+### 本轮修改文件 (14 files, commit 8a54b5f)
+- package.json: eslint 降级
+- HomePageContent.tsx, ai-panel.tsx: 未使用导入
+- AffiliateTab.tsx, MarketingTab.tsx: catch变量
+- AnalyticsTab.tsx, MarketingTab.tsx, page.tsx: eslint-disable注释
+- page.tsx: react/jsx-key修复
+- category/guide/store/privacy/terms + global-error: Link组件替换
+
+---
+
 ## 2026-03-17 13:00 UTC — 方向0: 代码质量 (第33轮)
 
 ### 本轮方向
