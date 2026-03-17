@@ -49,7 +49,7 @@ export default function MarketingTab() {
         setContent(data.data.content);
         setTips(data.data.tips || []);
       }
-    } catch (e) { message.error('生成失败'); }
+    } catch { message.error('生成失败'); }
     setLoading(false);
   };
 

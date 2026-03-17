@@ -212,7 +212,7 @@ export default function HomePageContent({ initialStores, initialCoupons, initial
       {/* BOTTOM NAV */}
       <nav className="hs-bottom-nav">
         <Link href="/" className="hs-nav-item active"><span className="hs-nav-icon"><ShopOutlined /></span>{t('首页', 'Home')}</Link>
-        <a href="/#stores" className="hs-nav-item"><span className="hs-nav-icon"><TagOutlined /></span>{t('商家', 'Stores')}</a>
+        <Link href="/#stores" className="hs-nav-item"><span className="hs-nav-icon"><TagOutlined /></span>{t('商家', 'Stores')}</Link>
         <Link href="/advertise" className="hs-nav-item"><span className="hs-nav-icon"><ThunderboltOutlined /></span>{t('合作', 'Partner')}</Link>
         {/* 管理入口已隐藏 */}
       </nav>

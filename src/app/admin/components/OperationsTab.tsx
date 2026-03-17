@@ -27,7 +27,7 @@ export default function OperationsTab() {
   });
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
+  const fetchData = () => {
     setLoading(true);
     Promise.all([
       fetch('/api/v1/stats').then(r => r.json()),
@@ -37,7 +37,9 @@ export default function OperationsTab() {
       setStats({ ...(s.data || {}), finance: f.data || {}, share: sh.data || {} });
       setLoading(false);
     }).catch(() => setLoading(false));
-  }, []);
+  };
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- standard data fetching pattern
+  useEffect(fetchData, []);
 
   const stat = (key: keyof OpsStats, def: number = 0) => (stats[key] as number) ?? def;
 

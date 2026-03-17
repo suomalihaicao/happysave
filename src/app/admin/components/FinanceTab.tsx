@@ -34,11 +34,12 @@ export default function FinanceTab() {
       fetch('/api/v1/finance?action=dashboard').then(r => r.json()),
       fetch('/api/v1/finance?action=transactions').then(r => r.json()),
     ]).then(([d, t]) => {
-      setDashboard(d.data || dashboard);
+      if (d.data) setDashboard(d.data);
       setTransactions(t.data || []);
       setLoading(false);
     }).catch(() => setLoading(false));
   };
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- standard data fetching pattern
   useEffect(fetchData, []);
 
   return (

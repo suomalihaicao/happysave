@@ -61,7 +61,7 @@ export default function AffiliateTab() {
       const d = await res.json();
       if (d.success) setSyncResult(d.data);
       message.success('联盟数据同步完成');
-    } catch (_e) {
+    } catch {
       message.error('同步失败，请检查配置');
     }
     setSyncing(false);

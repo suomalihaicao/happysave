@@ -87,6 +87,9 @@ export interface User {
   name: string;
   role: string;
   active: number;
+  level?: string;
+  points?: number;
+  totalclicks?: number;
   createdAt: string;
   lastLogin?: string;
 }

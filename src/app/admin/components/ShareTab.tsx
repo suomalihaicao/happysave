@@ -26,13 +26,15 @@ export default function ShareTab() {
   });
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
+  const fetchData = () => {
     setLoading(true);
     fetch('/api/v1/share?action=stats').then(r => r.json()).then(d => {
-      setStats(d.data || stats);
+      if (d.data) setStats(d.data);
       setLoading(false);
     }).catch(() => setLoading(false));
-  }, []);
+  };
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- standard data fetching pattern
+  useEffect(fetchData, []);
 
   return (
     <div>

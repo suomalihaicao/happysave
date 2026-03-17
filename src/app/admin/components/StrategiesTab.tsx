@@ -3,11 +3,8 @@
 import { useState, useEffect } from 'react';
 import {
   Button, Input, Tag, Space,
-  Card, Row, Col, message, Table,
-  Typography
+  Card, Row, Col, message, Table
 } from 'antd';
-
-const { Text } = Typography;
 
 interface Strategy {
   id: string;
@@ -50,6 +47,7 @@ export default function StrategiesTab() {
       setLoading(false);
     }).catch(() => setLoading(false));
   };
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- standard data fetching pattern
   useEffect(fetchData, []);
 
   const addStrategy = async () => {
