@@ -55,11 +55,9 @@ export default function HomePageContent({ initialStores, initialCoupons, initial
         <Space className="desktop-only" size="middle">
           <Input placeholder={t('搜索商家或优惠码...', 'Search stores...')} prefix={<SearchOutlined />} style={{ width: 280, borderRadius: 20 }} value={searchText} onChange={e => setSearchText(e.target.value)} allowClear />
           <Button icon={<GlobalOutlined />} onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}>{lang === 'zh' ? 'EN' : '中'}</Button>
-          <Link href="/admin"><Button type="primary" style={{ background: '#FF6B35', borderColor: '#FF6B35' }}>{t('管理后台', 'Admin')}</Button></Link>
         </Space>
         <div className="mobile-only" style={{ display: 'flex', gap: 8 }}>
           <Button size="small" icon={<GlobalOutlined />} onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')} />
-          <Link href="/admin"><Button size="small" type="primary" style={{ background: '#FF6B35' }}>{t('管理', 'Admin')}</Button></Link>
         </div>
       </header>
 
@@ -216,7 +214,7 @@ export default function HomePageContent({ initialStores, initialCoupons, initial
         <Link href="/" className="hs-nav-item active"><span className="hs-nav-icon"><ShopOutlined /></span>{t('首页', 'Home')}</Link>
         <a href="/#stores" className="hs-nav-item"><span className="hs-nav-icon"><TagOutlined /></span>{t('商家', 'Stores')}</a>
         <Link href="/advertise" className="hs-nav-item"><span className="hs-nav-icon"><ThunderboltOutlined /></span>{t('合作', 'Partner')}</Link>
-        <Link href="/admin" className="hs-nav-item"><span className="hs-nav-icon"><GlobalOutlined /></span>{t('管理', 'Admin')}</Link>
+        {/* 管理入口已隐藏 */}
       </nav>
 
       <FloatButton.BackTop />

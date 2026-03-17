@@ -36,15 +36,6 @@ export default function NotFound() {
         }}>
           🏠 回到首页
         </Link>
-        <Link href="/admin" style={{
-          padding: '12px 32px',
-          background: '#f5f5f5',
-          color: '#333',
-          borderRadius: 8,
-          textDecoration: 'none',
-        }}>
-          管理后台
-        </Link>
       </div>
     </div>
   );
