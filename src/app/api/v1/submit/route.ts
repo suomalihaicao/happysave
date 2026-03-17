@@ -1,70 +1,35 @@
-// 用户提交优惠码
+// 用户报告/反馈 API
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
 import { withErrorHandling } from '@/lib/api-wrapper';
-import type { Store, Coupon } from '@/types';
+import { db } from '@/lib/db';
 
-// POST /api/v1/submit - 用户提交优惠码
 export const POST = withErrorHandling(async (request: NextRequest) => {
   const body = await request.json();
-  const { storeName, storeUrl, couponCode, couponTitle, discount, description, submitterEmail } = body;
+  const { type, storeId, couponId, reportType, message: msg } = body;
 
-  if (!storeName || !couponTitle) {
-    return NextResponse.json({ success: false, message: '商家名称和优惠标题必填' }, { status: 400 });
+  if (type === 'report') {
+    // 记录报告到数据库（复用 notifications 表或 click_logs）
+    console.log(`[Report] store=${storeId} coupon=${couponId} type=${reportType}`);
+    
+    // 追踪到 click_logs（复用现有表）
+    try {
+      await db.trackClick({
+        itemId: couponId || storeId,
+        itemType: `report_${reportType}`,
+        userAgent: request.headers.get('user-agent') || '',
+        referer: request.headers.get('referer') || '',
+      });
+    } catch {
+      // 静默失败
+    }
+
+    return NextResponse.json({ success: true, message: '感谢反馈' });
   }
 
-  // 找到或创建商家
-  const slug = storeName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-  let store: Store | null = await db.getStoreBySlug(slug);
-
-  if (!store) {
-    store = await db.createStore({
-      slug,
-      name: storeName,
-      nameZh: storeName,
-      description: description || '',
-      website: storeUrl || '',
-      affiliateUrl: storeUrl || '',
-      category: 'shopping',
-      categoryZh: '综合购物',
-      tags: ['user-submitted'],
-      active: false, // 需要审核
-    });
+  if (type === 'feedback') {
+    console.log(`[Feedback] ${msg}`);
+    return NextResponse.json({ success: true, message: '感谢反馈' });
   }
 
-  if (!store) {
-    return NextResponse.json({ success: false, message: '创建商家失败' }, { status: 500 });
-  }
-
-  // 创建优惠码（待审核）
-  const coupon: Coupon | null = await db.createCoupon({
-    storeId: store.id,
-    storeName: store.name,
-    code: couponCode || null,
-    title: couponTitle,
-    titleZh: couponTitle,
-    description: description || couponTitle,
-    discount: discount || '',
-    discountType: 'percentage',
-    type: couponCode ? 'code' : 'deal',
-    affiliateUrl: storeUrl || '',
-    startDate: new Date().toISOString(),
-    featured: false,
-    active: false, // 需要审核
-    verified: false,
-  });
-
-  // 记录提交通知
-  await db.createNotification({
-    type: 'new_submission',
-    storeId: store.id,
-    email: submitterEmail || '',
-    keyword: `${storeName} - ${couponTitle}`,
-  });
-
-  return NextResponse.json({
-    success: true,
-    message: '提交成功！审核通过后会显示在网站上',
-    data: { couponId: coupon?.id },
-  });
+  return NextResponse.json({ success: false, message: 'Unknown type' }, { status: 400 });
 });
