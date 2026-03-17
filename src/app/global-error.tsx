@@ -30,6 +30,7 @@ export default function GlobalError({
             padding: '10px 24px', background: '#ff6b35', color: '#fff',
             border: 'none', borderRadius: 8, fontSize: 14, cursor: 'pointer',
           }}>🔄 重试</button>
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- global error page has no router context */}
           <a href="/" style={{
             padding: '10px 24px', background: '#fff', color: '#333',
             border: '1px solid #d9d9d9', borderRadius: 8, fontSize: 14,

@@ -1,3 +1,4 @@
+import Link from 'next/link';
 // Store Detail — Server Component 直出可见内容
 import { notFound } from 'next/navigation';
 import { cached } from '@/lib/cache';
@@ -48,7 +49,7 @@ export default async function StoreDetailPage({ params }: Props) {
       <div style={{ padding: '24px', maxWidth: 1000, margin: '0 auto' }}>
         {/* 面包屑 */}
         <nav style={{ marginBottom: 16, fontSize: 14, color: '#666' }}>
-          <a href="/" style={{ color: '#ff6b35', textDecoration: 'none' }}>🏠 首页</a>
+          <Link href="/" style={{ color: '#ff6b35', textDecoration: 'none' }}>🏠 首页</Link>
           <span style={{ margin: '0 8px' }}>/</span>
           <span>{store.name}</span>
         </nav>

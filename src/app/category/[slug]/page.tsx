@@ -1,3 +1,4 @@
+import Link from 'next/link';
 // 分类页面 - /category/[slug]
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -53,7 +54,7 @@ export default async function CategoryPage({ params }: Props) {
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '40px 20px', fontFamily: 'system-ui' }}>
       {/* Breadcrumb */}
       <nav style={{ marginBottom: 24, fontSize: 14, color: '#666' }}>
-        <a href="/" style={{ color: '#ff6b35', textDecoration: 'none' }}>🏠 首页</a>
+        <Link href="/" style={{ color: '#ff6b35', textDecoration: 'none' }}>🏠 首页</Link>
         {' > '}
         <span>{cat.icon} {cat.zh}</span>
       </nav>

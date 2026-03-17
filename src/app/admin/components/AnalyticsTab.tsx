@@ -62,6 +62,7 @@ export default function AnalyticsTab() {
     }).finally(() => setLoading(false));
   };
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- standard data fetching pattern
   useEffect(() => { fetchStats(); }, [days]);
 
   if (!stats) return <Card loading />;

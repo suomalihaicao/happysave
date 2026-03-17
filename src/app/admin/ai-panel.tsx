@@ -10,8 +10,7 @@ import {
   ShareAltOutlined, ThunderboltOutlined, BulbOutlined,
 } from '@ant-design/icons';
 
-const { Title, Text, Paragraph } = Typography;
-const { Option } = Select;
+const { Text, Paragraph } = Typography;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AIResults = Record<string, any>;

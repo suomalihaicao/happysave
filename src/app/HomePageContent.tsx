@@ -11,7 +11,7 @@ import {
 import { AdSlot } from '@/components/AdSlot';
 import type { Store, Coupon, Category } from '@/types';
 
-const { Content, Footer } = Layout;
+const { Content: _Content, Footer: _Footer } = Layout; // eslint-disable-line @typescript-eslint/no-unused-vars
 
 interface HomePageContentProps {
   initialStores: Store[];

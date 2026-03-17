@@ -1,3 +1,4 @@
+import Link from 'next/link';
 // SEO Guide Pages - AI 生成的商家攻略
 import { Metadata } from 'next';
 import { cached } from '@/lib/cache';
@@ -48,11 +49,11 @@ export default async function GuidePage({ params }: Props) {
     <div style={{ maxWidth: 800, margin: '0 auto', padding: '40px 20px', fontFamily: 'system-ui, sans-serif' }}>
       {/* Breadcrumb */}
       <nav style={{ marginBottom: 24, fontSize: 14, color: '#666' }}>
-        <a href="/" style={{ color: '#ff6b35', textDecoration: 'none' }}>快乐省省</a>
+        <Link href="/" style={{ color: '#ff6b35', textDecoration: 'none' }}>快乐省省</Link>
         {' > '}
-        <a href={`/store/${page.slug?.replace('guide-', '')}`} style={{ color: '#ff6b35', textDecoration: 'none' }}>
+        <Link href={`/store/${page.slug?.replace('guide-', '')}`} style={{ color: '#ff6b35', textDecoration: 'none' }}>
           商家页
-        </a>
+        </Link>
         {' > '}
         <span>{page.title}</span>
       </nav>
@@ -73,7 +74,7 @@ export default async function GuidePage({ params }: Props) {
       {/* Back to store */}
       <div style={{ marginTop: 48, padding: 24, background: '#f5f5f5', borderRadius: 12, textAlign: 'center' }}>
         <p style={{ marginBottom: 16, fontSize: 18 }}>🎉 查看最新优惠码</p>
-        <a 
+        <Link
           href={`/store/${page.slug?.replace('guide-', '')}`}
           style={{
             display: 'inline-block', padding: '12px 32px',
@@ -82,7 +83,7 @@ export default async function GuidePage({ params }: Props) {
           }}
         >
           查看优惠 →
-        </a>
+        </Link>
       </div>
     </div>
   );

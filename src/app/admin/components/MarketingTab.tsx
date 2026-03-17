@@ -59,6 +59,7 @@ export default function MarketingTab() {
     if (data.success) setInspiration(data.data);
   };
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- standard data fetching pattern
   useEffect(() => { loadInspiration(); }, []);
 
   return (

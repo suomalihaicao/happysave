@@ -1,4 +1,5 @@
 // 隐私政策
+import Link from 'next/link';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -44,7 +45,7 @@ export default function PrivacyPage() {
       <h2>5. 联系我们</h2>
       <p>如有隐私相关问题，请联系：privacy@happysave.cn</p>
       
-      <p><a href="/">← 返回首页</a></p>
+      <p><Link href="/">← 返回首页</Link></p>
     </div>
   );
 }

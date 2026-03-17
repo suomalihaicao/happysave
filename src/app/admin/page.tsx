@@ -198,6 +198,7 @@ function StoresTab() {
       setLoading(false);
     });
   };
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- standard data fetching pattern
   useEffect(fetchData, []);
 
   const toggleFeatured = async (store: Store) => {
@@ -385,6 +386,7 @@ function TasksTab() {
       setLoading(false);
     });
   };
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- standard data fetching pattern
   useEffect(fetchData, []);
 
   const priorityColors: Record<string, string> = { high: 'red', medium: 'orange', low: 'blue' };
@@ -580,7 +582,7 @@ function SettingsTab() {
               dataSource={users}
               renderItem={(u: User) => (
                 <List.Item actions={[
-                  <Button size="small" danger onClick={() => deleteUser(u.id)}>删除</Button>
+                  <Button key="del" size="small" danger onClick={() => deleteUser(u.id)}>删除</Button>
                 ]}>
                   <List.Item.Meta title={u.email} description={`${u.name || '未命名'} · ${u.role} · ${u.createdAt?.slice(0, 10)}`} />
                 </List.Item>
