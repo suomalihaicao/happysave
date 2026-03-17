@@ -1,3 +1,63 @@
+## 2026-03-17 15:00 UTC — 方向0: 代码质量 (第37轮)
+
+### 本轮方向
+分钟%5 = 0 → 方向0: 代码质量 — TypeScript错误、未使用导入、死代码清理
+
+### 检查项
+- ✅ TypeScript 编译 — 0 错误
+- ✅ Next.js 构建通过 (exit code 0)
+- ✅ ESLint 未使用导入扫描 — 72→45 warnings
+- ✅ 死代码检测
+
+### 发现问题 & 修复
+1. **未使用导入 (4处)** — `admin/page.tsx: TextArea`, `ai-panel.tsx: Select`, `FinanceTab.tsx: DollarOutlined`, `structured-data.ts: db` → **已全部移除**
+2. **未使用类型/函数 (3处)** — `db-postgres.ts: nowISO函数`, `sentry-tunnel/route.ts: SENTRY_HOST+SENTRY_KEY` → **已移除** (死代码)
+3. **未使用接口导出化 (3处)** — `affiliate.ts: MerchantRecord/CouponRecord`, `db-postgres.ts: NotificationUpdate` → **添加 export** 使其可供其他模块使用
+4. **catch 变量未使用 (4处)** — affiliate/qr 路由 `catch(e)`/`catch(error)` → **移除变量** `catch {}`
+5. **db-postgres.ts 末尾重复代码块** — 6行损坏的 deleteNotification 片段 → **已移除**
+6. **og-image/route.tsx 未使用变量** — `title` 参数声明但未引用 → **已移除**
+7. **StrategiesTab.tsx 多余解构** — `const { TextArea } = Input` 未使用 (代码直接用 `Input.TextArea`) → **已移除**
+
+### 文件变更
+| 文件 | 变更 |
+|------|------|
+| admin/page.tsx | 移除 TextArea 解构 |
+| admin/ai-panel.tsx | 移除 Select 导入 |
+| admin/components/FinanceTab.tsx | 移除 DollarOutlined 导入 |
+| admin/components/StrategiesTab.tsx | 移除未使用 TextArea 解构 |
+| affiliate/route.ts | catch(e) → catch {} |
+| qr/route.ts | catch(error) → catch {} |
+| sentry-tunnel/route.ts | 移除 SENTRY_HOST/SENTRY_KEY |
+| og-image/route.tsx | 移除未使用 title 变量 |
+| lib/affiliate.ts | MerchantRecord/CouponRecord 添加 export |
+| lib/db-postgres.ts | 移除 nowISO + 末尾重复代码, NotificationUpdate 添加 export |
+| lib/structured-data.ts | 移除未使用 db 导入 |
+
+### 质量指标
+| 指标 | 上轮 | 本轮 | 变化 |
+|------|------|------|------|
+| ESLint warnings | 72 | 45 | ↓38% |
+| unused-vars | 21 | 9 | ↓57% |
+| `: any` | 3 | 3 | 持平 |
+| `as any` | 9 | 9 | 持平 |
+| TS 错误 | 0 | 0 | 持平 |
+| 构建 | ✅ | ✅ | 持平 |
+
+### 剩余 unused-vars (9处, 低优先级)
+- admin/page.tsx: `_e`/`e` catch变量 (3处)
+- admin/components: catch变量 (3处)
+- lib/auto-discover.ts: scrapeWithAI (1处)
+- lib/data-growth.ts: coupons (1处)
+- 其他 (1处)
+
+### git
+- commit 3dd85cc → 已推送
+
+### 下次轮次
+方向1: 安全审计 — 密钥泄露、API鉴权、Cookie安全、依赖漏洞
+
+---
+
 ## 2026-03-17 14:30 UTC — 方向0: 代码质量 (第36轮)
 
 ### 本轮方向
