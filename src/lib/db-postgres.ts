@@ -631,46 +631,41 @@ export const postgres = {
   },
 
   // Site Config
-  getAllConfig(): Record<string, string> {
-    // Config table may not exist in PG; return empty as fallback
+  async getAllConfig(): Promise<Record<string, string>> {
     try {
       const p = getPool();
-      const rows = p.query('SELECT key, value FROM site_config') as unknown as { rows: { key: string; value: string }[] };
+      const res = await p.query('SELECT key, value FROM site_config');
       const result: Record<string, string> = {};
-      (rows as any).rows?.forEach((r: { key: string; value: string }) => result[r.key] = r.value);
+      res.rows.forEach((r: { key: string; value: string }) => result[r.key] = r.value);
       return result;
-    } catch {
-      return {};
-    }
+    } catch { return {}; }
   },
-  setConfig(key: string, value: string): boolean {
+  async setConfig(key: string, value: string): Promise<boolean> {
     try {
       const p = getPool();
-      p.query('INSERT INTO site_config (key, value, updatedAt) VALUES ($1, $2, NOW()) ON CONFLICT (key) DO UPDATE SET value = $2, updatedAt = NOW()', [key, value]);
+      await p.query('INSERT INTO site_config (key, value, "updatedAt") VALUES ($1, $2, NOW()) ON CONFLICT (key) DO UPDATE SET value = $2, "updatedAt" = NOW()', [key, value]);
       return true;
-    } catch {
-      return false;
-    }
+    } catch { return false; }
   },
 
   // Users
-  getUsers(): Record<string, unknown>[] {
+  async getUsers(): Promise<Record<string, unknown>[]> {
     try {
       const p = getPool();
-      const rows = p.query('SELECT id, email, name, role, active, "createdAt", "lastLogin" FROM users ORDER BY "createdAt" DESC');
-      return (rows as any).rows || [];
+      const res = await p.query('SELECT id, email, name, role, active, "createdAt", "lastLogin" FROM users ORDER BY "createdAt" DESC');
+      return res.rows;
     } catch { return []; }
   },
-  createUser(input: { email: string; name?: string; role?: string }): Record<string, unknown> {
+  async createUser(input: { email: string; name?: string; role?: string }): Promise<Record<string, unknown>> {
     const p = getPool();
     const id = Math.random().toString(36).slice(2);
-    p.query('INSERT INTO users (id, email, name, role, active, "createdAt") VALUES ($1, $2, $3, $4, true, NOW())', [id, input.email, input.name || '', input.role || 'user']);
+    await p.query('INSERT INTO users (id, email, name, role, active, "createdAt") VALUES ($1, $2, $3, $4, true, NOW())', [id, input.email, input.name || '', input.role || 'user']);
     return { id, email: input.email, name: input.name || '', role: input.role || 'user', active: true };
   },
-  deleteUser(id: string): boolean {
+  async deleteUser(id: string): Promise<boolean> {
     try {
       const p = getPool();
-      p.query('DELETE FROM users WHERE id = $1', [id]);
+      await p.query('DELETE FROM users WHERE id = $1', [id]);
       return true;
     } catch { return false; }
   },

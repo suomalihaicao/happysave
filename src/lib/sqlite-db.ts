@@ -793,7 +793,7 @@ export const database = {
 
   deleteUser(id: string) {
     if (dbType === 'sqlite') sqliteDb.prepare('DELETE FROM users WHERE id = ?').run(id);
-    else if ((memory as any).users) (memory as any).users = (memory as any).users.filter((u: any) => u.id !== id);
+    else if ((memory as any).users) (memory as any).users = (memory as any).users.filter((u: Record<string, unknown>) => u.id !== id);
     return true;
   },
 };
