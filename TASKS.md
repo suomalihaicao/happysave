@@ -1,3 +1,56 @@
+## 2026-03-17 16:00 UTC — 方向0: 代码质量 (第38轮)
+
+### 本轮方向
+分钟%5 = 0 → 方向0: 代码质量 — TypeScript错误、未使用导入、类型安全
+
+### 检查项
+- ✅ TypeScript 编译 — 0 错误
+- ✅ Next.js 构建通过 (exit code 0, 32.7s)
+- ✅ ESLint 全量扫描 — 37 problems (31 errors, 6 warnings)
+- ✅ 新增代码审查 — commit 51296ee (仅 markdown, 无 .ts/.tsx)
+
+### 发现问题 & 修复
+1. **未使用导入 (1处)** — `StrategiesTab.tsx: Typography/Text` (antd 解构未使用) → **已移除**
+2. **类型安全退化 (3处)** — `admin/page.tsx` SettingsTab `useState<any[]>` + MarketingContentTab `useState<any[]>` + Table render `any` → **已修复**: 新增 MarketingContent 接口, User 接口扩展(level/points/totalclicks), 本地 User 接口合并到 @/types
+3. **exhaustive-deps (2处)** — FinanceTab/ShareTab `useEffect` 中 setState 引用外部 state → **已修复**: 条件更新 `if (d.data) setState(d.data)`
+4. **set-state-in-effect (1处)** — CouponsTab useEffect 缺少 eslint-disable 注释 → **已补全**
+5. **遗留修复 (6处)** — 第37轮未提交的 `<a>`→`<Link>`, catch 变量清理, OperationsTab useEffect 重构
+
+### 文件变更
+| 文件 | 变更 |
+|------|------|
+| admin/components/StrategiesTab.tsx | 移除 Typography/Text |
+| admin/page.tsx | User/MarketingContent 接口化, eslint-disable 补全 |
+| admin/components/FinanceTab.tsx | exhaustive-deps 修复 |
+| admin/components/ShareTab.tsx | exhaustive-deps 修复 |
+| types/index.ts | User 接口扩展 (level/points/totalclicks) |
+| HomePageContent.tsx | `<a>`→`<Link>` (遗留) |
+| AffiliateTab/MarketingTab/sentry-tunnel | catch 变量清理 (遗留) |
+| OperationsTab.tsx | useEffect 重构 (遗留) |
+
+### 质量指标
+| 指标 | 上轮 (第37轮) | 本轮 | 变化 |
+|------|-------------|------|------|
+| ESLint problems | 46 | 37 | ↓20% |
+| no-explicit-any | 34 | 31 | ↓9% (admin 5→0) |
+| unused-vars | 9 | 6 | ↓33% |
+| TS 错误 | 0 | 0 | 持平 |
+| 构建 | ✅ | ✅ | 持平 |
+| admin 组件 any | 5 | 0 | ✅ 消除 |
+
+### 剩余问题 (低优先级, 全部 DB 适配器层)
+- `no-explicit-any`: 31处 (sqlite-db.ts 20 + db-tidb.ts 3 + db-postgres.ts 2 + scraper.ts 1 + data-growth.ts 1 + affiliate.ts 1 + migrate 1 + 其他 2)
+- `unused-vars`: 6处 (MerchantRecord, scrapeWithAI, coupons, NotificationUpdate, 等)
+- `no-require-imports`: 2处 (动态加载)
+
+### git
+- commit 3054abd → 已推送
+
+### 下次轮次
+方向1: 安全审计 — 密钥泄露、API鉴权、Cookie安全、依赖漏洞
+
+---
+
 ## 2026-03-17 15:00 UTC — 方向0: 代码质量 (第37轮)
 
 ### 本轮方向
