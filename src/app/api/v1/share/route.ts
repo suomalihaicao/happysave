@@ -3,7 +3,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withErrorHandling } from '@/lib/api-wrapper';
 import { Pool } from 'pg';
 
-function getPool() { const u = process.env.DATABASE_URL; return u ? new Pool({ connectionString: u }) : null; }
+let pool: Pool | null = null;
+
+function getPool(): Pool | null {
+  if (pool) return pool;
+  const url = process.env.DATABASE_URL;
+  if (!url) return null;
+  pool = new Pool({ connectionString: url, max: 5 });
+  return pool;
+}
 
 export const GET = withErrorHandling(async (request: NextRequest) => {
   const pool = getPool();
@@ -17,7 +25,6 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
       pool.query("SELECT COUNT(*) as total, COUNT(CASE WHEN status='completed' THEN 1 END) as completed FROM referrals"),
       pool.query("SELECT p.nickname, u.email, p.totalShares, p.inviteCode FROM user_profiles p JOIN users u ON p.userId = u.id ORDER BY p.totalShares DESC LIMIT 10"),
     ]);
-    await pool.end();
     return NextResponse.json({
       success: true,
       data: {
@@ -32,10 +39,8 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
 
   if (action === 'referrals') {
     const r = await pool.query('SELECT * FROM referrals ORDER BY createdAt DESC LIMIT 50');
-    await pool.end();
     return NextResponse.json({ success: true, data: r.rows });
   }
 
-  await pool.end();
   return NextResponse.json({ success: false }, { status: 400 });
 });

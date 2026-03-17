@@ -3,7 +3,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withErrorHandling } from '@/lib/api-wrapper';
 import { Pool } from 'pg';
 
-function getPool() { const u = process.env.DATABASE_URL; return u ? new Pool({ connectionString: u }) : null; }
+let pool: Pool | null = null;
+
+function getPool(): Pool | null {
+  if (pool) return pool;
+  const url = process.env.DATABASE_URL;
+  if (!url) return null;
+  pool = new Pool({ connectionString: url, max: 5 });
+  return pool;
+}
 
 export const GET = withErrorHandling(async (request: NextRequest) => {
   const pool = getPool();
@@ -18,17 +26,14 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
       FROM users u LEFT JOIN user_profiles p ON u.id = p.userId
       ORDER BY u.createdAt DESC LIMIT 100
     `);
-    await pool.end();
     return NextResponse.json({ success: true, data: r.rows });
   }
 
   if (action === 'points') {
     const r = await pool.query('SELECT * FROM point_records ORDER BY createdAt DESC LIMIT 50');
-    await pool.end();
     return NextResponse.json({ success: true, data: r.rows });
   }
 
-  await pool.end();
   return NextResponse.json({ success: false }, { status: 400 });
 });
 
@@ -43,10 +48,8 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
     await pool.query('INSERT INTO point_records (id, userId, action, points, description) VALUES ($1,$2,$3,$4,$5)',
       [id, userId, 'manual', points, description || '']);
     await pool.query('UPDATE user_profiles SET points = points + $1 WHERE userId = $2', [points, userId]);
-    await pool.end();
     return NextResponse.json({ success: true });
   }
 
-  await pool.end();
   return NextResponse.json({ success: false }, { status: 400 });
 });

@@ -16,6 +16,9 @@ import AnalyticsTab from './components/AnalyticsTab';
 import AffiliateTab from './components/AffiliateTab';
 import MarketingTab from './components/MarketingTab';
 import StrategiesTab from './components/StrategiesTab';
+import FinanceTab from './components/FinanceTab';
+import ShareTab from './components/ShareTab';
+import OperationsTab from './components/OperationsTab';
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -65,6 +68,18 @@ interface User {
   role: string;
   active: number;
   createdAt: string;
+}
+
+interface UserProfile {
+  id: string;
+  email: string;
+  nickname: string;
+  level: string;
+  points: number;
+  totalclicks: number;
+  invitecode: string;
+  role: string;
+  createdat: string;
 }
 
 // ============================================================
@@ -348,7 +363,7 @@ function CouponsTab() {
 // Users Tab
 // ============================================================
 function UsersTab() {
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(false);
 
   const fetchUsers = () => {
@@ -388,8 +403,8 @@ function UsersTab() {
             { title: '邮箱', dataIndex: 'email', key: 'email', render: (v: string) => <Text strong>{v}</Text> },
             { title: '昵称', dataIndex: 'nickname', key: 'nick', render: (v: string) => v || '-' },
             { title: '等级', dataIndex: 'level', key: 'level', render: (v: string) => levelTag(v || 'normal') },
-            { title: '积分', dataIndex: 'points', key: 'points', render: (v: number) => <Tag color="blue">{v || 0}</Tag>, sorter: (a: any, b: any) => (a.points || 0) - (b.points || 0) },
-            { title: '点击', dataIndex: 'totalclicks', key: 'clicks', render: (v: number) => v || 0, sorter: (a: any, b: any) => (a.totalclicks || 0) - (b.totalclicks || 0) },
+            { title: '积分', dataIndex: 'points', key: 'points', render: (v: number) => <Tag color="blue">{v || 0}</Tag>, sorter: (a: UserProfile, b: UserProfile) => (a.points || 0) - (b.points || 0) },
+            { title: '点击', dataIndex: 'totalclicks', key: 'clicks', render: (v: number) => v || 0, sorter: (a: UserProfile, b: UserProfile) => (a.totalclicks || 0) - (b.totalclicks || 0) },
             { title: '邀请码', dataIndex: 'invitecode', key: 'code', render: (v: string) => v ? <Tag>{v}</Tag> : '-' },
             { title: '角色', dataIndex: 'role', key: 'role', render: (v: string) => <Tag color={v === 'admin' ? 'red' : 'default'}>{v}</Tag> },
             { title: '注册时间', dataIndex: 'createdat', key: 'time', render: (v: string) => v?.slice(0, 10) },
@@ -693,184 +708,3 @@ function MarketingContentTab() {
 }
 
 
-
-// ============================================================
-// Finance Tab - 财务中心
-// ============================================================
-function FinanceTab() {
-  const [dashboard, setDashboard] = useState<any>({});
-  const [transactions, setTransactions] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  const fetchData = () => {
-    setLoading(true);
-    Promise.all([
-      fetch('/api/v1/finance?action=dashboard').then(r => r.json()),
-      fetch('/api/v1/finance?action=transactions').then(r => r.json()),
-    ]).then(([d, t]) => {
-      setDashboard(d.data || {});
-      setTransactions(t.data || []);
-      setLoading(false);
-    }).catch(() => setLoading(false));
-  };
-  useEffect(fetchData, []);
-
-  return (
-    <div>
-      <Row gutter={16} style={{ marginBottom: 16 }}>
-        <Col xs={12} md={6}><Card><Statistic title="总收入" value={dashboard.totalRevenue} prefix="$" precision={2} /></Card></Col>
-        <Col xs={12} md={6}><Card><Statistic title="已确认" value={dashboard.confirmedRevenue} prefix="$" precision={2} valueStyle={{ color: '#52c41a' }} /></Card></Col>
-        <Col xs={12} md={6}><Card><Statistic title="待确认" value={dashboard.pendingRevenue} prefix="$" precision={2} valueStyle={{ color: '#faad14' }} /></Card></Col>
-        <Col xs={12} md={6}><Card><Statistic title="交易笔数" value={dashboard.totalTransactions} /></Card></Col>
-      </Row>
-      <Row gutter={16} style={{ marginBottom: 16 }}>
-        <Col xs={24} md={12}>
-          <Card title="💰 商家佣金排行">
-            <Table dataSource={dashboard.byStore || []} rowKey="storename" pagination={false} size="small"
-              columns={[
-                { title: '商家', dataIndex: 'storename' },
-                { title: '佣金', dataIndex: 'total', render: (v: string) => <Text strong>${'${'}v{'}'}</Text> },
-                { title: '笔数', dataIndex: 'count' },
-              ]} />
-          </Card>
-        </Col>
-        <Col xs={24} md={12}>
-          <Card title="📊 提现">
-            <div style={{ textAlign: 'center', padding: 20 }}>
-              <p>可提现: <Text strong style={{ color: '#52c41a', fontSize: 24 }}>${'${'}dashboard.confirmedRevenue || 0{'}'}</Text></p>
-              <p style={{ fontSize: 12, color: '#999' }}>最低 $100</p>
-            </div>
-          </Card>
-        </Col>
-      </Row>
-      <Card title="📋 交易记录">
-        <Table dataSource={transactions} rowKey="id" loading={loading} pagination={{ pageSize: 10 }}
-          columns={[
-            { title: '时间', dataIndex: 'createdat', render: (v: string) => v?.slice(0, 16) },
-            { title: '商家', dataIndex: 'storename', render: (v: string) => <Text strong>{v}</Text> },
-            { title: '金额', dataIndex: 'amount', render: (v: string) => <Text strong style={{ color: '#52c41a' }}>${'${'}v{'}'}</Text> },
-            { title: '状态', dataIndex: 'status', render: (v: string) => v === 'confirmed' ? <Tag color="green">已确认</Tag> : <Tag color="orange">待确认</Tag> },
-            { title: '订单号', dataIndex: 'orderid' },
-          ]} />
-      </Card>
-    </div>
-  );
-}
-
-// ============================================================
-// Share Tab - 分享裂变
-// ============================================================
-function ShareTab() {
-  const [stats, setStats] = useState<any>({});
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    setLoading(true);
-    fetch('/api/v1/share?action=stats').then(r => r.json()).then(d => {
-      setStats(d.data || {});
-      setLoading(false);
-    }).catch(() => setLoading(false));
-  }, []);
-
-  return (
-    <div>
-      <Row gutter={16} style={{ marginBottom: 16 }}>
-        <Col xs={12} md={6}><Card><Statistic title="分享链接数" value={stats.totalShares || 0} prefix={<LinkOutlined />} /></Card></Col>
-        <Col xs={12} md={6}><Card><Statistic title="分享点击" value={stats.totalShareClicks || 0} prefix={<EyeOutlined />} /></Card></Col>
-        <Col xs={12} md={6}><Card><Statistic title="邀请总数" value={stats.totalReferrals || 0} prefix={<UserOutlined />} /></Card></Col>
-        <Col xs={12} md={6}><Card><Statistic title="邀请成功" value={stats.completedReferrals || 0} valueStyle={{ color: '#52c41a' }} /></Card></Col>
-      </Row>
-      <Card title="🏆 分享排行榜 TOP10">
-        <Table dataSource={stats.topSharers || []} rowKey="email" loading={loading} pagination={false} size="small"
-          columns={[
-            { title: '#', key: 'rank', render: (_: any, __: any, i: number) => <Tag color={i < 3 ? 'gold' : 'default'}>{i + 1}</Tag> },
-            { title: '用户', dataIndex: 'email', key: 'email' },
-            { title: '昵称', dataIndex: 'nickname', key: 'nick', render: (v: string) => v || '-' },
-            { title: '分享次数', dataIndex: 'totalshares', key: 'shares', render: (v: number) => <Text strong>{v || 0}</Text>, sorter: (a: any, b: any) => (a.totalshares || 0) - (b.totalshares || 0) },
-            { title: '邀请码', dataIndex: 'invitecode', key: 'code', render: (v: string) => v ? <Tag>{v}</Tag> : '-' },
-          ]} />
-      </Card>
-    </div>
-  );
-}
-
-// ============================================================
-// Operations Tab - 运营大盘
-// ============================================================
-function OperationsTab() {
-  const [stats, setStats] = useState<any>({});
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    setLoading(true);
-    Promise.all([
-      fetch('/api/v1/stats').then(r => r.json()),
-      fetch('/api/v1/finance?action=dashboard').then(r => r.json()),
-      fetch('/api/v1/share?action=stats').then(r => r.json()),
-    ]).then(([s, f, sh]) => {
-      setStats({ ...(s.data || {}), finance: f.data || {}, share: sh.data || {} });
-      setLoading(false);
-    }).catch(() => setLoading(false));
-  }, []);
-
-  const stat = (key: string, def: number = 0) => stats[key] ?? def;
-
-  return (
-    <div>
-      {/* 核心指标 */}
-      <Card title="📊 核心运营指标" loading={loading} style={{ marginBottom: 16 }}>
-        <Row gutter={16}>
-          <Col xs={12} md={4}><Statistic title="商家" value={stat('totalStores')} suffix="家" /></Col>
-          <Col xs={12} md={4}><Statistic title="优惠码" value={stat('totalCoupons')} suffix="个" /></Col>
-          <Col xs={12} md={4}><Statistic title="总点击" value={stat('totalClicks')} /></Col>
-          <Col xs={12} md={4}><Statistic title="短链接" value={stat('totalLinks')} /></Col>
-          <Col xs={12} md={4}><Statistic title="SEO页面" value={stat('totalSeoPages')} /></Col>
-          <Col xs={12} md={4}><Statistic title="分类" value={stat('totalCategories')} /></Col>
-        </Row>
-      </Card>
-
-      {/* 收入+分享 */}
-      <Row gutter={16} style={{ marginBottom: 16 }}>
-        <Col xs={24} md={12}>
-          <Card title="💰 今日收入">
-            <Row gutter={16}>
-              <Col span={12}><Statistic title="总收入" value={stats.finance?.totalRevenue || 0} prefix="$" precision={2} /></Col>
-              <Col span={12}><Statistic title="已确认" value={stats.finance?.confirmedRevenue || 0} prefix="$" precision={2} valueStyle={{ color: '#52c41a' }} /></Col>
-            </Row>
-          </Card>
-        </Col>
-        <Col xs={24} md={12}>
-          <Card title="🔗 分享数据">
-            <Row gutter={16}>
-              <Col span={12}><Statistic title="分享链接" value={stats.share?.totalShares || 0} /></Col>
-              <Col span={12}><Statistic title="邀请成功" value={stats.share?.completedReferrals || 0} /></Col>
-            </Row>
-          </Card>
-        </Col>
-      </Row>
-
-      {/* 待办提醒 */}
-      <Card title="⚡ 运营待办">
-        <List
-          dataSource={[
-            { text: '每日社媒发布 (Twitter/微博/小红书)', status: 'pending', priority: 'high' },
-            { text: '检查即将过期的优惠码', status: 'pending', priority: 'medium' },
-            { text: '审核用户报告的问题', status: 'pending', priority: 'medium' },
-            { text: '更新SEO文章', status: 'pending', priority: 'low' },
-            { text: '检查佣金到账情况', status: 'pending', priority: 'high' },
-          ]}
-          renderItem={(item: { text: string; status: string; priority: string }) => (
-            <List.Item>
-              <Space>
-                <Tag color={item.priority === 'high' ? 'red' : item.priority === 'medium' ? 'orange' : 'default'}>
-                  {item.priority === 'high' ? '🔴' : item.priority === 'medium' ? '🟡' : '🟢'}
-                </Tag>
-                {item.text}
-              </Space>
-            </List.Item>
-          )}
-        />
-      </Card>
-    </div>
-  );
-}

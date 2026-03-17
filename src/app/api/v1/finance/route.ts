@@ -3,7 +3,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withErrorHandling } from '@/lib/api-wrapper';
 import { Pool } from 'pg';
 
-function getPool() { const u = process.env.DATABASE_URL; return u ? new Pool({ connectionString: u }) : null; }
+let pool: Pool | null = null;
+
+function getPool(): Pool | null {
+  if (pool) return pool;
+  const url = process.env.DATABASE_URL;
+  if (!url) return null;
+  pool = new Pool({ connectionString: url, max: 5 });
+  return pool;
+}
 
 export const GET = withErrorHandling(async (request: NextRequest) => {
   const pool = getPool();
@@ -19,7 +27,6 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
       pool.query("SELECT COALESCE(SUM(amount),0) as total FROM finance_transactions WHERE status='pending'"),
       pool.query("SELECT storeName, SUM(amount) as total, COUNT(*) as count FROM finance_transactions GROUP BY storeName ORDER BY total DESC LIMIT 10"),
     ]);
-    await pool.end();
     return NextResponse.json({
       success: true,
       data: {
@@ -34,10 +41,8 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
 
   if (action === 'transactions') {
     const r = await pool.query('SELECT * FROM finance_transactions ORDER BY createdAt DESC LIMIT 100');
-    await pool.end();
     return NextResponse.json({ success: true, data: r.rows });
   }
 
-  await pool.end();
   return NextResponse.json({ success: false, message: 'Unknown action' }, { status: 400 });
 });
