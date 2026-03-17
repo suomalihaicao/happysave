@@ -638,6 +638,44 @@ export const tidb = {
     };
   },
 
+  // Site Config
+  getAllConfig(): Record<string, string> {
+    try {
+      const rows = this.query('SELECT `key`, `value` FROM site_config') as unknown as { key: string; value: string }[];
+      const result: Record<string, string> = {};
+      (Array.isArray(rows) ? rows : []).forEach((r: { key: string; value: string }) => result[r.key] = r.value);
+      return result;
+    } catch {
+      return {};
+    }
+  },
+  setConfig(key: string, value: string): boolean {
+    try {
+      this.query('INSERT INTO site_config (`key`, `value`, updatedAt) VALUES (?, ?, NOW()) ON DUPLICATE KEY UPDATE `value` = ?, updatedAt = NOW()', [key, value, value]);
+      return true;
+    } catch {
+      return false;
+    }
+  },
+
+  // Users
+  async getUsers(): Promise<Record<string, unknown>[]> {
+    try {
+      return this.query('SELECT id, email, name, role, active, createdAt, lastLogin FROM users ORDER BY createdAt DESC');
+    } catch { return []; }
+  },
+  async createUser(input: { email: string; name?: string; role?: string }): Promise<Record<string, unknown>> {
+    const id = Math.random().toString(36).slice(2);
+    await this.query('INSERT INTO users (id, email, name, role, active, createdAt) VALUES (?, ?, ?, ?, 1, NOW())', [id, input.email, input.name || '', input.role || 'user']);
+    return { id, email: input.email, name: input.name || '', role: input.role || 'user', active: true };
+  },
+  async deleteUser(id: string): Promise<boolean> {
+    try {
+      await this.query('DELETE FROM users WHERE id = ?', [id]);
+      return true;
+    } catch { return false; }
+  },
+
   raw: () => getPool(),
   init: initTiDB,
 };

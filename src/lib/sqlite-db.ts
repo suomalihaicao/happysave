@@ -290,6 +290,15 @@ if (dbType === 'sqlite' && sqliteDb) {
       keyword TEXT DEFAULT '', active INTEGER DEFAULT 1,
       createdAt TEXT DEFAULT (datetime('now'))
     );
+    CREATE TABLE IF NOT EXISTS site_config (
+      key TEXT PRIMARY KEY, value TEXT DEFAULT '',
+      updatedAt TEXT DEFAULT (datetime('now'))
+    );
+    CREATE TABLE IF NOT EXISTS users (
+      id TEXT PRIMARY KEY, email TEXT UNIQUE NOT NULL, name TEXT DEFAULT '',
+      role TEXT DEFAULT 'user', active INTEGER DEFAULT 1,
+      createdAt TEXT DEFAULT (datetime('now')), lastLogin TEXT
+    );
   `);
 }
 
@@ -731,6 +740,60 @@ export const database = {
       const n = memory.notifications.find(n => n.id === id);
       if (n) Object.assign(n, data);
     }
+    return true;
+  },
+
+  // ===== Site Config =====
+  getConfig(key: string, defaultValue: string = ''): string {
+    if (dbType === 'sqlite') {
+      const row = sqliteDb.prepare('SELECT value FROM site_config WHERE key = ?').get(key) as { value: string } | undefined;
+      return row?.value ?? defaultValue;
+    }
+    return (memory as any).siteConfig?.[key] ?? defaultValue;
+  },
+
+  setConfig(key: string, value: string) {
+    if (dbType === 'sqlite') {
+      sqliteDb.prepare('INSERT OR REPLACE INTO site_config (key, value, updatedAt) VALUES (?, ?, datetime("now"))').run(key, value);
+    } else {
+      if (!(memory as any).siteConfig) (memory as any).siteConfig = {};
+      (memory as any).siteConfig[key] = value;
+    }
+    return true;
+  },
+
+  getAllConfig(): Record<string, string> {
+    if (dbType === 'sqlite') {
+      const rows = sqliteDb.prepare('SELECT key, value FROM site_config').all() as { key: string; value: string }[];
+      const result: Record<string, string> = {};
+      rows.forEach(r => result[r.key] = r.value);
+      return result;
+    }
+    return (memory as any).siteConfig || {};
+  },
+
+  // ===== Users =====
+  getUsers() {
+    if (dbType === 'sqlite') {
+      return sqliteDb.prepare('SELECT id, email, name, role, active, createdAt, lastLogin FROM users ORDER BY createdAt DESC').all();
+    }
+    return (memory as any).users || [];
+  },
+
+  createUser(input: { email: string; name?: string; role?: string }) {
+    const id = 'user-' + Date.now() + Math.random().toString(36).substr(2, 5);
+    if (dbType === 'sqlite') {
+      sqliteDb.prepare('INSERT INTO users (id, email, name, role) VALUES (?, ?, ?, ?)').run(id, input.email, input.name || '', input.role || 'user');
+    } else {
+      if (!(memory as any).users) (memory as any).users = [];
+      (memory as any).users.push({ id, email: input.email, name: input.name || '', role: input.role || 'user', active: 1, createdAt: new Date().toISOString() });
+    }
+    return { id, email: input.email, name: input.name || '', role: input.role || 'user' };
+  },
+
+  deleteUser(id: string) {
+    if (dbType === 'sqlite') sqliteDb.prepare('DELETE FROM users WHERE id = ?').run(id);
+    else if ((memory as any).users) (memory as any).users = (memory as any).users.filter((u: any) => u.id !== id);
     return true;
   },
 };

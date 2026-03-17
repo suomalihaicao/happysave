@@ -629,4 +629,49 @@ export const postgres = {
       subscribers: { total: parseInt(subs.rows[0]?.total || '0') },
     };
   },
+
+  // Site Config
+  getAllConfig(): Record<string, string> {
+    // Config table may not exist in PG; return empty as fallback
+    try {
+      const p = getPool();
+      const rows = p.query('SELECT key, value FROM site_config') as unknown as { rows: { key: string; value: string }[] };
+      const result: Record<string, string> = {};
+      (rows as any).rows?.forEach((r: { key: string; value: string }) => result[r.key] = r.value);
+      return result;
+    } catch {
+      return {};
+    }
+  },
+  setConfig(key: string, value: string): boolean {
+    try {
+      const p = getPool();
+      p.query('INSERT INTO site_config (key, value, updatedAt) VALUES ($1, $2, NOW()) ON CONFLICT (key) DO UPDATE SET value = $2, updatedAt = NOW()', [key, value]);
+      return true;
+    } catch {
+      return false;
+    }
+  },
+
+  // Users
+  getUsers(): Record<string, unknown>[] {
+    try {
+      const p = getPool();
+      const rows = p.query('SELECT id, email, name, role, active, "createdAt", "lastLogin" FROM users ORDER BY "createdAt" DESC');
+      return (rows as any).rows || [];
+    } catch { return []; }
+  },
+  createUser(input: { email: string; name?: string; role?: string }): Record<string, unknown> {
+    const p = getPool();
+    const id = Math.random().toString(36).slice(2);
+    p.query('INSERT INTO users (id, email, name, role, active, "createdAt") VALUES ($1, $2, $3, $4, true, NOW())', [id, input.email, input.name || '', input.role || 'user']);
+    return { id, email: input.email, name: input.name || '', role: input.role || 'user', active: true };
+  },
+  deleteUser(id: string): boolean {
+    try {
+      const p = getPool();
+      p.query('DELETE FROM users WHERE id = $1', [id]);
+      return true;
+    } catch { return false; }
+  },
 };

@@ -1,54 +1,23 @@
-// 用户管理 + 邮件订阅
+// 用户管理 API
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
 import { withErrorHandling } from '@/lib/api-wrapper';
+import { db } from '@/lib/db';
 
-// POST /api/v1/users - 用户注册/订阅
-export const POST = withErrorHandling(async (request: NextRequest) => {
-  const body = await request.json();
-  const { action } = body;
-
-  switch (action) {
-    case 'subscribe': {
-      // 邮件订阅
-      const { email, name, category } = body;
-      if (!email) return NextResponse.json({ success: false, message: '邮箱必填' }, { status: 400 });
-      
-      const notifId = await db.createNotification({
-        type: 'email_subscribe',
-        email,
-        keyword: name || '',
-        storeId: category || '',
-      });
-      
-      return NextResponse.json({
-        success: true,
-        message: '订阅成功！我们会发送最新优惠到你的邮箱',
-        data: { id: notifId },
-      });
-    }
-
-    case 'favorite': {
-      const { userId, itemType, itemId } = body;
-      const result = await db.toggleFavorite(userId || 'anonymous', itemType, itemId);
-      return NextResponse.json({ success: true, data: result });
-    }
-
-    default:
-      return NextResponse.json({ success: false, message: 'Unknown action' }, { status: 400 });
-  }
+export const GET = withErrorHandling(async () => {
+  const users = db.getUsers();
+  return NextResponse.json({ success: true, data: users });
 });
 
-// GET /api/v1/users - 获取订阅列表
-export const GET = withErrorHandling(async (request: NextRequest) => {
+export const POST = withErrorHandling(async (request: NextRequest) => {
+  const body = await request.json();
+  const user = db.createUser(body);
+  return NextResponse.json({ success: true, data: user }, { status: 201 });
+});
+
+export const DELETE = withErrorHandling(async (request: NextRequest) => {
   const { searchParams } = new URL(request.url);
-  const action = searchParams.get('action');
-
-  if (action === 'favorites') {
-    const userId = searchParams.get('userId') || 'anonymous';
-    const favorites = await db.getFavorites(userId);
-    return NextResponse.json({ success: true, data: favorites });
-  }
-
-  return NextResponse.json({ success: true, data: [], message: '用户系统已就绪' });
+  const id = searchParams.get('id');
+  if (!id) return NextResponse.json({ success: false, message: 'id required' }, { status: 400 });
+  db.deleteUser(id);
+  return NextResponse.json({ success: true });
 });

@@ -79,6 +79,15 @@ export interface Database {
 
   // Maintenance
   fixCouponStats(): Promise<unknown>;
+
+  // Site Config
+  getAllConfig(): Promise<Record<string, string>>;
+  setConfig(key: string, value: string): Promise<boolean>;
+
+  // Users
+  getUsers(): Promise<Record<string, unknown>[]>;
+  createUser(input: { email: string; name?: string; role?: string }): Promise<Record<string, unknown>>;
+  deleteUser(id: string): Promise<boolean>;
 }
 
 let _db: Database | null = null;

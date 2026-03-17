@@ -20,6 +20,8 @@ const PROTECTED_API_PREFIXES = [
   '/api/v1/notify',
   '/api/v1/submit',
   '/api/v1/stats',
+  '/api/v1/config',
+  '/api/v1/users',
 ];
 
 // 公开 API（不需要 auth）
