@@ -1,14 +1,8 @@
-// Store Detail - 服务端数据获取 + 客户端交互
+// Store Detail — Server Component 直出关键内容 + Client 交互懒加载
 import { notFound } from 'next/navigation';
 import { cached } from '@/lib/cache';
-import dynamic from 'next/dynamic';
-import { AntdProvider } from '@/providers/AntdProvider';
 import type { Store, Coupon } from '@/types';
-
-const StoreDetailContent = dynamic(() => import('./StoreDetailContent'), {
-  ssr: true,
-  loading: () => <div style={{ minHeight: 400, display: 'flex', justifyContent: 'center', alignItems: 'center' }}><div className="animate-pulse">加载中...</div></div>,
-});
+import StoreDetailClient from './StoreDetailClient';
 
 // ISR: 每小时重新验证
 export const revalidate = 3600;
@@ -30,10 +24,9 @@ interface Props {
 export default async function StoreDetailPage({ params }: Props) {
   const { slug } = await params;
 
-  // 一次查询获取商家+优惠码
   let store: Store | null = null;
   let coupons: Coupon[] = [];
-  
+
   try {
     const result = await cached.getStoreWithCoupons(slug);
     store = result.store;
@@ -44,9 +37,8 @@ export default async function StoreDetailPage({ params }: Props) {
 
   if (!store) notFound();
 
+  // Server Component 直出关键内容 (SEO + 首屏), 交互功能走 Client Component
   return (
-    <AntdProvider>
-      <StoreDetailContent initialData={{ store, coupons }} />
-    </AntdProvider>
+    <StoreDetailClient store={store} coupons={coupons} />
   );
 }
