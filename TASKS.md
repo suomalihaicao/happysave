@@ -1,3 +1,48 @@
+## 2026-03-17 12:15 UTC — 方向3: 架构优化 (第31轮)
+
+### 本轮方向
+分钟%5 = 3 → 方向3: 架构优化 — 数据库层、缓存策略、中间件、API封装
+
+### 检查项
+- ✅ Database 接口完整性 — 40+ 方法签名齐全，config/users 方法已补全
+- ✅ 缓存层覆盖度 — 6个 cached.* 方法覆盖核心读取路径
+- ❌ **缓存失效缺失** — 写操作不触发缓存失效，返回过期数据
+- ❌ **冷启动预热未触发** — ensureWarmup 存在但从未调用
+- ⚠️ 中间件 PROTECTED_API_PREFIXES 重复条目
+- ✅ API 错误处理封装 — withErrorHandling 覆盖全部 25 个路由
+- ✅ DB 适配器 fallback 链 — Postgres → TiDB → SQLite/Memory
+
+### 发现并修复的问题
+
+1. **🔴 缓存失效缺失 (高)** — stores/coupons/categories 的 POST/PUT/DELETE 写操作后不清理缓存，导致前端读到过期数据 → ✅ 已修复: cache.ts 新增 invalidateStores/invalidateCoupons/invalidateCategories 批量失效方法（支持前缀匹配），写操作路由自动调用
+2. **🔴 冷启动预热未触发 (中)** — ensureWarmup() 函数存在但从未调用，serverless 冷启动每次都需要完整查询数据库 → ✅ 已修复: cache.ts 模块加载时自动触发（服务端，仅首次执行）
+3. **🟡 stores/detail 路由绕过缓存 (中)** — GET 直接调用 db.getStoreBySlug + db.getCouponsByStoreSlug，未走缓存层 → ✅ 已修复: 改用 cached.getStoreBySlug + cached.getCouponsByStoreSlug
+4. **🟡 中间件重复条目 (低)** — PROTECTED_API_PREFIXES 中 /api/v1/users 出现两次 → ✅ 已修复: 移除重复条目
+5. **🟡 categories 路由缺少写操作 (低)** — 仅有 GET 方法，无 POST/PUT/DELETE → ✅ 已修复: 补全 POST/PUT/DELETE 方法 + 缓存失效
+
+### 缓存策略架构
+```
+读路径: API Route → cached.getStores() → cache.get(key, fetcher) → [缓存命中?] → 返回 / DB查询
+写路径: API Route → db.createStore() → cache.invalidateStores() → 下次读走DB
+预热:   模块加载 → ensureWarmup() → 并行加载 stores/coupons/categories/seoPages
+```
+
+### 架构状态汇总
+| 项目 | 修复前 | 修复后 |
+|------|--------|--------|
+| 缓存失效 | ❌ 无 | ✅ 写操作自动失效 |
+| 冷启动预热 | ❌ 未触发 | ✅ 自动触发 |
+| stores/detail | ❌ 绕过缓存 | ✅ 使用 cached |
+| categories 写操作 | ❌ 仅有 GET | ✅ 完整 CRUD |
+| 中间件去重 | ⚠️ users 重复 | ✅ 已清理 |
+
+### git 状态
+- commit b27ac8d → 已推送
+- 6 文件修改，+83/-14 行
+
+### 下次轮次
+方向4: 运维监控 — Sentry事件、日志分析、构建状态、部署配置
+
 ## 2026-03-17 11:30 UTC — 方向0: 代码质量 (第30轮)
 
 ### 本轮方向

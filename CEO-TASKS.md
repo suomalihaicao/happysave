@@ -24,6 +24,15 @@
 - 大文件识别: admin/page.tsx (780行) 建议后续拆分组件
 - 28/28 检查项通过
 
+## ✅ 第31轮 (2026-03-17 12:15) — 架构优化
+- 缓存失效策略: cache.ts 新增 invalidateStores/invalidateCoupons/invalidateCategories（前缀匹配失效）
+- 冷启动预热: ensureWarmup 自动触发（服务端模块加载时），预加载 stores/coupons/categories/seoPages
+- API 路由缓存集成: stores/coupons/categories 写操作后自动失效缓存；stores/detail GET 改用 cached 层
+- 中间件清理: 移除 PROTECTED_API_PREFIXES 中重复的 /api/v1/users 条目
+- categories 路由补全 POST/PUT/DELETE 方法
+- TypeScript 0 错误 + Next.js 构建通过
+- git commit b27ac8d → 已推送
+
 ## 📋 检查清单
 
 ### 🔧 技术健康
