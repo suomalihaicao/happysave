@@ -289,6 +289,11 @@ function CouponsTab() {
     { title: '状态', dataIndex: 'active', key: 'active', render: (v: boolean) => v ? <Tag color="green">活跃</Tag> : <Tag color="red">停用</Tag> },
     { title: '操作', key: 'action', render: (_: unknown, record: Coupon) => (
       <Space size="small">
+        <Button size="small" onClick={() => {
+          const shareText = `🔥 ${record.storeName} ${record.discount} 优惠！${record.code ? `\n优惠码：${record.code}` : ''}\n👉 https://www.happysave.cn/store/${record.storeName?.toLowerCase().replace(/\s+/g, '-')}`;
+          navigator.clipboard.writeText(shareText);
+          message.success('分享文案已复制！');
+        }}>📋 分享</Button>
         <Button size="small" type={record.active ? 'default' : 'primary'} onClick={() => toggleActive(record)}>
           {record.active ? '停用' : '启用'}
         </Button>
@@ -302,11 +307,19 @@ function CouponsTab() {
   return (
     <div>
       <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
+        <Space>
         <Button type="primary" icon={<PlusOutlined />} onClick={async () => {
           await fetch('/api/v1/discover', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'coupons', count: 10 }) });
           message.success('生成新优惠码');
           fetchData();
         }}>自动生成优惠码</Button>
+        <Button icon={<ExportOutlined />} onClick={() => {
+          const top = data.filter(c => c.active).slice(0, 5);
+          const text = top.map(c => `🔥 ${c.storeName} ${c.discount}优惠${c.code ? ` 码:${c.code}` : ''}`).join('\n');
+          navigator.clipboard.writeText(text + '\n👉 www.happysave.cn');
+          message.success('热门优惠文案已复制，可直接粘贴到社交媒体！');
+        }}>📤 一键分享热门</Button>
+        </Space>
         <Text type="secondary">共 {data.length} 个优惠码</Text>
       </div>
       <Table columns={columns} dataSource={data} rowKey="id" loading={loading} pagination={{ pageSize: 20 }} />
