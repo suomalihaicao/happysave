@@ -3,6 +3,27 @@
 
 import { Pool } from 'pg';
 
+// ============================================================
+// Input types for create/update operations
+// ============================================================
+type StoreInput = { slug: string; name: string; nameZh?: string; description?: string; descriptionZh?: string; logo?: string; website?: string; affiliateUrl?: string; category?: string; categoryZh?: string; tags?: string[]; featured?: boolean; active?: boolean; sortOrder?: number; clickCount?: number; conversionRate?: number };
+type StoreUpdate = Partial<StoreInput>;
+type CouponInput = { storeId: string; storeName?: string; code?: string | null; title: string; titleZh?: string; description?: string; descriptionZh?: string; discount?: string; discountType?: string; type?: string; affiliateUrl?: string; startDate?: string; endDate?: string | null; featured?: boolean; active?: boolean; verified?: boolean; value?: number; minPurchase?: number; usageLimit?: number; sortOrder?: number; usageCount?: number };
+type CouponUpdate = Partial<CouponInput>;
+type ClickInput = { itemId: string; itemType?: string; ip?: string; userAgent?: string; referer?: string };
+type SeoPageInput = { slug: string; title: string; content?: string; metaDesc?: string; keywords?: string; type?: string; published?: boolean };
+type SeoPageUpdate = Partial<SeoPageInput>;
+type CategoryInput = { slug: string; name: string; nameZh?: string; description?: string; icon?: string; sortOrder?: number; active?: boolean };
+type CategoryUpdate = Partial<CategoryInput>;
+type SubscriberInput = { email: string; name?: string };
+type FavoriteInput = { userId: string; itemId: string; itemType?: string };
+type NotificationInput = { userId: string; type?: string; title?: string; message?: string };
+type NotificationUpdate = Partial<Pick<NotificationInput, 'title' | 'message' | 'type'>> & { read?: boolean };
+type StoreQueryOpts = { category?: string; featured?: boolean; active?: boolean; search?: string; page?: number; limit?: number };
+type CouponQueryOpts = { storeId?: string; type?: string; featured?: boolean; active?: boolean; search?: string; page?: number; limit?: number };
+type ClickStatsOpts = { days?: number };
+type SeoPageQueryOpts = { type?: string; published?: boolean };
+
 let pool: Pool | null = null;
 
 function getPool(): Pool {
@@ -179,10 +200,10 @@ function toCamel(obj: Record<string, unknown>): Record<string, unknown> {
 // ============================================================
 export const postgres = {
   // ---- Stores ----
-  async getStores(opts: any = {}) {
+  async getStores(opts: StoreQueryOpts = {}) {
     const db = getPool();
     let where = 'WHERE 1=1';
-    const params: any[] = [];
+    const params: (string | number | boolean)[] = [];
     let idx = 1;
 
     if (opts.category) { where += ` AND category = $${idx++}`; params.push(opts.category); }
@@ -223,7 +244,7 @@ export const postgres = {
     return toCamel(res.rows[0]);
   },
 
-  async createStore(data: any) {
+  async createStore(data: StoreInput) {
     const db = getPool();
     const id = genId();
     await db.query(
@@ -236,10 +257,10 @@ export const postgres = {
     return this.getStoreById(id);
   },
 
-  async updateStore(id: string, data: any) {
+  async updateStore(id: string, data: StoreUpdate) {
     const db = getPool();
     const sets: string[] = [];
-    const params: any[] = [];
+    const params: (string | number | boolean)[] = [];
     let idx = 1;
 
     const fieldMap: Record<string, string> = {
@@ -273,10 +294,10 @@ export const postgres = {
   },
 
   // ---- Coupons ----
-  async getCoupons(opts: any = {}) {
+  async getCoupons(opts: CouponQueryOpts = {}) {
     const db = getPool();
     let where = 'WHERE 1=1';
-    const params: any[] = [];
+    const params: (string | number | boolean)[] = [];
     let idx = 1;
 
     if (opts.storeId) { where += ` AND c.store_id = $${idx++}`; params.push(opts.storeId); }
@@ -311,7 +332,7 @@ export const postgres = {
     return toCamel(res.rows[0]);
   },
 
-  async createCoupon(data: any) {
+  async createCoupon(data: CouponInput) {
     const db = getPool();
     const id = genId();
     await db.query(
@@ -325,10 +346,10 @@ export const postgres = {
     return this.getCouponById(id);
   },
 
-  async updateCoupon(id: string, data: any) {
+  async updateCoupon(id: string, data: CouponUpdate) {
     const db = getPool();
     const sets: string[] = [];
-    const params: any[] = [];
+    const params: (string | number | boolean | null)[] = [];
     let idx = 1;
 
     const fieldMap: Record<string, string> = {
@@ -367,7 +388,7 @@ export const postgres = {
     return res.rows.map(toCamel);
   },
 
-  async createCategory(data: any) {
+  async createCategory(data: CategoryInput) {
     const db = getPool();
     const id = genId();
     await db.query(
@@ -377,10 +398,10 @@ export const postgres = {
     return { id, ...data };
   },
 
-  async updateCategory(id: string, data: any) {
+  async updateCategory(id: string, data: CategoryUpdate) {
     const db = getPool();
     const sets: string[] = [];
-    const params: any[] = [];
+    const params: (string | number | boolean)[] = [];
     let idx = 1;
     for (const [key, val] of Object.entries(data)) {
       const dbKey = key === 'nameZh' ? 'name_zh' : key === 'sortOrder' ? 'sort_order' : key;

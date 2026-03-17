@@ -1,6 +1,7 @@
 // 全自动运营API - /api/v1/auto
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import type { Store, Coupon } from '@/types';
 
 export async function GET() {
   return NextResponse.json({
@@ -62,8 +63,8 @@ export async function POST(request: NextRequest) {
     const stores = await db.getStores({ active: true, limit: 5 });
     const coupons = await db.getCoupons({ limit: 20 });
     
-    const storeList = (stores.data as any[]).map(s => `${s.name} (${s.categoryZh})`).join('、');
-    const topCoupons = (coupons.data as any[]).slice(0, 10).map(c => `${c.title}: ${c.discount} ${c.code ? `码:${c.code}` : ''}`).join('\n');
+    const storeList = (stores.data as Store[]).map(s => `${s.name} (${s.categoryZh})`).join('、');
+    const topCoupons = (coupons.data as Coupon[]).slice(0, 10).map(c => `${c.title}: ${c.discount} ${c.code ? `码:${c.code}` : ''}`).join('\n');
 
     const [zhihu, xiaohongshu, weibo] = await Promise.all([
       callAI(`请写一篇知乎风格的海淘省钱攻略文章（800字），推荐以下商家和优惠码：\n商家：${storeList}\n优惠码：\n${topCoupons}\n\n要求：专业实用，文末引导访问 happysave.cn`),
@@ -77,14 +78,14 @@ export async function POST(request: NextRequest) {
   if (action === 'check_coupons') {
     const coupons = await db.getCoupons({ limit: 100 });
     const now = new Date();
-    const expired = (coupons.data as any[]).filter(c => c.endDate && new Date(c.endDate) < now);
-    const noCode = (coupons.data as any[]).filter(c => !c.code && c.active);
+    const expired = (coupons.data as Coupon[]).filter(c => c.endDate && new Date(c.endDate) < now);
+    const noCode = (coupons.data as Coupon[]).filter(c => !c.code && c.active);
     return NextResponse.json({ success: true, data: { total: coupons.total, expired: expired.length, noCode: noCode.length, expiredList: expired.slice(0, 5) } });
   }
 
   if (action === 'generate_seo') {
     const stores = await db.getStores({ active: true, limit: 50 });
-    const pages = (stores.data as any[]).map(store => ({
+    const pages = (stores.data as Store[]).map(store => ({
       store: store.name, slug: store.slug,
       title: `${store.name} 优惠码 | ${store.nameZh} 折扣码 | 快乐省省`,
       metaDesc: `${store.name} 最新优惠码和折扣信息。使用快乐省省独家${store.name}优惠码，享受${store.categoryZh}品类最高50%折扣。`,

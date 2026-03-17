@@ -1,6 +1,7 @@
 // sitemap.ts - Next.js Metadata API
 import type { MetadataRoute } from 'next';
 import { cached } from '@/lib/cache';
+import type { Store, SeoPage } from '@/types';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://www.happysave.cn';
@@ -29,13 +30,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'daily' as const,
       priority: 0.7,
     })),
-    ...(stores.data as any[]).map(store => ({
+    ...(stores.data as Store[]).map(store => ({
       url: `${baseUrl}/store/${store.slug}`,
       lastModified: now,
       changeFrequency: 'daily' as const,
       priority: 0.8,
     })),
-    ...(seoPages.data as any[]).map(page => ({
+    ...(seoPages.data as SeoPage[]).map(page => ({
       url: `${baseUrl}/guide/${page.slug}`,
       lastModified: new Date(page.updatedAt || now),
       changeFrequency: 'weekly' as const,

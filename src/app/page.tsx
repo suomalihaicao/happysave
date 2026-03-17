@@ -4,11 +4,28 @@ import { SEO_CONFIG, getFAQJsonLd } from '@/lib/seo';
 import { cached } from '@/lib/cache';
 import { Store, Coupon, Category } from '@/types';
 import dynamic from 'next/dynamic';
+import { Suspense } from 'react';
 
 // 首页内容动态加载 (antd 内部自行处理)
 const HomePageContent = dynamic(() => import('./HomePageContent'), {
   loading: () => <div style={{ minHeight: 600, display: 'flex', justifyContent: 'center', alignItems: 'center' }}><div>加载中...</div></div>,
 });
+
+// 骨架屏
+function HomeSkeleton() {
+  return (
+    <div style={{ minHeight: '100vh', padding: '40px 20px' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+        <div style={{ height: 200, background: 'linear-gradient(135deg, #FFF5F0, #FFE8DB)', borderRadius: 16, marginBottom: 24 }} />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 12 }}>
+          {Array.from({ length: 12 }).map((_, i) => (
+            <div key={i} style={{ height: 100, background: '#F3F4F6', borderRadius: 12 }} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ISR: 每30分钟重新验证
 export const revalidate = 1800;
@@ -56,11 +73,13 @@ export default async function HomePage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
       />
-      <HomePageContent
-        initialStores={stores}
-        initialCoupons={coupons}
-        initialCategories={categories}
-      />
+      <Suspense fallback={<HomeSkeleton />}>
+        <HomePageContent
+          initialStores={stores}
+          initialCoupons={coupons}
+          initialCategories={categories}
+        />
+      </Suspense>
     </>
   );
 }

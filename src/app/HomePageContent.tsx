@@ -29,6 +29,15 @@ export default function HomePageContent({ initialStores, initialCoupons, initial
 
   const t = (zh: string, en: string) => lang === 'zh' ? zh : en;
 
+  // Pre-compute coupon counts per store (O(n) instead of O(n*m))
+  const couponCountByStore = useState(() => {
+    const map = new Map<string, number>();
+    for (const c of initialCoupons) {
+      map.set(c.storeId, (map.get(c.storeId) || 0) + 1);
+    }
+    return map;
+  })[0];
+
   const filtered = stores.filter(s => {
     if (selectedCat !== 'all' && s.category !== selectedCat) return false;
     if (searchText && !s.name.toLowerCase().includes(searchText.toLowerCase())) return false;
@@ -102,7 +111,7 @@ export default function HomePageContent({ initialStores, initialCoupons, initial
                   <div className="hs-store-name">{store.name}</div>
                   <div className="hs-store-cat">{lang === 'zh' ? store.categoryZh : store.category}</div>
                   <div style={{ marginTop: 6 }}>
-                    <Badge count={coupons.filter((c) => c.storeId === store.id).length} showZero style={{ backgroundColor: '#FF6B35', fontSize: 10 }} size="small" />
+                    <Badge count={couponCountByStore.get(store.id) || 0} showZero style={{ backgroundColor: '#FF6B35', fontSize: 10 }} size="small" />
                   </div>
                 </div>
               </Link>

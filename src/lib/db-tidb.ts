@@ -556,12 +556,14 @@ export const tidb = {
     const where = storeId ? 'AND cl.storeId = ?' : '';
     const params = storeId ? [since, storeId] : [since];
     
-    const totalRes = await this.query(`SELECT COUNT(*) as cnt FROM click_logs cl WHERE cl.timestamp >= ? ${where}`, params);
-    const byDevice = await this.query(`SELECT cl.device, COUNT(*) as cnt FROM click_logs cl WHERE cl.timestamp >= ? ${where} GROUP BY cl.device ORDER BY cnt DESC`, params);
-    const byReferer = await this.query(`SELECT CASE WHEN cl.referer = '' THEN '直接访问' ELSE cl.referer END as source, COUNT(*) as cnt FROM click_logs cl WHERE cl.timestamp >= ? ${where} GROUP BY source ORDER BY cnt DESC LIMIT 20`, params);
-    const byDay = await this.query(`SELECT DATE(cl.timestamp) as day, COUNT(*) as cnt FROM click_logs cl WHERE cl.timestamp >= ? ${where} GROUP BY day ORDER BY day DESC`, params);
-    const byStore = await this.query(`SELECT s.name, COUNT(cl.id) as cnt FROM click_logs cl LEFT JOIN stores s ON cl.storeId = s.id WHERE cl.timestamp >= ? ${where} GROUP BY cl.storeId ORDER BY cnt DESC LIMIT 10`, params);
-    const byUTMSource = await this.query(`SELECT CASE WHEN cl.utmSource = '' THEN '直接' ELSE cl.utmSource END as source, COUNT(*) as cnt FROM click_logs cl WHERE cl.timestamp >= ? ${where} AND cl.utmSource != '' GROUP BY source ORDER BY cnt DESC LIMIT 10`, params);
+    const [totalRes, byDevice, byReferer, byDay, byStore, byUTMSource] = await Promise.all([
+      this.query(`SELECT COUNT(*) as cnt FROM click_logs cl WHERE cl.timestamp >= ? ${where}`, params),
+      this.query(`SELECT cl.device, COUNT(*) as cnt FROM click_logs cl WHERE cl.timestamp >= ? ${where} GROUP BY cl.device ORDER BY cnt DESC`, params),
+      this.query(`SELECT CASE WHEN cl.referer = '' THEN '直接访问' ELSE cl.referer END as source, COUNT(*) as cnt FROM click_logs cl WHERE cl.timestamp >= ? ${where} GROUP BY source ORDER BY cnt DESC LIMIT 20`, params),
+      this.query(`SELECT DATE(cl.timestamp) as day, COUNT(*) as cnt FROM click_logs cl WHERE cl.timestamp >= ? ${where} GROUP BY day ORDER BY day DESC`, params),
+      this.query(`SELECT s.name, COUNT(cl.id) as cnt FROM click_logs cl LEFT JOIN stores s ON cl.storeId = s.id WHERE cl.timestamp >= ? ${where} GROUP BY cl.storeId ORDER BY cnt DESC LIMIT 10`, params),
+      this.query(`SELECT CASE WHEN cl.utmSource = '' THEN '直接' ELSE cl.utmSource END as source, COUNT(*) as cnt FROM click_logs cl WHERE cl.timestamp >= ? ${where} AND cl.utmSource != '' GROUP BY source ORDER BY cnt DESC LIMIT 10`, params),
+    ]);
 
     return {
       totalClicks: totalRes?.[0]?.cnt || 0,
@@ -618,14 +620,14 @@ export const tidb = {
   // ===== Dashboard =====
   async getDashboardStats() {
     const [stores, coupons, clicks, links, seo, topStores, featured, recent] = await Promise.all([
-      await this.getOne<{ c: number }>('SELECT COUNT(*) as c FROM stores WHERE active = 1'),
-      await this.getOne<{ c: number }>('SELECT COUNT(*) as c FROM coupons WHERE active = 1'),
-      await this.getOne<{ c: number }>('SELECT COALESCE(SUM(clickCount), 0) as c FROM stores'),
-      await this.getOne<{ c: number }>('SELECT COUNT(*) as c FROM short_links'),
-      await this.getOne<{ c: number }>('SELECT COUNT(*) as c FROM seo_pages'),
-      tidb.query('SELECT name, slug, clickCount as clicks, conversionRate FROM stores WHERE active = 1 ORDER BY clickCount DESC LIMIT 5'),
-      tidb.query('SELECT * FROM coupons WHERE featured = 1 AND active = 1'),
-      tidb.query('SELECT * FROM coupons WHERE active = 1 ORDER BY createdAt DESC LIMIT 5'),
+      this.getOne<{ c: number }>('SELECT COUNT(*) as c FROM stores WHERE active = 1'),
+      this.getOne<{ c: number }>('SELECT COUNT(*) as c FROM coupons WHERE active = 1'),
+      this.getOne<{ c: number }>('SELECT COALESCE(SUM(clickCount), 0) as c FROM stores'),
+      this.getOne<{ c: number }>('SELECT COUNT(*) as c FROM short_links'),
+      this.getOne<{ c: number }>('SELECT COUNT(*) as c FROM seo_pages'),
+      this.query('SELECT name, slug, clickCount as clicks, conversionRate FROM stores WHERE active = 1 ORDER BY clickCount DESC LIMIT 5'),
+      this.query('SELECT * FROM coupons WHERE featured = 1 AND active = 1'),
+      this.query('SELECT * FROM coupons WHERE active = 1 ORDER BY createdAt DESC LIMIT 5'),
     ]);
     
     return {

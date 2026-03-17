@@ -39,11 +39,20 @@ function isProtectedApi(pathname: string): boolean {
   return PROTECTED_API_PREFIXES.some(p => pathname.startsWith(p));
 }
 
-// 简单的内存限流
+// 简单的内存限流（含自动清理）
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT_MAX_SIZE = 10000; // 防止内存泄漏
 
 function rateLimit(ip: string, limit = 60, windowMs = 60000): boolean {
   const now = Date.now();
+  
+  // 定期清理过期条目（避免内存泄漏）
+  if (rateLimitMap.size > RATE_LIMIT_MAX_SIZE) {
+    for (const [key, record] of rateLimitMap) {
+      if (record.resetAt < now) rateLimitMap.delete(key);
+    }
+  }
+  
   const record = rateLimitMap.get(ip);
   if (!record || record.resetAt < now) {
     rateLimitMap.set(ip, { count: 1, resetAt: now + windowMs });

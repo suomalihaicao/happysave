@@ -113,3 +113,31 @@ export interface Category {
   icon: string;
   count: number;
 }
+
+export interface SeoPage {
+  id: string;
+  slug: string;
+  title: string;
+  content: string;
+  metaDesc: string;
+  keywords: string;
+  type: string;
+  published: boolean;
+  views: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ShortLinkRecord {
+  id: string;
+  code: string;
+  originalUrl: string;
+  shortUrl: string;
+  storeId: string;
+  storeName: string;
+  couponId: string | null;
+  clicks: number;
+  uniqueClicks: number;
+  createdAt: string;
+  lastClickedAt: string | null;
+}

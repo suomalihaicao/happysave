@@ -2,6 +2,7 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { cached } from '@/lib/cache';
+import type { Store } from '@/types';
 
 // ISR: 每小时重新验证
 export const revalidate = 3600;
@@ -68,7 +69,7 @@ export default async function CategoryPage({ params }: Props) {
 
       {/* Store Grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
-        {(stores.data as any[]).map(store => (
+        {(stores.data as Store[]).map(store => (
           <a
             key={store.id}
             href={`/store/${store.slug}`}
