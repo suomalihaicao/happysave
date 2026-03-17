@@ -1,5 +1,58 @@
 # TASKS.md - 技术审计记录
 
+## 2026-03-17 04:30 UTC — 方向0: 代码质量 (第16轮)
+
+### 检查项
+- ✅ TypeScript 编译 (`tsc --noEmit`) — 0 错误
+- ✅ 未使用导入 — ESLint 0 警告
+- ✅ `: any` / `as any` 残留分析 (1处 `: any` + 9处 `as any`，均为DB适配器可接受)
+- ✅ Next.js 构建通过
+- ✅ 新增代码审查: migrations/ 迁移框架 (3个文件, 374行新增)
+- ✅ 大文件分析 (>200行)
+- ✅ TODO/FIXME/ESLint-disable 注释扫描
+
+### 新增代码审查 (自上次审计以来)
+**新增提交:** `0babad9` feat: 数据库迁移框架
+
+| 文件 | 行数 | 评估 |
+|------|------|------|
+| `migrations/001_init_schema.sql` | 161 | ✅ 9张表幂等创建 + 9个索引 |
+| `migrations/migrate.sh` | 152 | ✅ 5个命令(status/new/apply/diff/pg) |
+| `migrations/README.md` | 61 | ✅ SQLite↔PG语法差异对照表 |
+
+**质量要点:**
+- ✅ `CREATE TABLE IF NOT EXISTS` 幂等安全
+- ✅ FOREIGN KEY 约束正确 (coupons.storeId → stores.id)
+- ✅ 索引覆盖核心查询字段 (slug/active/category/storeId/code/createdAt)
+- ✅ sed 自动转换 SQLite→PostgreSQL 语法
+- ⚠️ 发现并修复: migrate.sh 未使用变量 `DB_PATH` (引用错误路径) → 已移除
+
+### 发现并修复的问题
+1. **migrate.sh 未使用变量 (低)** — `DB_PATH="/root/workspace/happysave/docs/roles/happysave-logs.db"` 引用不存在路径且脚本内未使用 → 已移除，git commit `ea3a21d`
+
+### 类型安全状态
+| 指标 | 上轮 (04:00) | 本轮 | 变化 |
+|------|-------------|------|------|
+| `: any` | 1 | 1 | 持平 |
+| `as any` | 9 | 9 | 持平 |
+| TS 错误 | 0 | 0 | 持平 |
+| eslint-disable | 2 | 2 | 持平 |
+
+### 代码状态汇总
+| 项目 | 状态 |
+|------|------|
+| TypeScript 编译 | ✅ 0 错误 |
+| ESLint | ✅ 0 警告/0 错误 |
+| Next.js 构建 | ✅ 通过 |
+| 类型安全覆盖率 | 🟢 ~99% (稳定) |
+| 新增代码质量 | ✅ 良好 |
+| 迁移框架 | ✅ 新增，幂等安全 |
+
+### 下次轮次
+方向1: 安全审计 — 密钥泄露、API鉴权、Cookie安全、依赖漏洞
+
+---
+
 ## 2026-03-17 04:00 UTC — 方向0: 代码质量 (第15轮)
 
 ### 检查项
