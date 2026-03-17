@@ -1,7 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { Card, Table, Row, Col, Statistic, Tag, Typography } from 'antd';
-import { DollarOutlined } from '@ant-design/icons';
 
 const { Text } = Typography;
 

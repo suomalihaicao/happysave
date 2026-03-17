@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
   try {
     const dataUrl = await generateQRCode(url, size);
     return NextResponse.json({ success: true, data: { qr: dataUrl, url } });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ success: false, message: 'Failed to generate QR code' }, { status: 500 });
   }
 }

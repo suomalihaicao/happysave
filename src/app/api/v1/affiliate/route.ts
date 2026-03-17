@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
             });
             imported++;
           }
-        } catch (e) { /* skip */ }
+        } catch { /* skip */ }
       }
       return NextResponse.json({ success: true, data: { ...result.data.summary, imported, networks: result.data.networks } });
     }

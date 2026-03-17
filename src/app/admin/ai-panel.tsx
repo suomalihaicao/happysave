@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import {
   Card, Button, Space, Typography, message, Divider, Alert,
-  Select, Row, Col, Tag, List,
+  Row, Col, Tag, List,
 } from 'antd';
 import {
   RobotOutlined, FileTextOutlined, TranslationOutlined,

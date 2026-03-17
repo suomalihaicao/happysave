@@ -180,10 +180,6 @@ function genId(): string {
   return Math.random().toString(36).substring(2, 15);
 }
 
-function nowISO(): string {
-  return new Date().toISOString();
-}
-
 // Convert snake_case rows to camelCase
 function toCamel(obj: Record<string, unknown>): Record<string, unknown> {
   if (!obj) return obj;

@@ -21,7 +21,6 @@ import ShareTab from './components/ShareTab';
 import OperationsTab from './components/OperationsTab';
 
 const { Title, Text, Paragraph } = Typography;
-const { TextArea } = Input;
 
 interface Store {
   id: string;

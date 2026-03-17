@@ -2,9 +2,6 @@
 // 转发 Sentry 事件到 Sentry 服务器
 import { NextRequest, NextResponse } from 'next/server';
 
-const SENTRY_HOST = 'o4509164939839488';
-const SENTRY_KEY = 'sentry';
-
 export async function POST(request: NextRequest) {
   try {
     const body = await request.text();

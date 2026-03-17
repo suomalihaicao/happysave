@@ -50,7 +50,7 @@ interface MerchantRecord {
   affiliateUrl: string;
 }
 
-interface CouponRecord {
+export interface CouponRecord {
   source: string;
   merchantId: string;
   code: string;

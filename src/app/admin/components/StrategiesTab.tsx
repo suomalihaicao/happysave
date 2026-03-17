@@ -7,7 +7,6 @@ import {
   Typography
 } from 'antd';
 
-const { TextArea } = Input;
 const { Text } = Typography;
 
 interface Strategy {

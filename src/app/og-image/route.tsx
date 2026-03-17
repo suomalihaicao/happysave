@@ -6,7 +6,6 @@ export const runtime = 'edge';
 
 export async function GET(request: NextRequest) {
   const storeName = request.nextUrl.searchParams.get('store') || '';
-  const title = request.nextUrl.searchParams.get('title') || '';
   const discount = request.nextUrl.searchParams.get('discount') || '';
 
   // 商家专属 OG 图

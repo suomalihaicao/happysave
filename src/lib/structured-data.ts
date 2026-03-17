@@ -1,5 +1,4 @@
 // 结构化数据 (JSON-LD) - 让搜索引擎展示富片段
-import { db } from '@/lib/db';
 import type { Store, Coupon } from '@/types';
 
 export function generateStoreSchema(store: Store) {
