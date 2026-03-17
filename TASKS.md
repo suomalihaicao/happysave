@@ -28,5 +28,39 @@
 | `admin/page.tsx` | 472 | 可拆分为子组件 |
 | `marketing/route.ts` | 336 | 可拆分 handler |
 
+## 2026-03-17 01:00 UTC — 方向1: 安全审计
+
+### 检查项
+- ✅ 密钥泄露扫描 (硬编码/API key/.env git追踪)
+- ✅ API鉴权机制 (middleware保护/公开路由/CRON保护)
+- ✅ Cookie安全 (Secure/HttpOnly/SameSite)
+- ✅ 依赖漏洞 (pnpm audit)
+- ✅ SQL注入风险 (字符串拼接列名)
+- ✅ 安全头配置
+
+### 发现的问题
+1. **SQL注入 (中风险)** — `sqlite-db.ts` 的 `updateStore`/`updateCoupon` 使用 `"${k}"` 直接拼接列名，无白名单过滤。攻击者可通过构造恶意key执行注入。
+2. **开发环境默认密码 (低风险)** — `auth.ts` 在非production环境默认 `admin123`，仅影响本地开发。
+3. **.env文件 (已确认安全)** — `.env` 含 `OPENAI_API_KEY`，但已在 `.gitignore` 中且未被 git 追踪。
+
+### 已修复
+- ✅ `sqlite-db.ts`: 新增 `ALLOWED_STORE_COLUMNS` (16列) 和 `ALLOWED_COUPON_COLUMNS` (18列) 白名单
+- ✅ `updateStore`/`updateCoupon`: 添加 `.filter(([, , k]) => ALLOWED_XXX_COLUMNS.has(k))` 过滤
+- ✅ TypeScript 编译通过 + Next.js 构建通过
+- ✅ pnpm audit: 451个依赖, 0个漏洞
+- ✅ git push → `0275961`
+
+### 安全状态汇总
+| 项目 | 状态 |
+|------|------|
+| 硬编码密钥 | ✅ 无 |
+| API鉴权 | ✅ 中间件保护16个路由 |
+| CRON保护 | ✅ 3种认证方式 |
+| Cookie安全 | ✅ HttpOnly+SameSite+Secure(prod) |
+| 安全头 | ✅ X-Frame-Options/X-Content-Type-Options等 |
+| 依赖漏洞 | ✅ 0 critical/high/moderate |
+| SQL注入 | ✅ 已修复 (白名单) |
+| 限流 | ✅ 60次/分钟/IP |
+
 ### 下次轮次
-方向1: 安全审计 — 密钥泄露、API鉴权、Cookie安全、依赖漏洞
+方向2: 性能分析 — Bundle大小、查询次数、缓存命中率、ISR状态
