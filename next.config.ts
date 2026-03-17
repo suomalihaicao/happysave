@@ -30,11 +30,7 @@ const nextConfig: NextConfig = {
   // 重定向
   async redirects() {
     return [
-      {
-        source: '/admin',
-        destination: '/admin/',
-        permanent: true,
-      },
+      // 重定向已移除 - 避免 trailing slash 循环
     ];
   },
 
