@@ -1,6 +1,7 @@
 // REST API - Coupons (CRUD)
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { cache } from '@/lib/cache';
 import { withErrorHandling } from '@/lib/api-wrapper';
 
 export const GET = withErrorHandling(async (request: NextRequest) => {
@@ -19,6 +20,7 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
 export const POST = withErrorHandling(async (request: NextRequest) => {
   const body = await request.json();
   const coupon = await db.createCoupon(body);
+  cache.invalidateCoupons();
   return NextResponse.json({ success: true, data: coupon }, { status: 201 });
 });
 
@@ -27,6 +29,7 @@ export const PUT = withErrorHandling(async (request: NextRequest) => {
   const { id, ...data } = body;
   const coupon = await db.updateCoupon(id, data);
   if (!coupon) return NextResponse.json({ success: false, message: 'Coupon not found' }, { status: 404 });
+  cache.invalidateCoupons();
   return NextResponse.json({ success: true, data: coupon });
 });
 
@@ -35,5 +38,6 @@ export const DELETE = withErrorHandling(async (request: NextRequest) => {
   const id = searchParams.get('id');
   if (!id) return NextResponse.json({ success: false, message: 'ID required' }, { status: 400 });
   await db.deleteCoupon(id);
+  cache.invalidateCoupons();
   return NextResponse.json({ success: true, message: 'Deleted' });
 });

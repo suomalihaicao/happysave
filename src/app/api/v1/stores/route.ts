@@ -1,6 +1,7 @@
 // REST API - Stores (CRUD)
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { cached, cache } from '@/lib/cache';
 import { withErrorHandling } from '@/lib/api-wrapper';
 
 export const GET = withErrorHandling(async (request: NextRequest) => {
@@ -11,13 +12,14 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
   const search = searchParams.get('search') || undefined;
   const page = parseInt(searchParams.get('page') || '1');
   const limit = parseInt(searchParams.get('limit') || '20');
-  const result = await db.getStores({ category, featured, active, search, page, limit });
+  const result = await cached.getStores({ category, featured, active, search, page, limit });
   return NextResponse.json({ success: true, ...result });
 });
 
 export const POST = withErrorHandling(async (request: NextRequest) => {
   const body = await request.json();
   const store = await db.createStore(body);
+  cache.invalidateStores();
   return NextResponse.json({ success: true, data: store }, { status: 201 });
 });
 
@@ -26,6 +28,7 @@ export const PUT = withErrorHandling(async (request: NextRequest) => {
   const { id, ...data } = body;
   const store = await db.updateStore(id, data);
   if (!store) return NextResponse.json({ success: false, message: 'Store not found' }, { status: 404 });
+  cache.invalidateStores();
   return NextResponse.json({ success: true, data: store });
 });
 
@@ -34,5 +37,6 @@ export const DELETE = withErrorHandling(async (request: NextRequest) => {
   const id = searchParams.get('id');
   if (!id) return NextResponse.json({ success: false, message: 'ID required' }, { status: 400 });
   await db.deleteStore(id);
+  cache.invalidateStores();
   return NextResponse.json({ success: true, message: 'Deleted' });
 });

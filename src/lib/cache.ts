@@ -162,13 +162,42 @@ class DataCache {
     return stats;
   }
 
-  // 清除缓存
-  invalidate(key?: string) {
-    if (key) {
-      this.store.delete(key);
-    } else {
+  // 清除缓存 (支持通配符前缀匹配)
+  invalidate(keyOrPattern?: string) {
+    if (!keyOrPattern) {
       this.store.clear();
+      return;
     }
+
+    // 精确匹配
+    if (this.store.has(keyOrPattern)) {
+      this.store.delete(keyOrPattern);
+      return;
+    }
+
+    // 前缀匹配 (e.g. "stores:" 匹配 "stores:all", "stores:{...}" 等)
+    for (const key of [...this.store.keys()]) {
+      if (key.startsWith(keyOrPattern)) {
+        this.store.delete(key);
+      }
+    }
+  }
+
+  // 按实体类型批量失效缓存
+  invalidateStores() {
+    this.invalidate('stores:');
+    this.invalidate('store:');
+    this.invalidate('store+coupons:');
+  }
+
+  invalidateCoupons() {
+    this.invalidate('coupons:');
+    this.invalidate('store+coupons:');
+  }
+
+  invalidateCategories() {
+    this.invalidate('categories');
+    this.invalidate('stores:');
   }
 }
 
@@ -184,6 +213,11 @@ export async function ensureWarmup() {
     warmed = true;
     await cache.warmup();
   }
+}
+
+// 自动预热（服务端模块加载时触发，冷启动受益）
+if (typeof window === 'undefined' && process.env.NODE_ENV !== 'test') {
+  ensureWarmup().catch(() => {}); // 静默失败，不阻塞启动
 }
 
 // ============================================================
