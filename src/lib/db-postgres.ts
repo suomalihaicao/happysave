@@ -422,7 +422,7 @@ export const postgres = {
   },
 
   // ---- Click Tracking ----
-  async trackClick(data: any) {
+  async trackClick(data: ClickInput) {
     const db = getPool();
     const id = genId();
     await db.query(
@@ -435,7 +435,7 @@ export const postgres = {
     return { success: true };
   },
 
-  async getClickStats(opts: any = {}) {
+  async getClickStats(opts: ClickStatsOpts = {}) {
     const db = getPool();
     const days = opts.days || 30;
     const res = await db.query(
@@ -445,10 +445,10 @@ export const postgres = {
   },
 
   // ---- SEO Pages ----
-  async getSeoPages(opts: any = {}) {
+  async getSeoPages(opts: SeoPageQueryOpts = {}) {
     const db = getPool();
     let where = 'WHERE 1=1';
-    const params: any[] = [];
+    const params: (string | boolean)[] = [];
     let idx = 1;
     if (opts.type) { where += ` AND type = $${idx++}`; params.push(opts.type); }
     if (opts.published !== undefined) { where += ` AND published = $${idx++}`; params.push(opts.published); }
@@ -462,7 +462,7 @@ export const postgres = {
     return toCamel(res.rows[0]);
   },
 
-  async createSeoPage(data: any) {
+  async createSeoPage(data: SeoPageInput) {
     const db = getPool();
     const id = genId();
     await db.query(
@@ -472,15 +472,15 @@ export const postgres = {
     return { id, ...data };
   },
 
-  async updateSeoPage(id: string, data: any) {
+  async updateSeoPage(id: string, data: SeoPageUpdate) {
     const db = getPool();
     const sets: string[] = [];
-    const params: any[] = [];
+    const params: (string | boolean)[] = [];
     let idx = 1;
     for (const [key, val] of Object.entries(data)) {
       const dbKey = key === 'metaDesc' ? 'meta_desc' : key;
       sets.push(`${dbKey} = $${idx++}`);
-      params.push(val);
+      params.push(val as string | boolean);
     }
     if (sets.length > 0) {
       sets.push('updated_at = NOW()');
@@ -508,7 +508,7 @@ export const postgres = {
     return res.rows.map(toCamel);
   },
 
-  async createSubscriber(data: any) {
+  async createSubscriber(data: SubscriberInput) {
     const db = getPool();
     const id = genId();
     try {
@@ -539,7 +539,7 @@ export const postgres = {
     return res.rows.map(toCamel);
   },
 
-  async addFavorite(data: any) {
+  async addFavorite(data: FavoriteInput) {
     const db = getPool();
     const id = genId();
     try {
@@ -573,7 +573,7 @@ export const postgres = {
     return res.rows.map(toCamel);
   },
 
-  async createNotification(data: any) {
+  async createNotification(data: NotificationInput) {
     const db = getPool();
     const id = genId();
     await db.query(

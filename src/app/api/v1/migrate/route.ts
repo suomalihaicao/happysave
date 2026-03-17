@@ -3,6 +3,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 
+interface MigrationStep {
+  step: string;
+  status?: string;
+  total?: number;
+  migrated?: number;
+  skipped?: number;
+}
+
+interface MigrationResults {
+  steps: MigrationStep[];
+  success?: boolean;
+  message?: string;
+}
+
 export async function POST(request: NextRequest) {
   // Admin 鉴权
   if (!auth.verify(request)) {
@@ -14,7 +28,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, message: 'DATABASE_URL 不是 PostgreSQL' }, { status: 400 });
   }
 
-  const results: any = { steps: [] };
+  const results: MigrationResults = { steps: [] };
 
   try {
     // 动态导入（避免非 PostgreSQL 环境加载 pg）
