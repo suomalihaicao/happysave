@@ -23,6 +23,8 @@ const PROTECTED_API_PREFIXES = [
   '/api/v1/config',
   '/api/v1/marketing-content',
   '/api/v1/strategies',
+  '/api/v1/finance',
+  '/api/v1/user-profiles',
 ];
 
 // 公开 API（不需要 auth）

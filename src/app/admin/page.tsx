@@ -10,7 +10,7 @@ import {
   ShopOutlined, TagOutlined, BarChartOutlined, RobotOutlined,
   LinkOutlined, EyeOutlined, PlusOutlined, ThunderboltOutlined,
   LockOutlined, UserOutlined, FileTextOutlined,
-  ExportOutlined, LineChartOutlined, FireOutlined
+  ExportOutlined, LineChartOutlined, FireOutlined, DollarOutlined
 } from '@ant-design/icons';
 import AnalyticsTab from './components/AnalyticsTab';
 import AffiliateTab from './components/AffiliateTab';
@@ -160,6 +160,7 @@ export default function AdminPage() {
           { key: 'marketing', label: <span><FireOutlined /> 种草助手</span>, children: <MarketingTab /> },
           { key: 'marketing-content', label: <span><ExportOutlined /> 营销内容库</span>, children: <MarketingContentTab /> },
           { key: 'strategies', label: <span><LineChartOutlined /> 策略库</span>, children: <StrategiesTab /> },
+          { key: 'finance', label: <span><DollarOutlined /> 财务中心</span>, children: <FinanceTab /> },
           { key: 'settings', label: <span><LockOutlined /> 系统配置</span>, children: <SettingsTab /> },
         ]}
       />
@@ -668,3 +669,66 @@ function MarketingContentTab() {
 }
 
 
+
+// ============================================================
+// Finance Tab - 财务中心
+// ============================================================
+function FinanceTab() {
+  const [dashboard, setDashboard] = useState<any>({});
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const fetchData = () => {
+    setLoading(true);
+    Promise.all([
+      fetch('/api/v1/finance?action=dashboard').then(r => r.json()),
+      fetch('/api/v1/finance?action=transactions').then(r => r.json()),
+    ]).then(([d, t]) => {
+      setDashboard(d.data || {});
+      setTransactions(t.data || []);
+      setLoading(false);
+    }).catch(() => setLoading(false));
+  };
+  useEffect(fetchData, []);
+
+  return (
+    <div>
+      <Row gutter={16} style={{ marginBottom: 16 }}>
+        <Col xs={12} md={6}><Card><Statistic title="总收入" value={dashboard.totalRevenue} prefix="$" precision={2} /></Card></Col>
+        <Col xs={12} md={6}><Card><Statistic title="已确认" value={dashboard.confirmedRevenue} prefix="$" precision={2} valueStyle={{ color: '#52c41a' }} /></Card></Col>
+        <Col xs={12} md={6}><Card><Statistic title="待确认" value={dashboard.pendingRevenue} prefix="$" precision={2} valueStyle={{ color: '#faad14' }} /></Card></Col>
+        <Col xs={12} md={6}><Card><Statistic title="交易笔数" value={dashboard.totalTransactions} /></Card></Col>
+      </Row>
+      <Row gutter={16} style={{ marginBottom: 16 }}>
+        <Col xs={24} md={12}>
+          <Card title="💰 商家佣金排行">
+            <Table dataSource={dashboard.byStore || []} rowKey="storename" pagination={false} size="small"
+              columns={[
+                { title: '商家', dataIndex: 'storename' },
+                { title: '佣金', dataIndex: 'total', render: (v: string) => <Text strong>${'${'}v{'}'}</Text> },
+                { title: '笔数', dataIndex: 'count' },
+              ]} />
+          </Card>
+        </Col>
+        <Col xs={24} md={12}>
+          <Card title="📊 提现">
+            <div style={{ textAlign: 'center', padding: 20 }}>
+              <p>可提现: <Text strong style={{ color: '#52c41a', fontSize: 24 }}>${'${'}dashboard.confirmedRevenue || 0{'}'}</Text></p>
+              <p style={{ fontSize: 12, color: '#999' }}>最低 $100</p>
+            </div>
+          </Card>
+        </Col>
+      </Row>
+      <Card title="📋 交易记录">
+        <Table dataSource={transactions} rowKey="id" loading={loading} pagination={{ pageSize: 10 }}
+          columns={[
+            { title: '时间', dataIndex: 'createdat', render: (v: string) => v?.slice(0, 16) },
+            { title: '商家', dataIndex: 'storename', render: (v: string) => <Text strong>{v}</Text> },
+            { title: '金额', dataIndex: 'amount', render: (v: string) => <Text strong style={{ color: '#52c41a' }}>${'${'}v{'}'}</Text> },
+            { title: '状态', dataIndex: 'status', render: (v: string) => v === 'confirmed' ? <Tag color="green">已确认</Tag> : <Tag color="orange">待确认</Tag> },
+            { title: '订单号', dataIndex: 'orderid' },
+          ]} />
+      </Card>
+    </div>
+  );
+}
