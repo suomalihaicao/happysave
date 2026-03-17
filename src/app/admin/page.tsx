@@ -161,6 +161,8 @@ export default function AdminPage() {
           { key: 'marketing-content', label: <span><ExportOutlined /> 营销内容库</span>, children: <MarketingContentTab /> },
           { key: 'strategies', label: <span><LineChartOutlined /> 策略库</span>, children: <StrategiesTab /> },
           { key: 'finance', label: <span><DollarOutlined /> 财务中心</span>, children: <FinanceTab /> },
+          { key: 'share', label: <span><LinkOutlined /> 分享裂变</span>, children: <ShareTab /> },
+          { key: 'operations', label: <span><ThunderboltOutlined /> 运营大盘</span>, children: <OperationsTab /> },
           { key: 'settings', label: <span><LockOutlined /> 系统配置</span>, children: <SettingsTab /> },
         ]}
       />
@@ -750,6 +752,124 @@ function FinanceTab() {
             { title: '状态', dataIndex: 'status', render: (v: string) => v === 'confirmed' ? <Tag color="green">已确认</Tag> : <Tag color="orange">待确认</Tag> },
             { title: '订单号', dataIndex: 'orderid' },
           ]} />
+      </Card>
+    </div>
+  );
+}
+
+// ============================================================
+// Share Tab - 分享裂变
+// ============================================================
+function ShareTab() {
+  const [stats, setStats] = useState<any>({});
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setLoading(true);
+    fetch('/api/v1/share?action=stats').then(r => r.json()).then(d => {
+      setStats(d.data || {});
+      setLoading(false);
+    }).catch(() => setLoading(false));
+  }, []);
+
+  return (
+    <div>
+      <Row gutter={16} style={{ marginBottom: 16 }}>
+        <Col xs={12} md={6}><Card><Statistic title="分享链接数" value={stats.totalShares || 0} prefix={<LinkOutlined />} /></Card></Col>
+        <Col xs={12} md={6}><Card><Statistic title="分享点击" value={stats.totalShareClicks || 0} prefix={<EyeOutlined />} /></Card></Col>
+        <Col xs={12} md={6}><Card><Statistic title="邀请总数" value={stats.totalReferrals || 0} prefix={<UserOutlined />} /></Card></Col>
+        <Col xs={12} md={6}><Card><Statistic title="邀请成功" value={stats.completedReferrals || 0} valueStyle={{ color: '#52c41a' }} /></Card></Col>
+      </Row>
+      <Card title="🏆 分享排行榜 TOP10">
+        <Table dataSource={stats.topSharers || []} rowKey="email" loading={loading} pagination={false} size="small"
+          columns={[
+            { title: '#', key: 'rank', render: (_: any, __: any, i: number) => <Tag color={i < 3 ? 'gold' : 'default'}>{i + 1}</Tag> },
+            { title: '用户', dataIndex: 'email', key: 'email' },
+            { title: '昵称', dataIndex: 'nickname', key: 'nick', render: (v: string) => v || '-' },
+            { title: '分享次数', dataIndex: 'totalshares', key: 'shares', render: (v: number) => <Text strong>{v || 0}</Text>, sorter: (a: any, b: any) => (a.totalshares || 0) - (b.totalshares || 0) },
+            { title: '邀请码', dataIndex: 'invitecode', key: 'code', render: (v: string) => v ? <Tag>{v}</Tag> : '-' },
+          ]} />
+      </Card>
+    </div>
+  );
+}
+
+// ============================================================
+// Operations Tab - 运营大盘
+// ============================================================
+function OperationsTab() {
+  const [stats, setStats] = useState<any>({});
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setLoading(true);
+    Promise.all([
+      fetch('/api/v1/stats').then(r => r.json()),
+      fetch('/api/v1/finance?action=dashboard').then(r => r.json()),
+      fetch('/api/v1/share?action=stats').then(r => r.json()),
+    ]).then(([s, f, sh]) => {
+      setStats({ ...(s.data || {}), finance: f.data || {}, share: sh.data || {} });
+      setLoading(false);
+    }).catch(() => setLoading(false));
+  }, []);
+
+  const stat = (key: string, def: number = 0) => stats[key] ?? def;
+
+  return (
+    <div>
+      {/* 核心指标 */}
+      <Card title="📊 核心运营指标" loading={loading} style={{ marginBottom: 16 }}>
+        <Row gutter={16}>
+          <Col xs={12} md={4}><Statistic title="商家" value={stat('totalStores')} suffix="家" /></Col>
+          <Col xs={12} md={4}><Statistic title="优惠码" value={stat('totalCoupons')} suffix="个" /></Col>
+          <Col xs={12} md={4}><Statistic title="总点击" value={stat('totalClicks')} /></Col>
+          <Col xs={12} md={4}><Statistic title="短链接" value={stat('totalLinks')} /></Col>
+          <Col xs={12} md={4}><Statistic title="SEO页面" value={stat('totalSeoPages')} /></Col>
+          <Col xs={12} md={4}><Statistic title="分类" value={stat('totalCategories')} /></Col>
+        </Row>
+      </Card>
+
+      {/* 收入+分享 */}
+      <Row gutter={16} style={{ marginBottom: 16 }}>
+        <Col xs={24} md={12}>
+          <Card title="💰 今日收入">
+            <Row gutter={16}>
+              <Col span={12}><Statistic title="总收入" value={stats.finance?.totalRevenue || 0} prefix="$" precision={2} /></Col>
+              <Col span={12}><Statistic title="已确认" value={stats.finance?.confirmedRevenue || 0} prefix="$" precision={2} valueStyle={{ color: '#52c41a' }} /></Col>
+            </Row>
+          </Card>
+        </Col>
+        <Col xs={24} md={12}>
+          <Card title="🔗 分享数据">
+            <Row gutter={16}>
+              <Col span={12}><Statistic title="分享链接" value={stats.share?.totalShares || 0} /></Col>
+              <Col span={12}><Statistic title="邀请成功" value={stats.share?.completedReferrals || 0} /></Col>
+            </Row>
+          </Card>
+        </Col>
+      </Row>
+
+      {/* 待办提醒 */}
+      <Card title="⚡ 运营待办">
+        <List
+          dataSource={[
+            { text: '每日社媒发布 (Twitter/微博/小红书)', status: 'pending', priority: 'high' },
+            { text: '检查即将过期的优惠码', status: 'pending', priority: 'medium' },
+            { text: '审核用户报告的问题', status: 'pending', priority: 'medium' },
+            { text: '更新SEO文章', status: 'pending', priority: 'low' },
+            { text: '检查佣金到账情况', status: 'pending', priority: 'high' },
+          ]}
+          renderItem={(item: { text: string; status: string; priority: string }) => (
+            <List.Item>
+              <Space>
+                <Tag color={item.priority === 'high' ? 'red' : item.priority === 'medium' ? 'orange' : 'default'}>
+                  {item.priority === 'high' ? '🔴' : item.priority === 'medium' ? '🟡' : '🟢'}
+                </Tag>
+                {item.text}
+              </Space>
+            </List.Item>
+          )}
+        />
       </Card>
     </div>
   );

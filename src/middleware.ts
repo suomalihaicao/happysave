@@ -25,6 +25,7 @@ const PROTECTED_API_PREFIXES = [
   '/api/v1/strategies',
   '/api/v1/finance',
   '/api/v1/user-profiles',
+  '/api/v1/share',
 ];
 
 // 公开 API（不需要 auth）
