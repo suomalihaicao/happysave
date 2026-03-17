@@ -7,7 +7,6 @@
 #   bash migrate.sh diff                # 对比本地 vs 生产差异
 
 MIGRATIONS_DIR="/root/workspace/happysave/migrations"
-DB_PATH="/root/workspace/happysave/docs/roles/happysave-logs.db"
 PROJECT_DIR="/root/workspace/happysave"
 
 case "$1" in
