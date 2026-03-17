@@ -1,5 +1,37 @@
 # TASKS.md - 技术审计记录
 
+## 2026-03-17 02:30 UTC — 方向0: 代码质量
+
+### 检查项
+- ✅ TypeScript 类型检查 (`tsc --noEmit`) — 0 错误
+- ✅ `: any` / `as any` 残留分析
+- ✅ Next.js 构建通过
+
+### 发现的问题
+- `scripts/migrate-to-postgres.ts` 4处 catch 块使用 `err: any`（可访问 `err.code`/`err.message` 但缺少类型安全）
+
+### 已修复
+- ✅ `migrate-to-postgres.ts`: 4处 `catch (err: any)` → `catch (err: unknown)`
+  - stores/coupons 迁移: `typeof+in` 守卫 + `err.code` 检查重复键 `'23505'`
+  - categories/seoPages: `instanceof Error` 提取消息
+- ✅ TypeScript 编译通过 + Next.js 构建通过
+- ✅ git push → `f110056`
+
+### 类型安全进展
+| 指标 | 上轮 (02:00) | 本轮 | 变化 |
+|------|-------------|------|------|
+| `: any` | 5 | 1 | ↓80% |
+| `as any` | 9 | 9 | 持平 |
+| TS 错误 | 0 | 0 | 持平 |
+
+### 剩余 `any` 分析 (1处 `: any` + 9处 `as any`)
+**全部为可接受的 DB 适配器运行时类型断言，无需修复:**
+- `sqlite-db.ts:62` — SQLite 实例动态引用 (`let sqliteDb: any = null`)
+- `sqlite-db.ts:490-590` — Proxy 模式字段访问
+- `db-tidb.ts:191,371` — MySQL 执行结果类型转换
+- `scraper.ts:53` — 动态 store 对象引用
+- `data-growth.ts:280-281` — 动态 store 对象引用
+
 ## 2026-03-17 02:00 UTC — 方向0: 代码质量
 
 ### 检查项

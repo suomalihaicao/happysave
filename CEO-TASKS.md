@@ -141,11 +141,19 @@
 - git commit 2f13367 → 已推送
 
 ## 📌 下一轮重点
+- 方向1: 安全审计 — 密钥泄露、API鉴权、依赖漏洞
+- 方向2: 性能分析 — Bundle大小、查询次数、缓存命中率
 - 客户端 Bundle 大小优化 (Ant Design tree-shaking)
-- `as any` 继续消除 (9处均为DB适配器运行时断言，可接受)
 - 数据库连接池监控
 - 首页预热策略
-- API 响应时间监控
+
+## ✅ 第12轮 (2026-03-17 02:30) — 代码质量审计
+- migrate-to-postgres.ts: 4处 `catch (err: any)` → `catch (err: unknown)`
+- stores/coupons: typeof+in 守卫检查 Postgres 重复键 `code==='23505'`
+- categories/seoPages: instanceof Error 提取消息
+- `: any` 从 5→1 (↓80%), 仅 sqliteDb 实例保留
+- TypeScript 0错误 + Next.js 构建通过
+- git commit f110056 → 已推送
 
 ## ✅ 第11轮 (2026-03-17 02:00) — 代码质量审计
 - db-postgres.ts: 9个方法参数类型化 (any→ClickInput/ClickStatsOpts/SeoPageQueryOpts/SeoPageInput/SeoPageUpdate/SubscriberInput/FavoriteInput/NotificationInput)
