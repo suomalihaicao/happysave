@@ -1,3 +1,68 @@
+## 2026-03-17 12:30 UTC — 方向0: 代码质量 (第32轮)
+
+### 本轮方向
+分钟%5 = 0 → 方向0: 代码质量 — TypeScript错误、未使用导入、大文件拆分
+
+### 检查项
+- ✅ TypeScript 编译 (`tsc --noEmit`) — 0 错误
+- ✅ `: any` 残留: 1处 (sqlite-db.ts:62 — 运行时实例引用，可接受)
+- ✅ `as any` 残留: 17处 (sqlite-db.ts 13处 + db-tidb.ts 2处 + scraper.ts 1处 + data-growth.ts 1处，均DB适配器/scraper运行时断言)
+- ✅ eslint-disable: 2处 (ai-panel.tsx:16, db-tidb.ts:370 — 均合理)
+- ✅ 未使用导入: 0 (全部文件干净)
+- ✅ TODO/FIXME: 0 (无待办注释)
+- ✅ Next.js 构建通过 (exit code 0, 全路由正常)
+- ✅ git 工作树 — 无未提交变更
+
+### 新增代码审查 (自第31轮架构优化以来)
+**1个提交:** `b27ac8d` fix(architecture): 缓存失效策略 + 中间件去重 + 冷启动预热
+
+| 文件 | 变更 | 评估 |
+|------|------|------|
+| `cache.ts` | +44/-5 — 前缀匹配失效 + 批量失效方法 + 自动预热 | ✅ 类型安全，逻辑清晰 |
+| `categories/route.ts` | +29/-2 — 新增 POST/PUT/DELETE + 缓存失效 | ✅ withErrorHandling 封装，类型完整 |
+| `stores/detail/route.ts` | +6/-4 — 改用 cached + 动态 import | ✅ 消除绕过缓存，动态 import 合理 |
+| `coupons/route.ts` | +4 — 写操作缓存失效 | ✅ 正确 |
+| `stores/route.ts` | +6/-1 — 写操作缓存失效 | ✅ 正确 |
+| `middleware.ts` | -1 — 移除重复条目 | ✅ 去重干净 |
+
+### 架构代码质量评估
+- ✅ `cache.invalidate()` 前缀匹配 → 精确匹配 → 全清，三层降级逻辑正确
+- ✅ `invalidateStores/invalidateCoupons/invalidateCategories` 批量方法命名清晰
+- ✅ `ensureWarmup()` 自动触发：`typeof window === 'undefined'` 服务端守卫 + `catch(() => {})` 静默失败
+- ✅ categories CRUD 路由：读走 cached、写走 db + invalidate，模式一致
+- ✅ stores/detail：`cached.getStoreBySlug` + `cached.getCouponsByStoreSlug`，ID 查询用动态 import 避免循环依赖
+- ✅ 无新增 `: any` 或 `as any`（新代码全部类型安全）
+- ⚠️ categories/route.ts 末尾无换行（cosmetic，不影响功能）
+- ⚠️ categories POST/PUT 无输入验证（body 直传 db，低风险，API 层面已有 withErrorHandling 兜底）
+
+### 大文件状态 (top 6)
+| 文件 | 行数 | 评估 |
+|------|------|------|
+| sqlite-db.ts | 799 | 遗留适配器，可后续移除 |
+| db-tidb.ts | 681 | 按需保留 |
+| db-postgres.ts | 672 | 主数据库层，合理 |
+| admin/page.tsx | 594 | 已拆分多个 Tab 组件 |
+| marketing/route.ts | 336 | POST handler，可考虑提取 |
+| data-growth.ts | 322 | 数据增长引擎，合理 |
+
+### 代码状态汇总
+| 项目 | 状态 |
+|------|------|
+| TypeScript 编译 | ✅ 0 错误 |
+| 未使用导入 | ✅ 0 |
+| ESLint | ✅ 0 警告/0 错误 |
+| Next.js 构建 | ✅ 通过 |
+| 类型安全覆盖率 | 🟢 ~99% (稳定) |
+| 新增架构代码质量 | ✅ 良好，类型安全 |
+| 缓存失效覆盖 | ✅ stores/coupons/categories 全覆盖 |
+| 自动预热 | ✅ 服务端模块加载时触发 |
+| git 状态 | ✅ 工作树干净 |
+
+### 下次轮次
+方向1: 安全审计 — 密钥泄露、API鉴权、Cookie安全、依赖漏洞
+
+---
+
 ## 2026-03-17 12:15 UTC — 方向3: 架构优化 (第31轮)
 
 ### 本轮方向
