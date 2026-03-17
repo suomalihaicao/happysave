@@ -121,7 +121,7 @@ export default async function StoreDetailPage({ params }: Props) {
 
                   <div style={{ marginTop: 12, fontSize: 12, color: '#999' }}>
                     🕐 有效期至 {coupon.endDate
-                      ? new Date(coupon.endDate).toLocaleDateString('zh-CN')
+                      ? `${new Date(coupon.endDate).getFullYear()}/${new Date(coupon.endDate).getMonth() + 1}/${new Date(coupon.endDate).getDate()}`
                       : '长期有效'}
                     <span style={{ marginLeft: 16 }}>
                       👆 {coupon.clickCount?.toLocaleString() || 0} · ✅ {coupon.useCount?.toLocaleString() || 0}
