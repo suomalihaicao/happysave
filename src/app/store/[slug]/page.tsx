@@ -9,7 +9,7 @@ export const revalidate = 3600;
 export async function generateStaticParams() {
   try {
     const { data: stores } = await cached.getStores({ active: true, limit: 100 });
-    return stores.map((store) => ({ slug: store.slug }));
+    return stores.map((store: Store) => ({ slug: store.slug }));
   } catch {
     return [];
   }
@@ -24,13 +24,20 @@ export default async function StoreDetailPage({ params }: Props) {
 
   let store: Store | null = null;
   let coupons: Coupon[] = [];
+  let relatedStores: Store[] = [];
 
   try {
     const result = await cached.getStoreWithCoupons(slug);
     store = result.store;
     coupons = result.coupons;
+
+    // 同类商家推荐
+    if (store?.category) {
+      const related = await cached.getStores({ category: store.category, active: true, limit: 5 });
+      relatedStores = (related.data || []).filter((s: Store) => s.slug !== slug).slice(0, 4);
+    }
   } catch (err) {
-    console.error('Failed to fetch store data:', err);
+    console.error('[StorePage] Failed to fetch store data:', err);
   }
 
   if (!store) notFound();
@@ -157,6 +164,50 @@ export default async function StoreDetailPage({ params }: Props) {
             <p style={{ color: '#666' }}>暂无可用优惠，请稍后再来查看</p>
           </div>
         )}
+
+        {/* 相关商家推荐 */}
+        {relatedStores.length > 0 && (
+          <div style={{ marginTop: 32 }}>
+            <h2 style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 16, color: '#111' }}>
+              🔥 同类商家推荐
+            </h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220, 1fr))', gap: 12 }}>
+              {relatedStores.map((s: Store) => (
+                <a key={s.id} href={`/store/${s.slug}`} style={{
+                  background: '#fff', borderRadius: 12, padding: 16,
+                  textDecoration: 'none', color: 'inherit',
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  transition: 'box-shadow 0.2s',
+                  border: '1px solid #f0f0f0',
+                }}>
+                  <div style={{
+                    width: 48, height: 48, borderRadius: '50%',
+                    background: '#fff2e8', color: '#ff6b35', fontSize: 20, fontWeight: 'bold',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                  }}>
+                    {s.name.charAt(0)}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 15, fontWeight: 'bold', color: '#111',
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {s.name}
+                    </div>
+                    <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>
+                      {s.categoryZh || s.category} · 👆 {s.clickCount?.toLocaleString() || 0}
+                    </div>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 底部 SEO 文字 */}
+        <div style={{ marginTop: 32, padding: '16px 0', borderTop: '1px solid #eee', textAlign: 'center' }}>
+          <p style={{ fontSize: 12, color: '#bbb' }}>
+            © 2026 快乐省省 — 全球优惠券聚合平台 · 发现更多省钱机会
+          </p>
+        </div>
       </div>
     </div>
   );
