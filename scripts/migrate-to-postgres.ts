@@ -26,11 +26,13 @@ async function migrate() {
     try {
       await postgres.createStore(store);
       storeCount++;
-    } catch (err: any) {
-      if (err.code === '23505') {
+    } catch (err: unknown) {
+      const code = (err as Record<string, unknown>)?.code;
+      if (code === '23505') {
         console.log(`  ⏭️ 跳过已存在: ${store.name}`);
       } else {
-        console.error(`  ❌ ${store.name}: ${err.message}`);
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error(`  ❌ ${store.name}: ${msg}`);
       }
     }
   }
@@ -44,11 +46,12 @@ async function migrate() {
     try {
       await postgres.createCoupon(coupon);
       couponCount++;
-    } catch (err: any) {
-      if (err.code === '23505') {
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'code' in err && err.code === '23505') {
         console.log(`  ⏭️ 跳过已存在: ${coupon.title}`);
       } else {
-        console.error(`  ❌ ${coupon.title}: ${err.message}`);
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error(`  ❌ ${coupon.title}: ${msg}`);
       }
     }
   }
@@ -62,8 +65,9 @@ async function migrate() {
     try {
       await postgres.createCategory(cat);
       catCount++;
-    } catch (err: any) {
-      console.log(`  ⏭️ 跳过已存在: ${cat.name}`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.log(`  ⏭️ 跳过已存在: ${cat.name} (${msg})`);
     }
   }
   console.log(`  ✅ 迁移 ${catCount} 个分类`);
@@ -76,8 +80,9 @@ async function migrate() {
     try {
       await postgres.createSeoPage(page);
       seoCount++;
-    } catch (err: any) {
-      console.log(`  ⏭️ 跳过已存在: ${page.title}`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.log(`  ⏭️ 跳过已存在: ${page.title} (${msg})`);
     }
   }
   console.log(`  ✅ 迁移 ${seoCount}/${seoPages.total} 篇文章`);

@@ -1,5 +1,53 @@
 # TASKS.md - 技术审计记录
 
+## 2026-03-17 02:00 UTC — 方向0: 代码质量
+
+### 检查项
+- ✅ TypeScript 类型检查 (`tsc --noEmit`) — 0 错误
+- ✅ 大文件分析 (>200行)
+- ✅ `: any` / `as any` 残留分析
+- ✅ Next.js 构建通过
+
+### 发现的问题
+- `db-postgres.ts` 9个方法参数仍使用 `any`（上轮标记为可优化）
+
+### 已修复
+- ✅ `db-postgres.ts`: 9个方法参数类型化
+  - `trackClick` → `ClickInput`
+  - `getClickStats` → `ClickStatsOpts`
+  - `getSeoPages` → `SeoPageQueryOpts` + params 数组类型
+  - `createSeoPage` → `SeoPageInput`
+  - `updateSeoPage` → `SeoPageUpdate` + params 数组类型
+  - `createSubscriber` → `SubscriberInput`
+  - `addFavorite` → `FavoriteInput`
+  - `createNotification` → `NotificationInput`
+- ✅ `migrate/route.ts`: 新增 `MigrationStep`/`MigrationResults` 接口替换 `any`
+- ✅ git push → `bd5bd01`
+
+### 类型安全进展
+| 指标 | 上轮 (01:30) | 本轮 | 变化 |
+|------|-------------|------|------|
+| `: any` | 12 | 1 | ↓92% |
+| `as any` | 9 | 9 | 持平 |
+| TS 错误 | 0 | 0 | 持平 |
+
+### 剩余 `any` 分析 (1处 `: any` + 9处 `as any`)
+**全部为可接受的 DB 适配器运行时类型断言，无需修复:**
+- `sqlite-db.ts:62` — SQLite 实例动态引用 (`let sqliteDb: any = null`)
+- `sqlite-db.ts:490-590` — Proxy 模式字段访问
+- `db-tidb.ts:191,371` — MySQL 执行结果类型转换
+- `scraper.ts:53` — 动态 store 对象引用
+- `data-growth.ts:280-281` — 动态 store 对象引用
+
+### 大文件状态
+| 文件 | 行数 | 评估 |
+|------|------|------|
+| `sqlite-db.ts` | 736 | 遗留适配器，可后续移除 |
+| `db-tidb.ts` | 643 | 按需保留 |
+| `db-postgres.ts` | 632 | 主数据库层，合理 |
+| `admin/page.tsx` | 472 | 上轮已拆分41% |
+| `marketing/route.ts` | 336 | 可拆分 handler |
+
 ## 2026-03-17 01:30 UTC — 方向0: 代码质量
 
 ### 检查项
