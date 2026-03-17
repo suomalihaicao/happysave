@@ -4,7 +4,7 @@ import type { Metadata } from 'next';
 import { cached } from '@/lib/cache';
 import type { Store, Coupon } from '@/types';
 
-type Props = { params: Promise<{ slug: string }> };
+type Props = { params: Promise<{ slug: string }>; children: React.ReactNode };
 
 // ISR: 每小时重新验证
 export const revalidate = 3600;
@@ -39,15 +39,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-// Server Component - 仅渲染 JSON-LD 结构化数据
-export default async function StoreSEOWrapper({ params }: Props) {
+// Server Component — JSON-LD + 子页面内容
+export default async function StoreSEOWrapper({ children, params }: Props) {
   const { slug } = await params;
   const { store, coupons } = await getStoreData(slug);
   const s: Store | null = store;
   
-  if (!s) return null;
-
-  const jsonLd = {
+  const jsonLd = s ? {
     '@context': 'https://schema.org',
     '@type': 'Store',
     name: s.name,
@@ -68,12 +66,17 @@ export default async function StoreSEOWrapper({ params }: Props) {
       priceCurrency: 'USD',
       availability: c.active ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
     })),
-  };
+  } : null;
 
   return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-    />
+    <>
+      {jsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      )}
+      {children}
+    </>
   );
 }
