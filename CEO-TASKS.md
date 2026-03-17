@@ -45,6 +45,16 @@
 - TypeScript 0 错误 + Next.js 构建通过
 - git commit b27ac8d → 已推送
 
+## ✅ 第35轮 (2026-03-17 14:00) — 代码质量审计
+- 大文件拆分: StrategiesTab 提取到 components/StrategiesTab.tsx (140行)
+- admin/page.tsx: 788行→670行 (-15%), 回归可维护范围
+- strategies/route.ts: 共享连接池替换每次 new Pool, 修复连接泄漏
+- strategies/route.ts: 新增输入验证 (title/content 必填, id 必填)
+- StrategiesTab: any[]→Strategy[] 接口, 消除 4 处 any 类型
+- TypeScript 0 错误 + Next.js 构建通过
+- git commit 952dd97 → 已推送
+- 下次轮次: 方向1 安全审计
+
 ## 📋 检查清单
 
 ### 🔧 技术健康

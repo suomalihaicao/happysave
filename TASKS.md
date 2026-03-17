@@ -1,3 +1,40 @@
+## 2026-03-17 14:00 UTC — 方向0: 代码质量 (第35轮)
+
+### 本轮方向
+分钟%5 = 0 → 方向0: 代码质量 — 大文件拆分、连接泄漏、输入验证、类型安全
+
+### 检查项
+- ✅ TypeScript 编译 — 0 错误
+- ✅ Next.js 构建通过 (exit code 0)
+- ✅ 新增代码审查 — strategies/route.ts + StrategiesTab
+
+### 发现问题 & 修复
+1. **大文件膨胀回归** — admin/page.tsx 从 472行→788行 (新增 StrategiesTab 内联120行) → **已修复**: 提取到 components/StrategiesTab.tsx (140行独立文件)
+2. **连接泄漏风险** — strategies/route.ts 每次请求 `new Pool()` + `pool.end()` → **已修复**: 共享连接池 (单例模式, max:5)
+3. **缺少输入验证** — POST/PUT/DELETE 无必填校验 → **已修复**: title/content 必填检查, id 必填检查
+4. **类型安全退化** — StrategiesTab 中 `useState<any[]>`, `item: any` → **已修复**: Strategy 接口定义, 消除 4 处 any
+
+### 文件变更
+| 文件 | 变更 | 行数 |
+|------|------|------|
+| admin/page.tsx | 提取StrategiesTab组件, 移除120行内联代码 | 788→670 (-15%) |
+| components/StrategiesTab.tsx | 新建, Strategy 接口, 完整类型化 | 140行 |
+| strategies/route.ts | 共享连接池 + 输入验证 | 55→64行 |
+
+### 质量指标
+- `: any` — 1处 (sqlite-db.ts:62, 可接受)
+- `as any` — 9处 (DB适配器运行时断言, 无需修复)
+- 未使用导入 — 0
+- 大文件 — admin/page.tsx 670行 (已拆分3个子组件), DB层文件正常
+
+### git
+- commit 952dd97 → 已推送 main
+
+### 下次轮次
+- 方向1: 安全审计 — 密钥泄露、API鉴权、Cookie安全、依赖漏洞
+
+---
+
 ## 2026-03-17 13:30 UTC — 方向0: 代码质量 (第34轮)
 
 ### 本轮方向
