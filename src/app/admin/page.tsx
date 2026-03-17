@@ -346,30 +346,52 @@ function CouponsTab() {
 // Users Tab
 // ============================================================
 function UsersTab() {
+  const [users, setUsers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const fetchUsers = () => {
+    setLoading(true);
+    fetch('/api/v1/user-profiles?action=list').then(r => r.json()).then(d => {
+      setUsers(d.data || []);
+      setLoading(false);
+    }).catch(() => setLoading(false));
+  };
+  useEffect(fetchUsers, []);
+
+  const levelTag = (level: string) => {
+    const map: Record<string, { label: string; color: string }> = {
+      svip: { label: '👑 SVIP', color: 'gold' },
+      vip: { label: '⭐ VIP', color: 'blue' },
+      normal: { label: '👤 普通', color: 'default' },
+    };
+    const l = map[level] || map.normal;
+    return <Tag color={l.color}>{l.label}</Tag>;
+  };
+
   return (
     <div>
-      <Alert
-        message="邮件订阅系统"
-        description="用户在网站上输入邮箱订阅后，会出现在这里。你可以导出邮件列表进行批量推广。"
-        type="info"
-        showIcon
-        style={{ marginBottom: 16 }}
-      />
-      <Card title="邮件营销工具" extra={<Button icon={<ExportOutlined />}>导出邮件列表</Button>}>
-        <List
-          dataSource={[
-            { title: '📧 Mailchimp', desc: '最流行的邮件营销工具，免费版支持 500 订阅者', url: 'https://mailchimp.com' },
-            { title: '📧 Brevo (Sendinblue)', desc: '免费版每天 300 封邮件，适合初期', url: 'https://www.brevo.com' },
-            { title: '📧 Resend', desc: '开发者友好，API 驱动，免费 100 封/天', url: 'https://resend.com' },
+      <Row gutter={16} style={{ marginBottom: 16 }}>
+        <Col xs={12} md={6}><Card><Statistic title="总用户" value={users.length} /></Card></Col>
+        <Col xs={12} md={6}><Card><Statistic title="VIP用户" value={users.filter(u => u.level === 'vip' || u.level === 'svip').length} /></Card></Col>
+        <Col xs={12} md={6}><Card><Statistic title="总积分" value={users.reduce((sum, u) => sum + (u.points || 0), 0)} /></Card></Col>
+        <Col xs={12} md={6}><Card><Statistic title="总点击" value={users.reduce((sum, u) => sum + (u.totalclicks || 0), 0)} /></Card></Col>
+      </Row>
+      <Card title="👥 用户列表" extra={<Tag>{users.length} 人</Tag>}>
+        <Table
+          dataSource={users}
+          rowKey="id"
+          loading={loading}
+          pagination={{ pageSize: 20 }}
+          columns={[
+            { title: '邮箱', dataIndex: 'email', key: 'email', render: (v: string) => <Text strong>{v}</Text> },
+            { title: '昵称', dataIndex: 'nickname', key: 'nick', render: (v: string) => v || '-' },
+            { title: '等级', dataIndex: 'level', key: 'level', render: (v: string) => levelTag(v || 'normal') },
+            { title: '积分', dataIndex: 'points', key: 'points', render: (v: number) => <Tag color="blue">{v || 0}</Tag>, sorter: (a: any, b: any) => (a.points || 0) - (b.points || 0) },
+            { title: '点击', dataIndex: 'totalclicks', key: 'clicks', render: (v: number) => v || 0, sorter: (a: any, b: any) => (a.totalclicks || 0) - (b.totalclicks || 0) },
+            { title: '邀请码', dataIndex: 'invitecode', key: 'code', render: (v: string) => v ? <Tag>{v}</Tag> : '-' },
+            { title: '角色', dataIndex: 'role', key: 'role', render: (v: string) => <Tag color={v === 'admin' ? 'red' : 'default'}>{v}</Tag> },
+            { title: '注册时间', dataIndex: 'createdat', key: 'time', render: (v: string) => v?.slice(0, 10) },
           ]}
-          renderItem={(item: { title: string; desc: string; url: string }) => (
-            <List.Item>
-              <List.Item.Meta
-                title={<a href={item.url} target="_blank">{item.title}</a>}
-                description={item.desc}
-              />
-            </List.Item>
-          )}
         />
       </Card>
     </div>
