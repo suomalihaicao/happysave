@@ -51,6 +51,10 @@ type ClickInput = { shortCode: string; storeId?: string; couponId?: string | nul
 type SeoPageInput = { slug: string; title: string; content?: string; metaDesc?: string; keywords?: string; pageType?: string; storeId?: string; aiGenerated?: boolean };
 type NotificationInput = { userId?: string; email?: string; type?: string; storeId?: string; keyword?: string; active?: boolean };
 
+// Column whitelists for SQL injection prevention (column name interpolation)
+const ALLOWED_STORE_COLUMNS = new Set(['slug','name','nameZh','description','descriptionZh','logo','website','affiliateUrl','category','categoryZh','tags','featured','active','sortOrder','clickCount','conversionRate']);
+const ALLOWED_COUPON_COLUMNS = new Set(['storeId','storeName','code','title','titleZh','description','descriptionZh','discount','discountType','type','affiliateUrl','startDate','endDate','featured','active','verified','clickCount','useCount']);
+
 // Try to load better-sqlite3 (only available locally, not on Vercel)
 // Use eval to avoid Turbopack static analysis
 const dynamicRequire = eval('require') as NodeRequire;
@@ -367,7 +371,7 @@ export const database = {
     const existing = database.getStoreById(id);
     if (!existing) return null;
     if (dbType === 'sqlite') {
-      const fields = Object.entries(data).filter(([k, v]) => v !== undefined && k !== 'id');
+      const fields = Object.entries(data).filter(([k, v]) => v !== undefined && k !== 'id' && ALLOWED_STORE_COLUMNS.has(k));
       for (const [k, v] of fields) {
         const val = k === 'tags' ? JSON.stringify(v) : k === 'featured' || k === 'active' ? (v ? 1 : 0) : v;
         sqliteDb.prepare(`UPDATE stores SET "${k}" = ?, updatedAt = datetime('now') WHERE id = ?`).run(val, id);
@@ -460,7 +464,7 @@ export const database = {
     const existing = database.getCouponById(id);
     if (!existing) return null;
     if (dbType === 'sqlite') {
-      const fields = Object.entries(data).filter(([k, v]) => v !== undefined && k !== 'id');
+      const fields = Object.entries(data).filter(([k, v]) => v !== undefined && k !== 'id' && ALLOWED_COUPON_COLUMNS.has(k));
       for (const [k, v] of fields) {
         const val = k === 'featured' || k === 'active' || k === 'verified' ? (v ? 1 : 0) : v;
         sqliteDb.prepare(`UPDATE coupons SET "${k}" = ?, updatedAt = datetime('now') WHERE id = ?`).run(val, id);
