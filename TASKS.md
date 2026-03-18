@@ -1,3 +1,61 @@
+## 2026-03-18 05:00 UTC — 方向0: 代码质量 (第47轮)
+
+### 本轮方向
+分钟%5 = 0 → 方向0: 代码质量 — TypeScript错误、未使用导入、大文件拆分
+
+### 检查项
+- ✅ TypeScript 编译 (`npx tsc --noEmit`) → 0 错误 (修复后)
+- ✅ ESLint: 53 problems (47×no-explicit-any DB层 + 6×warnings/占位符)
+- ✅ Next.js 构建通过: `next build` → exit 0, 全路由正常
+- ✅ git commit `844f44e` 已推送
+
+### 发现问题
+**3个 TypeScript 编译错误（均为近期认证系统迁移引入）：**
+
+1. **auth.ts:46** — `verifyToken()` 返回类型错误: `if (sig.length !== expectedSig.length) return false` 应返回 `null` 而非 `false`
+2. **db-postgres.ts:184,191** — `initPostgres()` 函数中引用未定义变量 `p`，应为 `db`（该函数使用 `const db = getPool()`）
+3. **admin-db.ts:2** — `better-sqlite3` 缺少类型声明，导致隐式 `any` 编译错误
+
+**ESLint 53 problems（较上轮+19）：**
+- 新增 `admin-db.ts` (3×any) — 新建文件
+- 新增 `sqlite-db.ts` (499/501/594/599/752-846行, +24×any) — 新增 admin auth 函数
+- 新增 `db-postgres.ts` (+1×any) — 新增 initPostgres admin 表
+- `data-growth.ts` (19/20/130/279/280) — 6 problems, 其中1个新增
+- 6个 warnings 均为下划线占位符（_MerchantRecord/_token/_scrapeWithAI/_NotificationUpdate）— 可接受
+- 未使用导入: 0
+
+### 已修复内容
+1. **auth.ts:46**: `return false` → `return null`（修复返回类型）
+2. **db-postgres.ts:184**: `await p.query(...)` → `await db.query(...)`（修复变量引用）
+3. **db-postgres.ts:191**: `await p.query(...)` → `await db.query(...)`（修复变量引用）
+4. **admin-db.ts:4**: `Database.Database` → `Database`（配合新增类型声明）
+5. **新增** `src/types/better-sqlite3.d.ts` — 为 better-sqlite3 提供类型声明
+
+### 代码质量状态
+| 指标 | 上轮 (第46轮) | 本轮 | 变化 |
+|------|-------------|------|------|
+| TypeScript 错误 | 0 | 0→修复3个 | ↓3 (已修复) |
+| ESLint problems | 34 | 53 | ↑19 (新增admin auth代码) |
+| no-explicit-any | 29 | 47 | ↑18 (sqlite-db.ts新增admin函数) |
+| warnings | 5 | 6 | ↑1 (占位符增加) |
+| 未使用导入 | 0 | 0 | 持平 |
+| 构建 | ✅ | ✅ | 持平 |
+| 类型安全覆盖率 | ~99% | ~99% | 持平 |
+
+### 大文件分析
+| 文件 | 行数 | 变化 | 状态 |
+|------|------|------|------|
+| sqlite-db.ts | 848 | +112 (admin auth) | ⚠️ 增长，但函数内聚 |
+| db-postgres.ts | 728 | +85 (initPostgres) | ⚠️ 正常增长 |
+| admin/page.tsx | 723 | 持平 | ✅ 已拆分 |
+| db-tidb.ts | 681 | 持平 | ✅ |
+
+### 备注
+- 近期认证系统迁移引入的 TS 错误已全部修复
+- sqlite-db.ts 增长因新增 admin auth 函数(findAdmin/createAdmin/updateAdminLogin/listAdmins)，函数逻辑内聚，暂不拆分
+- ESLint 增长主要来自 sqlite-db.ts 中内存模式 fallback 的 `as any` 断言，为运行时动态对象操作，可接受
+
+
 ## 2026-03-18 04:30 UTC — 方向0: 代码质量 (第46轮)
 
 ### 本轮方向
