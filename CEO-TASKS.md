@@ -6,6 +6,20 @@
 - 发现问题立即修复
 - 记录每次执行结果
 
+## ✅ 第42轮 (2026-03-18 01:00) — 安全审计
+- 密钥泄露扫描: auth.ts 发现 **硬编码生产密码回归** (`happysave2026` 作为 fallback)
+- 已修复: `process.env.ADMIN_PASSWORD || 'happysave2026'` → `|| ''` (强制配置环境变量)
+- 此问题第1轮/第28轮已修复, 本次为第3次回归
+- API鉴权: 22个受保护路由, 限流60/min/IP, 安全头全配置
+- Cookie: HttpOnly+SameSite+Secure(prod), 7天有效期
+- SQL注入: ALLOWED_STORE/COUPON_COLUMNS 白名单正常运行
+- 依赖漏洞: 0 (pnpm audit clean)
+- CRON_SECRET: 空字符串回退(安全)
+- .env: .gitignore 中, 未被追踪
+- TypeScript 0 错误 + 构建通过
+- git commit 44b0afd → 已推送
+- 下次轮次: 方向2 性能分析
+
 ## ✅ 第41轮 (2026-03-18 00:30) — 代码质量审计
 - 自第40轮以来无 TypeScript/TSX 代码变更 (仅docs/security/SEO markdown)
 - TypeScript 编译通过: 0 错误

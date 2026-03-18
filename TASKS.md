@@ -1,3 +1,49 @@
+## 2026-03-18 01:00 UTC — 方向1: 安全审计 (第42轮)
+
+### 本轮方向
+分钟%5 = 1 → 方向1: 安全审计 — 密钥泄露、API鉴权、Cookie安全、依赖漏洞
+
+### 检查项
+- ✅ 密钥泄露扫描 — `grep -rn happysave2026|admin123|API_KEY|SECRET|TOKEN|PASSWORD src/`
+- ✅ API鉴权 — 中间件保护 22个路由, 公开 8个路由, 限流 60/min/IP
+- ✅ Cookie安全 — HttpOnly + SameSite=Lax + Secure(production)
+- ✅ 依赖漏洞 — `pnpm audit`: 0 漏洞
+- ✅ SQL注入防护 — ALLOWED_STORE_COLUMNS(16)/ALLOWED_COUPON_COLUMNS(18) 白名单
+- ✅ 安全头 — X-Frame-Options DENY, X-Content-Type-Options nosniff, Permissions-Policy
+- ✅ .env安全 — 在 .gitignore 中, 未被 git 追踪
+- ✅ CRON_SECRET — 空字符串回退(安全), 无硬编码
+- ✅ TypeScript 编译 — 0 错误
+- ✅ git 工作树干净
+
+### 发现问题 & 修复
+1. **🔴 auth.ts 硬编码生产密码 (高风险)** — `src/lib/auth.ts:4` 生产环境默认密码 `'happysave2026'` 作为 fallback, 意味着未配置 `ADMIN_PASSWORD` 环境变量的部署会使用此公开密码。此为第1轮/第28轮已修复问题的 **第3次回归**。 → ✅ **已修复**: 改为空字符串 `''`, git commit `44b0afd`
+   - 注意: `advertise/page.tsx:88` 的 `happysave2026` 为微信联系方式展示, 非安全问题
+
+### 安全状态汇总
+| 项目 | 状态 | 说明 |
+|------|------|------|
+| 硬编码密钥 | ✅ 无 (auth.ts已修复) | 空字符串强制配置 |
+| API鉴权 | ✅ 22个受保护路由 | 中间件Cookie验证 |
+| CRON保护 | ✅ 空字符串回退安全 | 3种认证方式 |
+| Cookie安全 | ✅ HttpOnly+SameSite+Secure(prod) | 7天有效期 |
+| 安全头 | ✅ 全部配置 | X-Frame-Options等 |
+| 依赖漏洞 | ✅ 0 漏洞 | pnpm audit 干净 |
+| SQL注入 | ✅ 白名单过滤 | ALLOWED_COLUMNS |
+| 限流 | ✅ 60次/分钟/IP | 含自动清理 |
+| .env安全 | ✅ .gitignore | 未被追踪 |
+
+### 经验教训
+- **安全回归检测**: auth.ts 硬编码密码问题已在第1轮和第28轮修复过, 但又回来了。建议在 pre-commit hook 或 CI 中添加规则: 禁止 `process.env.* || 'happysave2026'` 模式
+- 类似模式可推广: `process.env.XXX || '固定值'` 在生产环境应全部替换为 `process.env.XXX || ''`
+
+### git
+- commit `44b0afd` → 已推送
+
+### 下次轮次
+方向2: 性能分析 — Bundle大小、查询次数、缓存命中率、ISR状态
+
+---
+
 ## 2026-03-18 00:30 UTC — 方向0: 代码质量 (第41轮)
 
 ### 本轮方向
