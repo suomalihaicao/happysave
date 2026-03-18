@@ -181,14 +181,14 @@ export async function initPostgres() {
   `);
 
   // Seed default admin if no admins exist
-  const { rows } = await p.query('SELECT COUNT(*) as count FROM admins');
+  const { rows } = await db.query('SELECT COUNT(*) as count FROM admins');
   if (parseInt(rows[0].count) === 0) {
     const defaultPassword = process.env.ADMIN_PASSWORD || 'admin123';
     const { createHmac } = await import('crypto');
     const secret = process.env.ADMIN_SECRET || 'happysave-secret-change-me';
     const salt = createHmac('sha256', secret).update(Date.now().toString()).digest('hex').slice(0, 32);
     const hash = createHmac('sha256', salt).update(defaultPassword).digest('hex');
-    await p.query(
+    await db.query(
       'INSERT INTO admins (username, password_hash, password_salt, role) VALUES ($1, $2, $3, $4)',
       ['admin', hash, salt, 'admin']
     );

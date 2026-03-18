@@ -43,7 +43,7 @@ function verifyToken(token: string): TokenPayload | null {
 
   const expectedSig = createHmac('sha256', ADMIN_SECRET).update(data).digest('hex');
   // timing-safe 比较
-  if (sig.length !== expectedSig.length) return false;
+  if (sig.length !== expectedSig.length) return null;
   try {
     if (!timingSafeEqual(Buffer.from(sig, 'hex'), Buffer.from(expectedSig, 'hex'))) return null;
   } catch {

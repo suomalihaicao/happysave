@@ -1,7 +1,7 @@
 // Admin 数据库操作 - 支持 SQLite 和内存模式
 import Database from 'better-sqlite3';
 
-let _db: Database.Database | null = null;
+let _db: Database | null = null;
 let _mode: 'sqlite' | 'memory' = 'memory';
 
 // 内存存储（Vercel fallback）
