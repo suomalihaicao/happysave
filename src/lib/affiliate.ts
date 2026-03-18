@@ -1,6 +1,8 @@
 // 联盟数据集成 - ShareASale / CJ / Impact / Awin
 // 配置环境变量后自动拉取商家和优惠码数据
 
+import { createHash } from 'crypto';
+
 const AFFILIATE_CONFIG = {
   shareasale: {
     name: 'ShareASale',
@@ -36,10 +38,9 @@ const AFFILIATE_CONFIG = {
   },
 };
 
-// ============================================================
 // Affiliate network response types
-// ============================================================
-interface MerchantRecord {
+// (保留供未来联盟API扩展使用)
+interface _MerchantRecord {
   source: string;
   merchantId: string;
   name: string;
@@ -241,8 +242,7 @@ async function fetchAwinMerchants(limit = 50) {
 
 function generateShareASaleAuth(token: string) {
   const date = new Date().toUTCString();
-  const crypto = require('crypto');
-  const hash = crypto.createHash('sha256').update(token + date).digest('hex');
+  const hash = createHash('sha256').update(token + date).digest('hex');
   return { date, hash };
 }
 

@@ -1,6 +1,7 @@
 // 数据增长引擎 - 五条路径全部接入
 // 1. AI自动发现 2.联盟API 3.优惠码聚合API 4.爬虫 5.用户提交
 
+import { createHmac } from 'crypto';
 import { db } from './db';
 
 // ============================================================
@@ -29,8 +30,7 @@ const ShareASaleAdapter: AffiliateNetwork = {
     // ShareASale API v4 - 获取商家列表
     try {
       const timestamp = new Date().toISOString();
-      const signature = require('crypto')
-        .createHmac('sha256', process.env.SHAREASALE_SECRET!)
+      const signature = createHmac('sha256', process.env.SHAREASALE_SECRET!)
         .update(process.env.SHAREASALE_TOKEN! + timestamp)
         .digest('hex');
 
@@ -186,8 +186,8 @@ interface ScrapedResult {
   sourceUrl: string;
 }
 
-// 爬虫执行器 (通过 AI 解析页面内容)
-async function scrapeWithAI(url: string, storeName: string): Promise<ScrapedResult[]> {
+// 爬虫执行器 (通过 AI 解析页面内容) - TODO: 待接入实际爬虫服务
+async function _scrapeWithAI(url: string, storeName: string): Promise<ScrapedResult[]> {
   // 使用 AI 分析页面提取优惠信息
   // 实际实现需要配合 fetch + AI 解析
   console.log(`🔍 Scraping ${url} for ${storeName}...`);
@@ -244,8 +244,7 @@ export const dataGrowth = {
         totalMerchants++;
       }
 
-      const coupons = await network.fetchCoupons();
-      // 处理优惠码...
+      // 网络商家优惠码由聚合API统一处理
     }
 
     // 聚合 API
