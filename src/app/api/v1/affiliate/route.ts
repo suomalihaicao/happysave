@@ -3,7 +3,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { ai } from '@/lib/ai-engine';
+import type { Store } from '@/types';
 
 const CRON_SECRET = process.env.CRON_SECRET || '';
 const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
@@ -52,8 +52,8 @@ async function sendEmail(to: string, subject: string, html: string): Promise<{ s
       return { success: true, messageId: data.id };
     }
     return { success: false, error: data.message || 'Unknown error' };
-  } catch (e: any) {
-    return { success: false, error: e.message };
+  } catch (e: unknown) {
+    return { success: false, error: e instanceof Error ? e.message : String(e) };
   }
 }
 
@@ -142,8 +142,8 @@ async function findContactTargets(): Promise<ContactTarget[]> {
 
   // 优先级排序：有联盟链接但还没发过邮件的
   const targets: ContactTarget[] = stores.data
-    .filter((s: any) => s.website) // 有官网的
-    .map((s: any) => ({
+    .filter((s: Store) => s.website) // 有官网的
+    .map((s: Store) => ({
       storeName: s.name,
       storeWebsite: s.website,
       category: s.category || 'General',
