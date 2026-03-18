@@ -14,6 +14,7 @@
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
     "antd": "^5.29.3",
+    "better-sqlite3": "^12.8.0",
     "dayjs": "^1.11.20",
     "mysql2": "^3.19.1",
     "next": "16.1.7",

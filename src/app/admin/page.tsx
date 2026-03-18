@@ -77,6 +77,7 @@ interface UserProfile {
 // Login Component
 // ============================================================
 function LoginPage({ onLogin }: { onLogin: () => void }) {
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -86,14 +87,14 @@ function LoginPage({ onLogin }: { onLogin: () => void }) {
       const res = await fetch('/api/v1/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'login', password }),
+        body: JSON.stringify({ action: 'login', username: username || 'admin', password }),
       });
       const data = await res.json();
       if (data.success) {
         message.success('登录成功');
         onLogin();
       } else {
-        message.error('密码错误');
+        message.error(data.message || '用户名或密码错误');
       }
     } catch {
       message.error('登录失败');
@@ -106,10 +107,18 @@ function LoginPage({ onLogin }: { onLogin: () => void }) {
       <Card style={{ width: 400, textAlign: 'center' }}>
         <RobotOutlined style={{ fontSize: 48, color: '#764ba2', marginBottom: 16 }} />
         <Title level={3}>快乐省省 Admin</Title>
-        <Paragraph type="secondary">输入管理密码登录</Paragraph>
+        <Paragraph type="secondary">管理员登录</Paragraph>
+        <Input
+          prefix={<UserOutlined />}
+          placeholder="用户名（默认 admin）"
+          value={username}
+          onChange={e => setUsername(e.target.value)}
+          size="large"
+          style={{ marginBottom: 12 }}
+        />
         <Input.Password
           prefix={<LockOutlined />}
-          placeholder="管理密码"
+          placeholder="密码"
           value={password}
           onChange={e => setPassword(e.target.value)}
           onPressEnter={handleLogin}
