@@ -5,7 +5,7 @@ const AI_BASE_URL = process.env.OPENAI_BASE_URL || 'https://openrouter.ai/api/v1
 const AI_API_KEY = process.env.OPENAI_API_KEY || '';
 const AI_MODEL = process.env.OPENAI_MODEL || 'openrouter/auto';
 
-interface AIMessage {
+export interface AIMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
 }
@@ -49,6 +49,11 @@ async function callAI(messages: AIMessage[], temperature = 0.7): Promise<string>
 // ============================================================
 
 export const ai = {
+  /**
+   * 通用 AI 调用（供外部使用）
+   */
+  callAI,
+
   /**
    * 生成商家 SEO 文章
    */
