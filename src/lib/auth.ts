@@ -1,7 +1,7 @@
 // 认证中间件 - 简单 session-based auth
 import { NextRequest } from 'next/server';
 
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'happysave2026';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
 const COOKIE_NAME = 'hs_admin';
 
 // 生成简单 token
