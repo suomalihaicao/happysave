@@ -68,12 +68,12 @@ function getCookieSettings(token: string): string {
 }
 
 // ============================================================
-// 数据库查询管理员（延迟加载，避免循环依赖）
+// 数据库查询管理员（通过主数据库适配器）
 // ============================================================
 async function findAdminByUsername(username: string): Promise<{ id: string; username: string; passwordHash: string; passwordSalt: string; role: string } | null> {
   try {
-    const { getDb } = await import('./admin-db');
-    return await getDb().findAdmin(username);
+    const { db } = await import('./db');
+    return await db.findAdmin(username);
   } catch {
     return null;
   }
@@ -81,8 +81,8 @@ async function findAdminByUsername(username: string): Promise<{ id: string; user
 
 async function getAllAdmins(): Promise<Array<{ id: string; username: string; role: string; lastLogin: string | null }>> {
   try {
-    const { getDb } = await import('./admin-db');
-    return await getDb().listAdmins();
+    const { db } = await import('./db');
+    return await db.listAdmins();
   } catch {
     return [];
   }
@@ -90,8 +90,8 @@ async function getAllAdmins(): Promise<Array<{ id: string; username: string; rol
 
 async function createAdminRecord(username: string, passwordHash: string, passwordSalt: string, role: string): Promise<boolean> {
   try {
-    const { getDb } = await import('./admin-db');
-    return await getDb().createAdmin(username, passwordHash, passwordSalt, role);
+    const { db } = await import('./db');
+    return await db.createAdmin(username, passwordHash, passwordSalt, role);
   } catch {
     return false;
   }
@@ -99,8 +99,8 @@ async function createAdminRecord(username: string, passwordHash: string, passwor
 
 async function updateAdminLogin(username: string): Promise<void> {
   try {
-    const { getDb } = await import('./admin-db');
-    await getDb().updateLastLogin(username);
+    const { db } = await import('./db');
+    await db.updateAdminLogin(username);
   } catch {
     // ignore
   }

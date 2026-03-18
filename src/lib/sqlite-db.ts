@@ -796,4 +796,53 @@ export const database = {
     else if ((memory as any).users) (memory as any).users = (memory as any).users.filter((u: Record<string, unknown>) => u.id !== id);
     return true;
   },
+
+  // ===== Admin Auth =====
+  findAdmin(username: string) {
+    if (dbType === 'sqlite') {
+      // Ensure table exists
+      sqliteDb.exec(`CREATE TABLE IF NOT EXISTS admins (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE NOT NULL,
+        passwordHash TEXT NOT NULL,
+        passwordSalt TEXT NOT NULL,
+        role TEXT DEFAULT 'admin',
+        lastLogin TEXT,
+        createdAt TEXT DEFAULT (datetime('now'))
+      )`);
+      return sqliteDb.prepare('SELECT id, username, passwordHash, passwordSalt, role FROM admins WHERE username = ?').get(username) || null;
+    }
+    if (!(memory as any).admins) (memory as any).admins = [];
+    return (memory as any).admins.find((a: any) => a.username === username) || null;
+  },
+
+  createAdmin(username: string, passwordHash: string, passwordSalt: string, role: string) {
+    if (dbType === 'sqlite') {
+      try {
+        sqliteDb.prepare('INSERT INTO admins (username, passwordHash, passwordSalt, role) VALUES (?, ?, ?, ?)').run(username, passwordHash, passwordSalt, role);
+        return true;
+      } catch { return false; }
+    }
+    if (!(memory as any).admins) (memory as any).admins = [];
+    if ((memory as any).admins.find((a: any) => a.username === username)) return false;
+    (memory as any).admins.push({ id: String(Date.now()), username, passwordHash, passwordSalt, role, lastLogin: null });
+    return true;
+  },
+
+  updateAdminLogin(username: string) {
+    const now = new Date().toISOString();
+    if (dbType === 'sqlite') {
+      sqliteDb.prepare('UPDATE admins SET lastLogin = ? WHERE username = ?').run(now, username);
+    } else if ((memory as any).admins) {
+      const admin = (memory as any).admins.find((a: any) => a.username === username);
+      if (admin) admin.lastLogin = now;
+    }
+  },
+
+  listAdmins() {
+    if (dbType === 'sqlite') {
+      return sqliteDb.prepare('SELECT id, username, role, lastLogin FROM admins ORDER BY createdAt DESC').all();
+    }
+    return ((memory as any).admins || []).map((a: any) => ({ id: a.id, username: a.username, role: a.role, lastLogin: a.lastLogin }));
+  },
 };

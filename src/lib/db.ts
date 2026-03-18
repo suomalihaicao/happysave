@@ -88,6 +88,12 @@ export interface Database {
   getUsers(): Promise<User[]>;
   createUser(input: { email: string; name?: string; role?: string }): Promise<User>;
   deleteUser(id: string): Promise<boolean>;
+
+  // Admin auth
+  findAdmin(username: string): Promise<{ id: string; username: string; passwordHash: string; passwordSalt: string; role: string } | null>;
+  createAdmin(username: string, passwordHash: string, passwordSalt: string, role: string): Promise<boolean>;
+  updateAdminLogin(username: string): Promise<void>;
+  listAdmins(): Promise<Array<{ id: string; username: string; role: string; lastLogin: string | null }>>;
 }
 
 let _db: Database | null = null;

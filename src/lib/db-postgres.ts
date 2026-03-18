@@ -168,7 +168,32 @@ export async function initPostgres() {
     CREATE INDEX IF NOT EXISTS idx_coupons_active ON coupons(active);
     CREATE INDEX IF NOT EXISTS idx_seo_pages_slug ON seo_pages(slug);
     CREATE INDEX IF NOT EXISTS idx_favorites_user ON favorites(user_id);
+
+    CREATE TABLE IF NOT EXISTS admins (
+      id SERIAL PRIMARY KEY,
+      username VARCHAR(100) UNIQUE NOT NULL,
+      password_hash VARCHAR(128) NOT NULL,
+      password_salt VARCHAR(64) NOT NULL,
+      role VARCHAR(50) DEFAULT 'admin',
+      last_login TIMESTAMP,
+      created_at TIMESTAMP DEFAULT NOW()
+    );
   `);
+
+  // Seed default admin if no admins exist
+  const { rows } = await p.query('SELECT COUNT(*) as count FROM admins');
+  if (parseInt(rows[0].count) === 0) {
+    const defaultPassword = process.env.ADMIN_PASSWORD || 'admin123';
+    const { createHmac } = await import('crypto');
+    const secret = process.env.ADMIN_SECRET || 'happysave-secret-change-me';
+    const salt = createHmac('sha256', secret).update(Date.now().toString()).digest('hex').slice(0, 32);
+    const hash = createHmac('sha256', salt).update(defaultPassword).digest('hex');
+    await p.query(
+      'INSERT INTO admins (username, password_hash, password_salt, role) VALUES ($1, $2, $3, $4)',
+      ['admin', hash, salt, 'admin']
+    );
+    console.log('✅ Default admin user created (admin)');
+  }
 
   console.log('✅ PostgreSQL schema initialized');
 }
@@ -664,5 +689,40 @@ export const postgres = {
       await p.query('DELETE FROM users WHERE id = $1', [id]);
       return true;
     } catch { return false; }
+  },
+
+  // ===== Admin Auth =====
+  async findAdmin(username: string) {
+    const p = getPool();
+    const { rows } = await p.query(
+      'SELECT id, username, password_hash as "passwordHash", password_salt as "passwordSalt", role FROM admins WHERE username = $1',
+      [username]
+    );
+    return rows[0] || null;
+  },
+
+  async createAdmin(username: string, passwordHash: string, passwordSalt: string, role: string): Promise<boolean> {
+    try {
+      const p = getPool();
+      await p.query(
+        'INSERT INTO admins (username, password_hash, password_salt, role) VALUES ($1, $2, $3, $4)',
+        [username, passwordHash, passwordSalt, role]
+      );
+      return true;
+    } catch (e: any) {
+      if (e.code === '23505') return false; // unique violation
+      throw e;
+    }
+  },
+
+  async updateAdminLogin(username: string): Promise<void> {
+    const p = getPool();
+    await p.query('UPDATE admins SET last_login = NOW() WHERE username = $1', [username]);
+  },
+
+  async listAdmins() {
+    const p = getPool();
+    const { rows } = await p.query('SELECT id, username, role, last_login as "lastLogin" FROM admins ORDER BY created_at DESC');
+    return rows;
   },
 };
