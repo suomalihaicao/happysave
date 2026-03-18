@@ -1,3 +1,74 @@
+## 2026-03-18 00:04 UTC — 方向4: 运维监控 (第40轮)
+
+### 本轮方向
+分钟%5 = 4 → 方向4: 运维监控 — Sentry事件、日志分析、构建状态、部署配置
+
+### 检查项
+- ✅ TypeScript 编译 — 0 错误
+- ✅ Next.js 构建通过 (exit code 0, 全路由正常)
+- ✅ Sentry 配置审查 — client/server/edge 三端配置完整
+- ✅ Sentry Tunnel — `/api/v1/sentry-tunnel` 路由正常, 绕过广告拦截器
+- ✅ 依赖安全审计 — 5个漏洞 (next 16.1.6 存在 GHSA-jcc7-9wpm-mj36)
+- ✅ 构建产物 — 40条路由 (13静态 + 25动态 + 2代理)
+- ✅ ISR 配置 — 首页30min / 商家页1h / 分类页1h / 攻略6h
+- ✅ 日志状态 — 0 个 console.log/error (代码层无日志输出)
+- ✅ git 状态 — 工作树干净
+
+### 发现问题 & 修复
+
+1. **🔴 依赖漏洞 (中等)** — next@16.1.6 存在安全漏洞 GHSA-jcc7-9wpm-mj36 (moderate), 需升级至 ≥16.1.7 → ✅ **已修复**: pnpm update next@latest → next@16.1.7
+
+### Sentry 配置评估
+| 组件 | 状态 | 说明 |
+|------|------|------|
+| sentry.client.config.ts | ✅ | 仅生产启用, tracesSampleRate 0.1, replay 1%采样 |
+| sentry.server.config.ts | ✅ | 过滤网络错误 (ECONNREFUSED/ECONNRESET 等) |
+| sentry.edge.config.ts | ✅ | Edge Runtime 配置存在 |
+| sentry-tunnel/route.ts | ✅ | 广告拦截器绕过, DSN 解析 + 转发逻辑正确 |
+| withSentryConfig | ✅ | org=happy-save, project=happysave |
+| disableLogger | ⚠️ | Sentry 已弃用, 建议改用 webpack.treeshake.removeDebugLogging |
+
+### ISR 缓存策略
+| 页面 | revalidate | 说明 |
+|------|-----------|------|
+| / (首页) | 1800s (30min) | 高频更新 |
+| /store/[slug] | 3600s (1h) | 商家详情 |
+| /category/[slug] | 3600s (1h) | 分类列表 |
+| /guide/[slug] | 21600s (6h) | 攻略内容 |
+| /privacy, /terms | static | 静态不变 |
+| /sitemap.xml | static | 静态生成 |
+
+### 部署架构评估
+- ✅ Vercel 部署就绪 (withSentryConfig + @vercel/analytics + @vercel/speed-insights)
+- ✅ Turbopack 支持 (显式 root 配置)
+- ✅ 图片优化: AVIF/WebP + 12个远程域名白名单
+- ✅ 中间件: 安全头 + API限流 + 管理鉴权
+- ⚠️ Dockerfile / PM2 / 自托管配置缺失 (当前仅 Vercel 部署方案)
+
+### 依赖漏洞修复
+| 包 | 修复前 | 修复后 | 漏洞 |
+|----|--------|--------|------|
+| next | 16.1.6 | 16.1.7 | GHSA-jcc7-9wpm-mj36 (moderate) |
+
+修复后 pnpm audit 结果: 0 漏洞 (已验证)
+
+### 运维状态汇总
+| 项目 | 状态 |
+|------|------|
+| TypeScript 编译 | ✅ 0 错误 |
+| 构建 | ✅ 通过 |
+| Sentry 监控 | ✅ 三端就绪 |
+| 依赖安全 | ✅ 0 漏洞 (修复后) |
+| console.log | ✅ 0 (代码层干净) |
+| ISR 配置 | ✅ 分级合理 |
+| 部署就绪 | ✅ Vercel |
+| git 状态 | ✅ 已推送 57a8c48 |
+
+### 下次轮次
+方向0: 代码质量 — TypeScript错误、未使用导入、大文件拆分
+
+---
+
 ## 2026-03-17 16:30 UTC — 方向0: 代码质量 (第39轮)
 
 ### 本轮方向
