@@ -1,4 +1,33 @@
-## 2026-03-18 01:00 UTC — 方向1: 安全审计 (第42轮)
+## 2026-03-18 01:30 UTC — 方向0: 代码质量 (第43轮)
+
+### 本轮方向
+分钟%5 = 0 → 方向0: 代码质量 — TypeScript错误、未使用导入、大文件拆分
+
+### 检查项
+- ✅ TypeScript 编译: `npx tsc --noEmit` → 0 错误
+- ✅ ESLint: 34 problems (31×no-explicit-any DB层 + 5×warning 占位符/最佳实践)
+- ✅ 未使用导入: 0 (所有文件干净)
+- ✅ 未使用声明: 3处 `_` 前缀占位符 (保留待未来使用)
+- ✅ require 导入: 2处 → ESM import (crypto)
+- ✅ 大文件: sqlite-db.ts(799行), admin/page.tsx(714行), db-tidb.ts(681行) — 均已在前期拆分
+- ✅ Next.js 构建通过: `next build` → exit 0, 全路由正常
+- ✅ 自第42轮以来变更: 仅 `content/social/` markdown 内容新增 (无代码影响)
+
+### 发现问题 & 修复
+1. **🟡 require('crypto') 违反ESM规范 (低风险)** — `data-growth.ts:32` 和 `affiliate.ts:244` 使用 `require('crypto')` 而非ESM import。 → ✅ **已修复**: 改为 `import { createHmac }` / `import { createHash }`
+2. **🟡 死代码: 未使用赋值 (低风险)** — `data-growth.ts:247` `const coupons = await network.fetchCoupons()` 赋值后从未使用。 → ✅ **已修复**: 移除, 改为注释说明
+3. **🟡 文件尾部重复内容 (低风险)** — `data-growth.ts` 末尾3行异常残留(`};`重复)。 → ✅ **已修复**: 截断清理
+4. **🟡 未使用类型声明 (低风险)** — `MerchantRecord`(affiliate.ts)、`NotificationUpdate`(db-postgres.ts)、`scrapeWithAI`(data-growth.ts) 定义后从未使用。 → ✅ **已处理**: 加 `_` 前缀标记为占位符
+
+### 本轮统计
+- TypeScript: 0 错误 (持平)
+- ESLint: 37→34 problems (-8%)
+- 未使用导入: 0 (持平)
+- 代码修复: 4项
+- git commit 17824ce → 已推送
+
+
+---
 
 ### 本轮方向
 分钟%5 = 1 → 方向1: 安全审计 — 密钥泄露、API鉴权、Cookie安全、依赖漏洞
