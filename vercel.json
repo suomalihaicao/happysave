@@ -34,6 +34,10 @@
     {
       "path": "/api/v1/pipeline?task=auto_publish",
       "schedule": "45 * * * *"
+    },
+    {
+      "path": "/api/v1/affiliate?action=send&limit=2&secret=CHANGE_ME",
+      "schedule": "0 10 * * 1"
     }
   ]
 }
