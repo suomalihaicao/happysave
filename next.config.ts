@@ -6,6 +6,11 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: __dirname,
   },
+
+  // Ant Design tree-shaking: 按需导入，减少 bundle 体积
+  experimental: {
+    optimizePackageImports: ['antd', '@ant-design/icons'],
+  },
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: '**.amazon.com' },
