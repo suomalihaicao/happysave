@@ -1,3 +1,81 @@
+## 2026-03-19 00:12 UTC — 方向2: 性能分析 (第49轮)
+
+### 本轮方向
+分钟%5 = 2 → 方向2: 性能分析 — Bundle大小、查询次数、缓存命中率、ISR状态
+
+### 检查项
+- ✅ TypeScript 编译 — 0 错误
+- ✅ Next.js 构建通过 — exit 0, 全路由正常
+- ✅ Bundle 大小分析 — 35 chunks, 4.2MB total static
+- ✅ ISR 分级配置 — 5个页面 revalidate 设置正确
+- ✅ CDN 缓存头 — s-maxage + stale-while-revalidate 全配置
+- ✅ 内存缓存层 — SWR 模式, 6个 cached.* 方法, 自动 warmup + 失效
+- ✅ SQL 查询模式 — API 路由单次查询, dashboard 路由 Promise.all 并行
+- ✅ Dynamic Import — QRCode (ssr:false), HomePageContent, 按需加载
+- ✅ console.log — 51处 (DB初始化/AI模块, 可接受)
+- ✅ git 工作树干净 (除本次修复外)
+
+### 发现问题 & 修复
+1. **🟡 Ant Design 缺少 tree-shaking 优化 (中等)** — next.config.ts 未配置 `optimizePackageImports: ['antd', '@ant-design/icons']`, 最大 chunk 641KB 主要来自 antd 核心。14个文件导入 antd, 虽然使用解构导入, 但缺少显式优化指令。→ ✅ **已修复**: next.config.ts 新增 `experimental.optimizePackageImports`, git commit `1b132ba`
+
+### 性能状态汇总
+
+**Bundle 大小:**
+| 指标 | 值 | 评估 |
+|------|------|------|
+| Total static | 4.2MB | ✅ 合理 |
+| 最大 chunk | 641KB | ⚠️ antd 核心, 已加 tree-shaking |
+| 次大 chunk | 404KB ×2 | ✅ 代码分割正常 |
+| 中等 chunk | 323KB ×4 | ✅ 路由级分割 |
+| JS 文件数 | 35 | ✅ 合理 |
+
+**ISR 缓存分级:**
+| 页面 | revalidate | CDN s-maxage | SWR |
+|------|-----------|-------------|-----|
+| / (首页) | 30min | — | ✅ |
+| /store/[slug] | 1h | 1h | ✅ cached.getStoreWithCoupons |
+| /category/[slug] | 1h | 1h | ✅ cached.getStores |
+| /guide/[slug] | 6h | 6h | ✅ |
+| /privacy, /terms | static | 7d | 静态不变 |
+
+**缓存层架构:**
+- ✅ 内存缓存: SWR 模式 (5min fresh → 30min stale → 过期)
+- ✅ 自动预热: ensureWarmup() 启动时加载 stores/coupons/categories/seoPages
+- ✅ 写操作失效: stores/coupons/categories 写操作后自动清缓存
+- ✅ 前缀匹配失效: 支持批量失效 (stores:, coupons:, categories)
+- ✅ 读路径全缓存: 首页/商家页/分类页 全部走 cached.* 方法
+
+**SQL 查询优化:**
+- ✅ 无 N+1 查询: API 路由每次请求 1-2 次 DB 调用
+- ✅ 联合查询: stats/finance/share 路由使用 Promise.all 并行
+- ✅ 查询参数化: 所有查询使用参数化, 无字符串拼接
+- ✅ LIMIT 分页: 列表查询均带分页参数
+
+**动态导入:**
+- ✅ QRCode: dynamic import + ssr:false (2处)
+- ✅ HomePageContent: dynamic import + Suspense fallback
+- ✅ 按路由代码分割: admin 页面独立 chunk
+
+### 代码状态汇总
+| 项目 | 状态 |
+|------|------|
+| TypeScript 编译 | ✅ 0 错误 |
+| Next.js 构建 | ✅ 通过 |
+| Bundle 优化 | ✅ antd tree-shaking 已配置 |
+| ISR 缓存 | ✅ 分级合理 |
+| CDN 缓存头 | ✅ 全配置 |
+| 内存缓存 | ✅ SWR + 预热 + 失效 |
+| SQL 查询 | ✅ 无 N+1, 并行优化 |
+| 动态导入 | ✅ 按需加载 |
+
+### git
+- commit `1b132ba` → 已推送
+
+### 下次轮次
+方向3: 架构优化 — 数据库层、缓存策略、中间件、API封装
+
+---
+
 ## 2026-03-18 05:30 UTC — 方向0: 代码质量 (第48轮)
 
 ### 本轮方向
