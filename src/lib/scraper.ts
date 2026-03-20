@@ -1,10 +1,14 @@
-// 种子数据采集引擎 - 50+ 热门品牌预填充
-
-import { db } from './db';
+import { db } from './sqlite-db';
 
 interface Merchant {
-  name: string; slug: string; url: string; affUrl: string;
-  category: string; catZh: string; logo: string; desc: string;
+  name: string;
+  slug: string;
+  url: string;
+  affUrl: string;
+  category: string;
+  catZh: string;
+  logo: string;
+  desc: string;
 }
 
 const SEED_MERCHANTS: Merchant[] = [
@@ -24,7 +28,7 @@ const COUPON_TEMPLATES = [
   { title: 'Welcome Discount', titleZh: '新用户专享', codePrefix: 'WELCOME', discount: '10%', type: 'code' },
   { title: 'Season Sale', titleZh: '季节大促', codePrefix: 'SEASON', discount: '15%', type: 'code' },
   { title: 'Flash Deal', titleZh: '限时特惠', codePrefix: 'FLASH', discount: '20%', type: 'code' },
-  { title: 'Free Shipping', titleZh: '免运费', codePrefix: null, discount: 'Free Shipping', type: 'deal' },
+  { title: 'Free Shipping', titleZh: '免运费', codePrefix: null as string | null, discount: 'Free Shipping', type: 'deal' },
   { title: 'VIP Exclusive', titleZh: '会员专享', codePrefix: 'VIP', discount: '30%', type: 'code' },
 ];
 
@@ -50,7 +54,7 @@ export const scraper = {
       for (const tpl of COUPON_TEMPLATES.slice(0, 3)) {
         const code = tpl.codePrefix ? `${tpl.codePrefix}${Math.random().toString(36).substring(2, 5).toUpperCase()}` : null;
         await db.createCoupon({
-          storeId: (store as any).id, storeName: merchant.name, code,
+          storeId: (store as { id: string | number }).id, storeName: merchant.name, code,
           title: `${tpl.title} - ${merchant.name}`, titleZh: `${merchant.name} ${tpl.titleZh}`,
           description: `${tpl.discount} off at ${merchant.name}`,
           descriptionZh: `${merchant.name} ${tpl.titleZh}，${tpl.discount}优惠`,

@@ -1,19 +1,7 @@
 #!/usr/bin/env node
 import fs from 'fs';
 
-// Map of file -> line -> fix
-const fixes = {
-  'src/app/api/v1/ai/route.ts': {
-    46: { old: 'stores.data.map((s) =>', new: 'stores.data.map((s: { name: string }) =>' },
-    76: { old: 'stores.data) {', new: 'stores.data as import("@/types").Store[]) {' },
-  },
-  'src/app/api/v1/cron/route.ts': {
-    37: { old: 'seoPages.data.map((p) => p.slug)', new: 'seoPages.data.map((p: { slug: string }) => p.slug)' },
-    73: { old: 'coupons.data) {', new: 'coupons.data as import("@/types").Coupon[]) {' },
-  },
-};
-
-// Actually, let me just read each file and fix by line context
+// 按文件扫描隐式 any 的 map/filter/reduce/sort 回调并注入类型
 const files = [
   'src/app/api/v1/ai/route.ts',
   'src/app/api/v1/cron/route.ts',
@@ -29,11 +17,12 @@ for (const file of files) {
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
 
-    // Fix map/sort callbacks with implicit any
-    // Pattern: .map((x) => or .sort((a, b) => or .filter((x) =>
-    if (line.match(/\.\(map|sort|filter|reduce)\(\(([a-z])\)\s*(=>|,)/)) {
-      // Add explicit : any type
-      const newLine = line.replace(/\(([a-z])\)\s*(=>|,)/g, '($1: import("@/types").Store & Record<string, unknown>) $2');
+    // 只处理简单的单参数箭头函数，避免误伤复杂表达式
+    if (line.match(/\.(map|filter|reduce|sort)\s*\(([a-zA-Z_$][a-zA-Z0-9_$]*)\)\s*=>/)) {
+      const newLine = line.replace(
+        /\(([_a-zA-Z][_a-zA-Z0-9]*)\)\s*=>/g,
+        '($1: any) =>',
+      );
       if (newLine !== line) {
         lines[i] = newLine;
         changed = true;
