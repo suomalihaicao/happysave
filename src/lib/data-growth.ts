@@ -257,10 +257,14 @@ export const dataGrowth = {
       for (const c of coupons.slice(0, 50)) {
         // 找到或创建商家
         const slug = (c.merchant || c.store || '').toLowerCase().replace(/[^a-z0-9]/g, '-');
-        let store = await db.getStoreBySlug(slug);
-        if (!store && slug) {
-          store = await db.createStore({
-            slug,
+        const existingSlug = slug || '';
+
+        const storeRecord = existingSlug ? await db.getStoreBySlug(existingSlug) : null;
+
+        const store = storeRecord || (await (async () => {
+          if (!existingSlug) return null;
+          const created = await db.createStore({
+            slug: existingSlug,
             name: c.merchant || c.store || 'Unknown',
             nameZh: c.merchant || c.store || 'Unknown',
             description: '',
@@ -272,7 +276,8 @@ export const dataGrowth = {
             active: true,
           });
           totalMerchants++;
-        }
+          return created;
+        })());
 
         if (store) {
           await db.createCoupon({
