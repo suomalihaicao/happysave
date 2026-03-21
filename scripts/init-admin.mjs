@@ -3,8 +3,8 @@
 // 用法: node scripts/init-admin.mjs [username] [password]
 // 默认: admin / admin123
 
-import { createHmac, randomBytes } from 'crypto';
-import { existsSync, mkdirSync } from 'fs';
+import { createHmac } from 'crypto';
+import { mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
